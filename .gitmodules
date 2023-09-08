@@ -1,0 +1,3 @@
+[submodule "autocomplete/extract/fig"]
+	path = autocomplete/extract/fig
+	url = https://github.com/withfig/autocomplete.git
