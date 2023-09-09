@@ -156,17 +156,20 @@ func (m Model) View() string {
 	if showDescriptionRight {
 		return lipgloss.
 			NewStyle().
+			MarginBottom(1).
 			MarginLeft(utils.Clamp(m.userInputCursorLocation, 0, maxLeftPaddingWhenJoined)).
 			Render(lipgloss.JoinHorizontal(lipgloss.Top, suggestionsView, descriptionView))
 
 	} else if showDescriptionLeft {
 		return lipgloss.
 			NewStyle().
+			MarginBottom(1).
 			MarginLeft(utils.Clamp(m.userInputCursorLocation-DescriptionWidth-BorderOffset, 0, maxLeftPaddingWhenJoined)).
 			Render(lipgloss.JoinHorizontal(lipgloss.Top, descriptionView, suggestionsView))
 	} else {
 		return lipgloss.
 			NewStyle().
+			MarginBottom(1).
 			MarginLeft(utils.Clamp(m.userInputCursorLocation, 0, maxLeftPadding)).
 			Render(lipgloss.JoinVertical(lipgloss.Left, suggestionsView, descriptionView))
 	}
