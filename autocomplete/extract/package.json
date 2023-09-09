@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "test": "ts-node extract.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.6.0",
+    "@withfig/autocomplete-types": "^1.28.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "declaration": true,
+    "outDir": "./build",
+    "strict": true,
+    "esModuleInterop": true,
+    "types": ["@withfig/autocomplete-types", "node"]
+  },
+  "exclude": ["node_modules/", "fig/", "build/"]
+}
