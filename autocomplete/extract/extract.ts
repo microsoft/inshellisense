@@ -6,9 +6,16 @@ import * as child_process from "child_process";
 import ProgressBar = require("progress");
 
 const exclusions = new Set(["deno.ts", "rush.ts"]);
+const renamings = {
+  "-": "underscore",
+};
 
 const clearAllNewlines = (input: string): string => {
   return input.replaceAll(/[\r\n]+/g, "");
+};
+
+const escapeSpecialCharacters = (input: string): string => {
+  return input.replaceAll("`", '"').replaceAll("\0", "\\\\0");
 };
 
 function chunk<T>(arr: T[], chuckSize: number): T[][] {
@@ -63,18 +70,18 @@ const main = async () => {
         }
 
         const filenameWithoutExtension = path.parse(directoryItem.name).name;
+        const golangFilename =
+          renamings[filenameWithoutExtension] != null
+            ? renamings[filenameWithoutExtension]
+            : filenameWithoutExtension;
         const subcommand = spec as unknown as Fig.Subcommand;
         const generatedCode = generateGolang(
           subcommand,
           filenameWithoutExtension
         );
+
         await fsAsync.writeFile(
-          path.join(
-            process.cwd(),
-            "..",
-            "specs",
-            `${filenameWithoutExtension}.go`
-          ),
+          path.join(process.cwd(), "..", "specs", `${golangFilename}.go`),
           generatedCode
         );
         progressBar.tick();
@@ -103,13 +110,16 @@ const generateTemplate = (template: Fig.Template): string => {
 const genName = (name: Fig.SingleOrArray<string> | undefined): string => {
   if (name == null) return "";
   return Array.isArray(name)
-    ? `Name: []string{${name.map((n) => `"${n}"`).join(",")}},`
+    ? `Name: []string{${name
+        .filter((n) => n != null)
+        .map((n) => `"${n}"`)
+        .join(",")}},`
     : `Name: "${name}",`;
 };
 
 const genDescription = (description: string | undefined): string => {
   return description != null
-    ? `Description: "${clearAllNewlines(description)}",`
+    ? `Description: \`${escapeSpecialCharacters(description)}\`,`
     : "";
 };
 
@@ -137,19 +147,21 @@ const genSubcommands = (
   if (subcommand == null) return "";
   const subcommands = Array.isArray(subcommand) ? subcommand : [subcommand];
   return `Subcommands: []model.Subcommand{${subcommands
-    .map((s) => generateSubcommand(s))
+    .map((s) => generateSubcommand(s, false))
     .join(",")}},`;
 };
 
 const generateArgs = (args: Fig.SingleOrArray<Fig.Arg>): string => {
   const argList = Array.isArray(args) ? args : [args];
-  const generatedArgs = argList.map((arg) => {
-    return `{
+  const generatedArgs = argList
+    .map((arg) => {
+      return `{
       ${genTemplates(arg.template)}
       ${genName(arg.name)}
       ${genDescription(arg.description)}
-    },`;
-  });
+    }`;
+    })
+    .join(",");
   return `Args: []model.Arg{${generatedArgs}},`;
 };
 
@@ -164,8 +176,12 @@ const generateOptions = (options: Fig.Option[]): string => {
   return `Options: []model.Option{${generatedOptions}},`;
 };
 
-const generateSubcommand = (subcommand: Fig.Subcommand): string => {
-  return `model.Subcommand{
+const generateSubcommand = (
+  subcommand: Fig.Subcommand,
+  usePrefix = true
+): string => {
+  const prefix = usePrefix ? "model.Subcommand" : "";
+  return `${prefix}{
     ${genName(subcommand.name)}
     ${genDescription(subcommand.description)}
     ${genArgs(subcommand.args)}
