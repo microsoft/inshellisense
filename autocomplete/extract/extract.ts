@@ -15,7 +15,27 @@ const clearAllNewlines = (input: string): string => {
 };
 
 const escapeSpecialCharacters = (input: string): string => {
-  return input.replaceAll("`", '"').replaceAll("\0", "\\\\0");
+  const chars = [...input];
+  const special = new Set(["a", "b", "f", "n", "r", "t", "v", "\\", "0", ":"]);
+  for (let i = 0; i < chars.length; i++) {
+    switch (chars[i]) {
+      case "\\":
+        if (special.has(chars.at(i + 1))) {
+          chars[i] = "\\\\";
+        }
+        if (chars.at(i + 1) == "\\") {
+          chars[i + 1] = "\\\\";
+        }
+        break;
+      case "`":
+        chars[i] = '"';
+        break;
+      case "\0":
+        chars[i] = "\\\\0";
+        break;
+    }
+  }
+  return chars.join("");
 };
 
 function chunk<T>(arr: T[], chuckSize: number): T[][] {
@@ -114,7 +134,12 @@ const genName = (name: Fig.SingleOrArray<string> | undefined): string => {
         .filter((n) => n != null)
         .map((n) => `"${n}"`)
         .join(",")}},`
-    : `Name: "${name}",`;
+    : `Name: []string{"${name}"},`;
+};
+
+const genSingleName = (name: string | undefined): string => {
+  if (name == null) return "";
+  return `Name: "${name}",`;
 };
 
 const genDescription = (description: string | undefined): string => {
@@ -141,6 +166,12 @@ const genArgs = (args: Fig.SingleOrArray<Fig.Arg> | undefined): string => {
   return args != null ? generateArgs(args) : "";
 };
 
+const genSuggestions = (
+  suggestions: (string | Fig.Suggestion)[] | undefined
+): string => {
+  return suggestions != null ? generateSuggestions(suggestions) : "";
+};
+
 const genSubcommands = (
   subcommand: Fig.SingleOrArray<Fig.Subcommand> | undefined
 ): string => {
@@ -151,14 +182,56 @@ const genSubcommands = (
     .join(",")}},`;
 };
 
+const genIsPersistent = (persistent: boolean): string => {
+  return persistent === true ? "IsPersistent: true," : "";
+};
+
+const genExclusiveOn = (exclusiveOn: string[] | undefined): string => {
+  if (exclusiveOn == null) return "";
+  return `ExclusiveOn: []string{${exclusiveOn
+    .map((e) => `"${e}"`)
+    .join(",")}},`;
+};
+
+const generateSuggestions = (
+  suggestions: (string | Fig.Suggestion)[]
+): string => {
+  const genName = (name: Fig.SingleOrArray<string>) => {
+    return Array.isArray(name)
+      ? `Name: []string{${name
+          .map((n) => `\`${escapeSpecialCharacters(n)}\``)
+          .join(",")}},`
+      : `Name: []string{\`${escapeSpecialCharacters(name)}\`},`;
+  };
+
+  const generatedSuggestions = suggestions
+    .map((suggestion) => {
+      if (typeof suggestion == "string") {
+        return `{Name: []string{\`${escapeSpecialCharacters(suggestion)}\`}}`;
+      }
+      if (suggestion.name == null) {
+        return null;
+      }
+      return `{
+        ${genName(suggestion.name)}
+        ${genDescription(suggestion.description)}
+      }`;
+    })
+    .filter((s) => s != null)
+    .join(",");
+
+  return `Suggestions: []model.Suggestion{${generatedSuggestions}},`;
+};
+
 const generateArgs = (args: Fig.SingleOrArray<Fig.Arg>): string => {
   const argList = Array.isArray(args) ? args : [args];
   const generatedArgs = argList
     .map((arg) => {
       return `{
       ${genTemplates(arg.template)}
-      ${genName(arg.name)}
+      ${genSingleName(arg.name)}
       ${genDescription(arg.description)}
+      ${genSuggestions(arg.suggestions)}
     }`;
     })
     .join(",");
@@ -171,6 +244,8 @@ const generateOptions = (options: Fig.Option[]): string => {
       ${genName(option.name)}
       ${genDescription(option.description)}
       ${genArgs(option.args)}
+      ${genIsPersistent(option.isPersistent)}
+      ${genExclusiveOn(option.exclusiveOn)}
     }`;
   });
   return `Options: []model.Option{${generatedOptions}},`;

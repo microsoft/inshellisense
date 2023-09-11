@@ -13,6 +13,7 @@ var (
 type commandToken struct {
 	token    string
 	complete bool
+	isOption bool
 }
 
 func ParseCommand(cmd string) []commandToken {
@@ -48,7 +49,7 @@ func parse(cmd []rune) []commandToken {
 			results = append(results, commandToken{complete: complete, token: string(cmd[readingIdx : idx+1])})
 		} else if readingFlag && (unicode.IsSpace(r) || r == '=') {
 			readingFlag = false
-			results = append(results, commandToken{complete: true, token: string(cmd[readingIdx:idx])})
+			results = append(results, commandToken{complete: true, token: string(cmd[readingIdx:idx]), isOption: true})
 		} else if readingCmd && unicode.IsSpace(r) {
 			readingCmd = false
 			results = append(results, commandToken{complete: true, token: string(cmd[readingIdx:idx])})
