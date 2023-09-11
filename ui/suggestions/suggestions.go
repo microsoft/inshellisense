@@ -28,6 +28,7 @@ const (
 	SuggestionWidth  = 40
 	DescriptionWidth = 30
 	BorderOffset     = 2
+	MaxSuggestions   = 5
 )
 
 type KeyMap struct {
@@ -93,12 +94,15 @@ func (m Model) Update(msg tea.Msg, command string, userInputCursorLocation int) 
 	}
 	m.userInputCursorLocation = userInputCursorLocation
 	m.suggestions = autocomplete.LoadSuggestions(command)
+	if len(m.suggestions) == 0 {
+		m.cursor = 0
+	}
 	return m
 }
 
-func (m Model) renderSuggestion(suggestion string, position int, width int) string {
+func (m Model) renderSuggestion(suggestion string, position, cursor, width int) string {
 	content := wordTrunc(suggestion, width)
-	if position == m.cursor {
+	if position == m.cursor%MaxSuggestions {
 		return lipgloss.NewStyle().Background(lipgloss.Color("#7D56F4")).Width(width).Render(content)
 	}
 	return lipgloss.NewStyle().Render(content)
@@ -112,6 +116,15 @@ func wordTrunc(content string, width int) string {
 	return runewidth.Truncate(content, width, "…")
 }
 
+func pageSuggestions(suggestions []autocomplete.Suggestion, cursorLocation int) []autocomplete.Suggestion {
+	page := (cursorLocation / MaxSuggestions) + 1
+	pagedSuggestions := []autocomplete.Suggestion{}
+	for i := (page - 1) * MaxSuggestions; i < min(page*MaxSuggestions, len(suggestions)); i++ {
+		pagedSuggestions = append(pagedSuggestions, suggestions[i])
+	}
+	return pagedSuggestions
+}
+
 func (m Model) renderSuggestions(width int) string {
 	var style = lipgloss.NewStyle().
 		Bold(true).
@@ -119,9 +132,11 @@ func (m Model) renderSuggestions(width int) string {
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(lipgloss.Color("63"))
 
+	m.suggestions = pageSuggestions(m.suggestions, m.cursor)
 	r := make([]string, len(m.suggestions))
+
 	for idx, suggestion := range m.suggestions {
-		r[idx] = m.renderSuggestion(suggestion.Name, idx, width)
+		r[idx] = m.renderSuggestion(suggestion.Name, idx, m.cursor, width)
 	}
 
 	return style.Render(strings.Join(r, "\n"))
