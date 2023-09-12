@@ -22,6 +22,7 @@ type Model struct {
 	keyMap                  KeyMap
 	windowWidth             int
 	windowHeight            int
+	runesToRemove           int
 }
 
 const (
@@ -71,8 +72,8 @@ func (m Model) HasActiveSuggestion() bool {
 	return len(m.suggestions) > 0
 }
 
-func (m Model) ActiveSuggestion() string {
-	return m.suggestions[m.cursor].Name
+func (m Model) ActiveSuggestion() (string, int) {
+	return m.suggestions[m.cursor].Name, m.runesToRemove
 }
 
 func (m Model) Update(msg tea.Msg, command string, userInputCursorLocation int) Model {
@@ -93,7 +94,7 @@ func (m Model) Update(msg tea.Msg, command string, userInputCursorLocation int) 
 		m.windowWidth = msg.Width
 	}
 	m.userInputCursorLocation = userInputCursorLocation
-	m.suggestions = autocomplete.LoadSuggestions(command)
+	m.suggestions, m.runesToRemove = autocomplete.LoadSuggestions(command)
 	if len(m.suggestions) == 0 {
 		m.cursor = 0
 	}

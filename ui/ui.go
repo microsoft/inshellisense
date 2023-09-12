@@ -49,8 +49,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !m.suggestions.HasActiveSuggestion() {
 				return m, nil
 			}
-			activeSuggestion := m.suggestions.ActiveSuggestion()
-			s := m.textInput.Value() + activeSuggestion
+			activeSuggestion, runesToRemove := m.suggestions.ActiveSuggestion()
+			currentValue := m.textInput.Value()
+			s := currentValue[:len(currentValue)-runesToRemove] + activeSuggestion + " "
 			m.textInput.SetValue(s)
 			m.textInput.SetCursor(len(s))
 			return m, nil

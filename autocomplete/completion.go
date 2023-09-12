@@ -17,6 +17,7 @@ var (
 	cmdDelimiter      = regexp.MustCompile(`(\|\|)|(&&)|(;)`)
 	lastSuggestionCmd = ""
 	lastSuggestion    = []Suggestion{}
+	lastCmdRunes      = 0
 )
 
 func getOption(token string, options []model.Option) *model.Option {
@@ -59,14 +60,34 @@ func getLongName(names []string) string {
 	return longestName
 }
 
+func getShortName(names []string) string {
+	if len(names) == 0 {
+		return ""
+	}
+	shortestName := names[0]
+	for _, name := range names {
+		if len(name) < len(shortestName) {
+			shortestName = name
+		}
+	}
+	return shortestName
+}
+
 func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken) []Suggestion {
 	suggestions := []Suggestion{}
+	allOptions := append(spec.Options, persistentOptions...)
 	if partialCmd != nil {
 		switch spec.FilterStrategy {
 		case model.FilterStrategyFuzzy:
-			return fuzzyMatchSubcommands(partialCmd.token, spec.Subcommands)
+			return append(
+				fuzzyMatchSubcommands(partialCmd.token, spec.Subcommands),
+				fuzzyMatchOptions(partialCmd.token, allOptions)...,
+			)
 		case model.FilterStrategyPrefix, model.FilterStrategyEmpty:
-			return prefixMatchSubcommands(partialCmd.token, spec.Subcommands)
+			return append(
+				prefixMatchSubcommands(partialCmd.token, spec.Subcommands),
+				prefixMatchOptions(partialCmd.token, allOptions)...,
+			)
 		}
 	}
 
@@ -76,9 +97,9 @@ func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions 
 			Description: sub.Description,
 		})
 	}
-	for _, op := range append(spec.Options, persistentOptions...) {
+	for _, op := range allOptions {
 		suggestions = append(suggestions, Suggestion{
-			Name:        getLongName(op.Name),
+			Name:        getShortName(op.Name),
 			Description: op.Description,
 		})
 	}
@@ -164,7 +185,7 @@ func handleArg(tokens []commandToken, args []model.Arg, spec model.Subcommand, p
 	return handleArg(tokens[1:], args[1:], spec, persistentOptions)
 }
 
-func loadSuggestions(cmd string) (suggestions []Suggestion) {
+func loadSuggestions(cmd string) (suggestions []Suggestion, charsInLastCmd int) {
 	activeCmd := ParseCommand(cmd)
 	if len(activeCmd) <= 0 {
 		return
@@ -173,17 +194,22 @@ func loadSuggestions(cmd string) (suggestions []Suggestion) {
 	if !rootToken.complete {
 		return
 	}
+	lastCmd := activeCmd[len(activeCmd)-1]
+	charsInLastCmd = len(lastCmd.token)
+	if lastCmd.complete {
+		charsInLastCmd = 0
+	}
 	if spec, ok := specs.Specs[rootToken.token]; ok {
-		return handleSubcommand(activeCmd[1:], spec, []model.Option{})
+		return handleSubcommand(activeCmd[1:], spec, []model.Option{}), charsInLastCmd
 	}
 	return
 }
 
-func LoadSuggestions(cmd string) []Suggestion {
+func LoadSuggestions(cmd string) ([]Suggestion, int) {
 	if cmd == lastSuggestionCmd {
-		return lastSuggestion
+		return lastSuggestion, lastCmdRunes
 	}
-	suggestions := loadSuggestions(cmd)
-	lastSuggestionCmd, lastSuggestion = cmd, suggestions
-	return suggestions
+	suggestions, lastRunes := loadSuggestions(cmd)
+	lastSuggestionCmd, lastSuggestion, lastCmdRunes = cmd, suggestions, lastRunes
+	return suggestions, lastRunes
 }

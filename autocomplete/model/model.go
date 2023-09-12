@@ -9,12 +9,28 @@ type Subcommand struct {
 	FilterStrategy FilterStrategy
 }
 
+func (s Subcommand) GetName() []string {
+	return s.Name
+}
+
+func (s Subcommand) GetDescription() string {
+	return s.Description
+}
+
 type Option struct {
 	Name         []string //single or array string, required
 	Args         []Arg    //single or array Arg, optional
 	Description  string   //single, optional
 	IsPersistent bool
 	ExclusiveOn  []string
+}
+
+func (o Option) GetName() []string {
+	return o.Name
+}
+
+func (o Option) GetDescription() string {
+	return o.Description
 }
 
 type Arg struct {
