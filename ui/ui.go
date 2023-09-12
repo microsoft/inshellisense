@@ -54,6 +54,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			s := currentValue[:len(currentValue)-runesToRemove] + activeSuggestion + " "
 			m.textInput.SetValue(s)
 			m.textInput.SetCursor(len(s))
+			m.suggestions.ResetCursor()
 			return m, nil
 		}
 	case cursor.BlinkMsg:

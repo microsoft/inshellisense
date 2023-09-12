@@ -76,6 +76,10 @@ func (m Model) ActiveSuggestion() (string, int) {
 	return m.suggestions[m.cursor].Name, m.runesToRemove
 }
 
+func (m *Model) ResetCursor() {
+	m.cursor = 0
+}
+
 func (m Model) Update(msg tea.Msg, command string, userInputCursorLocation int) Model {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:

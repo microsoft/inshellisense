@@ -1,6 +1,7 @@
 package autocomplete
 
 import (
+	"log"
 	"log/slog"
 	"regexp"
 
@@ -8,17 +9,17 @@ import (
 	"github.com/cpendery/clac/autocomplete/specs"
 )
 
-type Suggestion struct {
-	Name        string
-	Description string
-}
-
 var (
 	cmdDelimiter      = regexp.MustCompile(`(\|\|)|(&&)|(;)`)
 	lastSuggestionCmd = ""
 	lastSuggestion    = []Suggestion{}
 	lastCmdRunes      = 0
 )
+
+type Suggestion struct {
+	Name        string
+	Description string
+}
 
 func getOption(token string, options []model.Option) *model.Option {
 	for _, option := range options {
@@ -73,48 +74,66 @@ func getShortName(names []string) string {
 	return shortestName
 }
 
-func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken) []Suggestion {
-	suggestions := []Suggestion{}
+func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken, onlyRecommendSubcommands bool) []model.TermSuggestion {
+	log.Println("sub rec")
+	suggestions := []model.TermSuggestion{}
 	allOptions := append(spec.Options, persistentOptions...)
+
+	if onlyRecommendSubcommands {
+		getSubcommandDrivenRecommendations(spec, &suggestions)
+	} else {
+		if len(spec.Args) != 0 {
+			activeArg := spec.Args[0]
+			getSuggestionDrivenRecommendations(activeArg.Suggestions, &suggestions)
+			getTemplateDrivenRecommendations(activeArg.Templates, &suggestions)
+		}
+		getSubcommandDrivenRecommendations(spec, &suggestions)
+		getOptionDrivenRecommendations(allOptions, &suggestions)
+	}
+
 	if partialCmd != nil {
 		switch spec.FilterStrategy {
 		case model.FilterStrategyFuzzy:
-			return append(
-				fuzzyMatchSubcommands(partialCmd.token, spec.Subcommands),
-				fuzzyMatchOptions(partialCmd.token, allOptions)...,
-			)
+			getFuzzyFilteredRecommendations(partialCmd.token, &suggestions)
 		case model.FilterStrategyPrefix, model.FilterStrategyEmpty:
-			return append(
-				prefixMatchSubcommands(partialCmd.token, spec.Subcommands),
-				prefixMatchOptions(partialCmd.token, allOptions)...,
-			)
+			getPrefixFilteredRecommendations(partialCmd.token, &suggestions)
 		}
 	}
 
-	for _, sub := range spec.Subcommands {
-		suggestions = append(suggestions, Suggestion{
-			Name:        getLongName(sub.Name),
-			Description: sub.Description,
-		})
-	}
-	for _, op := range allOptions {
-		suggestions = append(suggestions, Suggestion{
-			Name:        getShortName(op.Name),
-			Description: op.Description,
-		})
-	}
 	return suggestions
 }
 
-func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persistentOptions []model.Option) []Suggestion {
-	return []Suggestion{}
+func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken) []model.TermSuggestion {
+	log.Println("arg rec")
+	suggestions := []model.TermSuggestion{}
+	activeArg := args[0]
+	allOptions := append(spec.Options, persistentOptions...)
+
+	getSuggestionDrivenRecommendations(activeArg.Suggestions, &suggestions)
+	getTemplateDrivenRecommendations(activeArg.Templates, &suggestions)
+
+	if activeArg.IsOptional {
+		getSubcommandDrivenRecommendations(spec, &suggestions)
+		getOptionDrivenRecommendations(allOptions, &suggestions)
+	}
+
+	if partialCmd != nil {
+		switch spec.FilterStrategy {
+		case model.FilterStrategyFuzzy:
+			getFuzzyFilteredRecommendations(partialCmd.token, &suggestions)
+		case model.FilterStrategyPrefix, model.FilterStrategyEmpty:
+			getPrefixFilteredRecommendations(partialCmd.token, &suggestions)
+		}
+	}
+
+	return suggestions
 }
 
-func handleSubcommand(tokens []commandToken, spec model.Subcommand, persistentOptions []model.Option) (suggestions []Suggestion) {
+func handleSubcommand(tokens []commandToken, spec model.Subcommand, persistentOptions []model.Option, argsDepleted bool) (suggestions []model.TermSuggestion) {
 	if len(tokens) == 0 {
-		return getSubcommandDrivenRecommendation(spec, persistentOptions, nil)
+		return getSubcommandDrivenRecommendation(spec, persistentOptions, nil, argsDepleted)
 	} else if !tokens[0].complete {
-		return getSubcommandDrivenRecommendation(spec, persistentOptions, &tokens[0])
+		return getSubcommandDrivenRecommendation(spec, persistentOptions, &tokens[0], argsDepleted)
 	}
 	for _, option := range spec.Options {
 		if option.IsPersistent {
@@ -129,30 +148,30 @@ func handleSubcommand(tokens []commandToken, spec model.Subcommand, persistentOp
 		return
 	}
 	if subcommand := getSubcommand(activeCmd.token, spec); subcommand != nil {
-		return handleSubcommand(tokens[1:], *subcommand, persistentOptions)
+		return handleSubcommand(tokens[1:], *subcommand, persistentOptions, false)
 	}
 
 	return handleArg(tokens, spec.Args, spec, persistentOptions)
 }
 
-func handleOption(tokens []commandToken, option model.Option, spec model.Subcommand, persistentOptions []model.Option) (suggestions []Suggestion) {
+func handleOption(tokens []commandToken, option model.Option, spec model.Subcommand, persistentOptions []model.Option) (suggestions []model.TermSuggestion) {
 	if len(tokens) == 0 {
 		slog.Error("invalid state reached, option with no tokens")
 		return
 	}
 	if len(option.Args) == 0 {
-		return handleSubcommand(tokens[1:], spec, persistentOptions)
+		return handleSubcommand(tokens[1:], spec, persistentOptions, false)
 	}
 	return handleArg(tokens[1:], option.Args, spec, persistentOptions)
 }
 
-func handleArg(tokens []commandToken, args []model.Arg, spec model.Subcommand, persistentOptions []model.Option) (suggestions []Suggestion) {
-	if len(tokens) == 0 {
-		return getArgDrivenRecommendation(args, spec, persistentOptions)
+func handleArg(tokens []commandToken, args []model.Arg, spec model.Subcommand, persistentOptions []model.Option) (suggestions []model.TermSuggestion) {
+	if len(args) == 0 {
+		return handleSubcommand(tokens, spec, persistentOptions, true)
+	} else if len(tokens) == 0 {
+		return getArgDrivenRecommendation(args, spec, persistentOptions, nil)
 	} else if !tokens[0].complete {
-		return getArgDrivenRecommendation(args, spec, persistentOptions)
-	} else if len(args) == 0 {
-		return handleSubcommand(tokens, spec, persistentOptions)
+		return getArgDrivenRecommendation(args, spec, persistentOptions, &tokens[0])
 	}
 
 	activeCmd := tokens[0]
@@ -165,27 +184,27 @@ func handleArg(tokens []commandToken, args []model.Arg, spec model.Subcommand, p
 		}
 		subcommand := getSubcommand(activeCmd.token, spec)
 		if subcommand != nil {
-			return handleSubcommand(tokens[1:], *subcommand, persistentOptions)
+			return handleSubcommand(tokens[1:], *subcommand, persistentOptions, false)
 		}
 	}
 
 	activeArg := args[0]
 	if activeArg.IsVariadic {
-		return []Suggestion{{Name: activeArg.Name}}
+		return handleArg(tokens[1:], args, spec, persistentOptions)
 	} else if activeArg.IsCommand {
 		if len(tokens) <= 1 {
 			return
 		}
 		activeCmd = tokens[1]
 		if subcommand := getSubcommand(activeCmd.token, spec); subcommand != nil {
-			return handleSubcommand(tokens[2:], *subcommand, persistentOptions)
+			return handleSubcommand(tokens[2:], *subcommand, persistentOptions, false)
 		}
 		return
 	}
 	return handleArg(tokens[1:], args[1:], spec, persistentOptions)
 }
 
-func loadSuggestions(cmd string) (suggestions []Suggestion, charsInLastCmd int) {
+func loadSuggestions(cmd string) (suggestions []model.TermSuggestion, charsInLastCmd int) {
 	activeCmd := ParseCommand(cmd)
 	if len(activeCmd) <= 0 {
 		return
@@ -200,7 +219,7 @@ func loadSuggestions(cmd string) (suggestions []Suggestion, charsInLastCmd int) 
 		charsInLastCmd = 0
 	}
 	if spec, ok := specs.Specs[rootToken.token]; ok {
-		return handleSubcommand(activeCmd[1:], spec, []model.Option{}), charsInLastCmd
+		return handleSubcommand(activeCmd[1:], spec, []model.Option{}, false), charsInLastCmd
 	}
 	return
 }
@@ -209,7 +228,11 @@ func LoadSuggestions(cmd string) ([]Suggestion, int) {
 	if cmd == lastSuggestionCmd {
 		return lastSuggestion, lastCmdRunes
 	}
-	suggestions, lastRunes := loadSuggestions(cmd)
+	termSuggestions, lastRunes := loadSuggestions(cmd)
+	suggestions := []Suggestion{}
+	for _, suggestion := range termSuggestions {
+		suggestions = append(suggestions, Suggestion{Name: suggestion.Name, Description: suggestion.Description})
+	}
 	lastSuggestionCmd, lastSuggestion, lastCmdRunes = cmd, suggestions, lastRunes
 	return suggestions, lastRunes
 }

@@ -8,3 +8,7 @@ clean:
 	rm -r autocomplete/specs
 	mkdir autocomplete/specs
 	mv autocomplete/specs_.go autocomplete/specs/
+
+.PHONY: build
+build:
+	go build -o clac main.go

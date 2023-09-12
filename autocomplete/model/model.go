@@ -50,6 +50,19 @@ type Suggestion struct {
 	Description string
 }
 
+type TermSuggestion struct {
+	Name        string
+	Description string
+}
+
+func (t TermSuggestion) GetName() []string {
+	return []string{t.Name}
+}
+
+func (t TermSuggestion) GetDescription() string {
+	return t.Description
+}
+
 type Generator struct {
 	Script      string
 	Function    func() string
@@ -75,5 +88,5 @@ const (
 )
 
 var (
-	Templates = []Template{TemplateFilepaths, TemplateFolders, TemplateHistory}
+	Templates = []Template{TemplateFilepaths, TemplateFolders, TemplateHistory, TemplateHelp}
 )
