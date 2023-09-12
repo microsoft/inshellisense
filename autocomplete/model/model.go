@@ -63,6 +63,11 @@ func (t TermSuggestion) GetDescription() string {
 	return t.Description
 }
 
+type ProcessedToken struct {
+	Token   string
+	Persist bool
+}
+
 type Generator struct {
 	Script      string
 	Function    func() string

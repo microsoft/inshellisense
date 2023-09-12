@@ -121,3 +121,16 @@ func getOptionDrivenRecommendations(options []model.Option, suggestions *[]model
 		})
 	}
 }
+
+func removeDuplicateRecommendation(suggestions *[]model.TermSuggestion, processedTokens []model.ProcessedToken) {
+	dupMap := make(map[string]struct{})
+	for _, processedToken := range processedTokens {
+		dupMap[processedToken.Token] = struct{}{}
+	}
+	for i := 0; i < len(*suggestions); i++ {
+		if _, includes := dupMap[(*suggestions)[i].Name]; includes {
+			*suggestions = append((*suggestions)[:i], (*suggestions)[i+1:]...)
+			i--
+		}
+	}
+}

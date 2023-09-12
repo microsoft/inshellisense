@@ -1,7 +1,6 @@
 package autocomplete
 
 import (
-	"log"
 	"log/slog"
 	"regexp"
 
@@ -74,8 +73,17 @@ func getShortName(names []string) string {
 	return shortestName
 }
 
-func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken, onlyRecommendSubcommands bool) []model.TermSuggestion {
-	log.Println("sub rec")
+func getPersistentTokens(tokens []model.ProcessedToken) []model.ProcessedToken {
+	persistentTokens := []model.ProcessedToken{}
+	for _, token := range tokens {
+		if token.Persist {
+			persistentTokens = append(persistentTokens, token)
+		}
+	}
+	return persistentTokens
+}
+
+func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken, onlyRecommendSubcommands bool, acceptedTokens []model.ProcessedToken) []model.TermSuggestion {
 	suggestions := []model.TermSuggestion{}
 	allOptions := append(spec.Options, persistentOptions...)
 
@@ -91,6 +99,7 @@ func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions 
 		getOptionDrivenRecommendations(allOptions, &suggestions)
 	}
 
+	removeDuplicateRecommendation(&suggestions, acceptedTokens)
 	if partialCmd != nil {
 		switch spec.FilterStrategy {
 		case model.FilterStrategyFuzzy:
@@ -103,8 +112,7 @@ func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions 
 	return suggestions
 }
 
-func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken) []model.TermSuggestion {
-	log.Println("arg rec")
+func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken, acceptedTokens []model.ProcessedToken) []model.TermSuggestion {
 	suggestions := []model.TermSuggestion{}
 	activeArg := args[0]
 	allOptions := append(spec.Options, persistentOptions...)
@@ -117,6 +125,7 @@ func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persist
 		getOptionDrivenRecommendations(allOptions, &suggestions)
 	}
 
+	removeDuplicateRecommendation(&suggestions, acceptedTokens)
 	if partialCmd != nil {
 		switch spec.FilterStrategy {
 		case model.FilterStrategyFuzzy:
@@ -129,11 +138,11 @@ func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persist
 	return suggestions
 }
 
-func handleSubcommand(tokens []commandToken, spec model.Subcommand, persistentOptions []model.Option, argsDepleted bool) (suggestions []model.TermSuggestion) {
+func handleSubcommand(tokens []commandToken, spec model.Subcommand, persistentOptions []model.Option, argsDepleted bool, acceptedTokens []model.ProcessedToken) (suggestions []model.TermSuggestion) {
 	if len(tokens) == 0 {
-		return getSubcommandDrivenRecommendation(spec, persistentOptions, nil, argsDepleted)
+		return getSubcommandDrivenRecommendation(spec, persistentOptions, nil, argsDepleted, acceptedTokens)
 	} else if !tokens[0].complete {
-		return getSubcommandDrivenRecommendation(spec, persistentOptions, &tokens[0], argsDepleted)
+		return getSubcommandDrivenRecommendation(spec, persistentOptions, &tokens[0], argsDepleted, acceptedTokens)
 	}
 	for _, option := range spec.Options {
 		if option.IsPersistent {
@@ -143,65 +152,78 @@ func handleSubcommand(tokens []commandToken, spec model.Subcommand, persistentOp
 	activeCmd := tokens[0]
 	if activeCmd.isOption {
 		if option := getOption(activeCmd.token, append(spec.Options, persistentOptions...)); option != nil {
-			return handleOption(tokens, *option, spec, persistentOptions)
+			return handleOption(tokens, *option, spec, persistentOptions, acceptedTokens)
 		}
 		return
 	}
 	if subcommand := getSubcommand(activeCmd.token, spec); subcommand != nil {
-		return handleSubcommand(tokens[1:], *subcommand, persistentOptions, false)
+		return handleSubcommand(tokens[1:], *subcommand, persistentOptions, false, getPersistentTokens(acceptedTokens))
 	}
 
-	return handleArg(tokens, spec.Args, spec, persistentOptions)
+	return handleArg(tokens, spec.Args, spec, persistentOptions, acceptedTokens)
 }
 
-func handleOption(tokens []commandToken, option model.Option, spec model.Subcommand, persistentOptions []model.Option) (suggestions []model.TermSuggestion) {
+func handleOption(tokens []commandToken, option model.Option, spec model.Subcommand, persistentOptions []model.Option, acceptedTokens []model.ProcessedToken) (suggestions []model.TermSuggestion) {
 	if len(tokens) == 0 {
 		slog.Error("invalid state reached, option with no tokens")
 		return
 	}
-	if len(option.Args) == 0 {
-		return handleSubcommand(tokens[1:], spec, persistentOptions, false)
+	activeOption := tokens[0]
+	isPersistent := false
+	for _, persistentOption := range persistentOptions {
+		for _, persistentOptionName := range persistentOption.Name {
+			if activeOption.token == persistentOptionName {
+				isPersistent = true
+				goto persistenceDetermined
+			}
+		}
 	}
-	return handleArg(tokens[1:], option.Args, spec, persistentOptions)
+persistenceDetermined:
+	acceptedTokens = append(acceptedTokens, model.ProcessedToken{Token: activeOption.token, Persist: isPersistent})
+	if len(option.Args) == 0 {
+		return handleSubcommand(tokens[1:], spec, persistentOptions, false, acceptedTokens)
+	}
+	return handleArg(tokens[1:], option.Args, spec, persistentOptions, acceptedTokens)
 }
 
-func handleArg(tokens []commandToken, args []model.Arg, spec model.Subcommand, persistentOptions []model.Option) (suggestions []model.TermSuggestion) {
+func handleArg(tokens []commandToken, args []model.Arg, spec model.Subcommand, persistentOptions []model.Option, acceptedTokens []model.ProcessedToken) (suggestions []model.TermSuggestion) {
 	if len(args) == 0 {
-		return handleSubcommand(tokens, spec, persistentOptions, true)
+		return handleSubcommand(tokens, spec, persistentOptions, true, acceptedTokens)
 	} else if len(tokens) == 0 {
-		return getArgDrivenRecommendation(args, spec, persistentOptions, nil)
+		return getArgDrivenRecommendation(args, spec, persistentOptions, nil, acceptedTokens)
 	} else if !tokens[0].complete {
-		return getArgDrivenRecommendation(args, spec, persistentOptions, &tokens[0])
+		return getArgDrivenRecommendation(args, spec, persistentOptions, &tokens[0], acceptedTokens)
 	}
 
 	activeCmd := tokens[0]
 	if argsAreOptional(args) {
 		if activeCmd.isOption {
 			if option := getOption(activeCmd.token, append(spec.Options, persistentOptions...)); option != nil {
-				return handleOption(tokens, *option, spec, persistentOptions)
+				return handleOption(tokens, *option, spec, persistentOptions, acceptedTokens)
 			}
 			return
 		}
 		subcommand := getSubcommand(activeCmd.token, spec)
 		if subcommand != nil {
-			return handleSubcommand(tokens[1:], *subcommand, persistentOptions, false)
+			return handleSubcommand(tokens[1:], *subcommand, persistentOptions, false, getPersistentTokens(acceptedTokens))
 		}
 	}
 
 	activeArg := args[0]
+	acceptedTokens = append(acceptedTokens, model.ProcessedToken{Token: activeCmd.token, Persist: false})
 	if activeArg.IsVariadic {
-		return handleArg(tokens[1:], args, spec, persistentOptions)
+		return handleArg(tokens[1:], args, spec, persistentOptions, acceptedTokens)
 	} else if activeArg.IsCommand {
 		if len(tokens) <= 1 {
 			return
 		}
 		activeCmd = tokens[1]
 		if subcommand := getSubcommand(activeCmd.token, spec); subcommand != nil {
-			return handleSubcommand(tokens[2:], *subcommand, persistentOptions, false)
+			return handleSubcommand(tokens[2:], *subcommand, persistentOptions, false, []model.ProcessedToken{})
 		}
 		return
 	}
-	return handleArg(tokens[1:], args[1:], spec, persistentOptions)
+	return handleArg(tokens[1:], args[1:], spec, persistentOptions, getPersistentTokens(acceptedTokens))
 }
 
 func loadSuggestions(cmd string) (suggestions []model.TermSuggestion, charsInLastCmd int) {
@@ -219,7 +241,7 @@ func loadSuggestions(cmd string) (suggestions []model.TermSuggestion, charsInLas
 		charsInLastCmd = 0
 	}
 	if spec, ok := specs.Specs[rootToken.token]; ok {
-		return handleSubcommand(activeCmd[1:], spec, []model.Option{}, false), charsInLastCmd
+		return handleSubcommand(activeCmd[1:], spec, []model.Option{}, false, []model.ProcessedToken{}), charsInLastCmd
 	}
 	return
 }
