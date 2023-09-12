@@ -49,45 +49,6 @@ func argsAreOptional(args []model.Arg) bool {
 	return allOptional
 }
 
-/*  <has a>   <no a>
-cmd --flag arg --flag
-
-thus load suggestions for the base command, which would be any template, suggestions, options, subcommand, or an arg
-
-rules:
-	if there is an arg, just show the description of that arg
-	else, show suggestions, subcommand, template, options
-	in that org
-*/
-
-/*
-generally, we want to make a recommendation based on what we finish on, so that is what matters, we can tree down until we get there
-
-subcommand
-	if isOption -> option
-	else
-		if match subcommand -> subcommand
-		else -> arg
-
-	if _ -> recommend based self + rest
-
-option
-	if hasArgs
-		if args optional
-			if next is subcommand || option -> go there
-		if args variadic ---> arg
-		else -> arg
-
-	if _ ->
-		if args optional -> recommend on parent subcommand + rest + args
-		else if has args -> recommend based on args
-		else -> recommend based on parent subcommand + rest
-
-arg
-	<NEEDS_WORK>
-	if _ -> recommend based on self
-*/
-
 func getLongName(names []string) string {
 	longestName := ""
 	for _, name := range names {
@@ -98,8 +59,17 @@ func getLongName(names []string) string {
 	return longestName
 }
 
-func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions []model.Option) []Suggestion {
+func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken) []Suggestion {
 	suggestions := []Suggestion{}
+	if partialCmd != nil {
+		switch spec.FilterStrategy {
+		case model.FilterStrategyFuzzy:
+			return fuzzyMatchSubcommands(partialCmd.token, spec.Subcommands)
+		case model.FilterStrategyPrefix, model.FilterStrategyEmpty:
+			return prefixMatchSubcommands(partialCmd.token, spec.Subcommands)
+		}
+	}
+
 	for _, sub := range spec.Subcommands {
 		suggestions = append(suggestions, Suggestion{
 			Name:        getLongName(sub.Name),
@@ -121,7 +91,9 @@ func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persist
 
 func handleSubcommand(tokens []commandToken, spec model.Subcommand, persistentOptions []model.Option) (suggestions []Suggestion) {
 	if len(tokens) == 0 {
-		return getSubcommandDrivenRecommendation(spec, persistentOptions)
+		return getSubcommandDrivenRecommendation(spec, persistentOptions, nil)
+	} else if !tokens[0].complete {
+		return getSubcommandDrivenRecommendation(spec, persistentOptions, &tokens[0])
 	}
 	for _, option := range spec.Options {
 		if option.IsPersistent {
@@ -155,6 +127,8 @@ func handleOption(tokens []commandToken, option model.Option, spec model.Subcomm
 
 func handleArg(tokens []commandToken, args []model.Arg, spec model.Subcommand, persistentOptions []model.Option) (suggestions []Suggestion) {
 	if len(tokens) == 0 {
+		return getArgDrivenRecommendation(args, spec, persistentOptions)
+	} else if !tokens[0].complete {
 		return getArgDrivenRecommendation(args, spec, persistentOptions)
 	} else if len(args) == 0 {
 		return handleSubcommand(tokens, spec, persistentOptions)
@@ -197,9 +171,6 @@ func loadSuggestions(cmd string) (suggestions []Suggestion) {
 	}
 	rootToken := activeCmd[0]
 	if !rootToken.complete {
-		return
-	}
-	if !activeCmd[len(activeCmd)-1].complete {
 		return
 	}
 	if spec, ok := specs.Specs[rootToken.token]; ok {

@@ -127,6 +127,19 @@ const generateTemplate = (template: Fig.Template): string => {
   throw Error("unknown template value");
 };
 
+const generateFilterStrategy = (
+  filterStrategy: "fuzzy" | "prefix" | "default"
+): string => {
+  switch (filterStrategy) {
+    case "fuzzy":
+      return "model.FilterStrategyFuzzy";
+    case "prefix":
+      return "model.FilterStrategyPrefix";
+    case "default":
+      return "model.FilterStrategyPrefix";
+  }
+};
+
 const genName = (name: Fig.SingleOrArray<string> | undefined): string => {
   if (name == null) return "";
   return Array.isArray(name)
@@ -186,11 +199,39 @@ const genIsPersistent = (persistent: boolean): string => {
   return persistent === true ? "IsPersistent: true," : "";
 };
 
+const genFilterStrategy = (
+  filterStrategy: "fuzzy" | "prefix" | "default" | undefined
+): string => {
+  return filterStrategy != null
+    ? `FilterStrategy: ${generateFilterStrategy(filterStrategy)},`
+    : "";
+};
+
 const genExclusiveOn = (exclusiveOn: string[] | undefined): string => {
   if (exclusiveOn == null) return "";
   return `ExclusiveOn: []string{${exclusiveOn
     .map((e) => `"${e}"`)
     .join(",")}},`;
+};
+
+const genGenerators = (
+  generators: Fig.SingleOrArray<Fig.Generator> | undefined
+) => {
+  return generators != null
+    ? `Generator: nil, // TODO: port over generator`
+    : "";
+};
+
+const genIsOptional = (isOptional: boolean | undefined) => {
+  return isOptional === true ? "IsOptional: true," : "";
+};
+
+const genIsCommand = (isCommand: boolean | undefined) => {
+  return isCommand === true ? "IsCommand: true," : "";
+};
+
+const genIsVariadic = (isVariadic: boolean | undefined) => {
+  return isVariadic === true ? "IsVariadic: true," : "";
 };
 
 const generateSuggestions = (
@@ -232,6 +273,11 @@ const generateArgs = (args: Fig.SingleOrArray<Fig.Arg>): string => {
       ${genSingleName(arg.name)}
       ${genDescription(arg.description)}
       ${genSuggestions(arg.suggestions)}
+      ${genFilterStrategy(arg.filterStrategy)}
+      ${genGenerators(arg.generators)}
+      ${genIsOptional(arg.isOptional)}
+      ${genIsCommand(arg.isCommand)}
+      ${genIsVariadic(arg.isVariadic)}
     }`;
     })
     .join(",");
@@ -262,7 +308,8 @@ const generateSubcommand = (
     ${genArgs(subcommand.args)}
     ${genOptions(subcommand.options)}
     ${genSubcommands(subcommand.subcommands)}
-  }`;
+    ${genFilterStrategy(subcommand.filterStrategy)}
+  }`.replaceAll(/(\n\s+\n)+/g, "\n");
 };
 
 const generateGolang = (
