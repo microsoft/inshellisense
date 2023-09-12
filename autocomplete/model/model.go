@@ -50,6 +50,11 @@ type Suggestion struct {
 	Description string
 }
 
+type TermSuggestions struct {
+	ArgumentDescription string
+	Suggestions         []TermSuggestion
+}
+
 type TermSuggestion struct {
 	Name        string
 	Description string

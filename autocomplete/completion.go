@@ -9,10 +9,11 @@ import (
 )
 
 var (
-	cmdDelimiter      = regexp.MustCompile(`(\|\|)|(&&)|(;)`)
-	lastSuggestionCmd = ""
-	lastSuggestion    = []Suggestion{}
-	lastCmdRunes      = 0
+	cmdDelimiter       = regexp.MustCompile(`(\|\|)|(&&)|(;)`)
+	lastSuggestionCmd  = ""
+	lastSuggestion     = []Suggestion{}
+	lastArgDescription = ""
+	lastCmdRunes       = 0
 )
 
 type Suggestion struct {
@@ -83,7 +84,7 @@ func getPersistentTokens(tokens []model.ProcessedToken) []model.ProcessedToken {
 	return persistentTokens
 }
 
-func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken, onlyRecommendSubcommands bool, acceptedTokens []model.ProcessedToken) []model.TermSuggestion {
+func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken, onlyRecommendSubcommands bool, acceptedTokens []model.ProcessedToken) model.TermSuggestions {
 	suggestions := []model.TermSuggestion{}
 	allOptions := append(spec.Options, persistentOptions...)
 
@@ -109,10 +110,12 @@ func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions 
 		}
 	}
 
-	return suggestions
+	return model.TermSuggestions{
+		Suggestions: suggestions,
+	}
 }
 
-func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken, acceptedTokens []model.ProcessedToken) []model.TermSuggestion {
+func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken, acceptedTokens []model.ProcessedToken) model.TermSuggestions {
 	suggestions := []model.TermSuggestion{}
 	activeArg := args[0]
 	allOptions := append(spec.Options, persistentOptions...)
@@ -135,10 +138,18 @@ func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persist
 		}
 	}
 
-	return suggestions
+	argDescriptionSuggestion := ""
+	if len(suggestions) == 0 {
+		argDescriptionSuggestion = activeArg.Name
+	}
+
+	return model.TermSuggestions{
+		ArgumentDescription: argDescriptionSuggestion,
+		Suggestions:         suggestions,
+	}
 }
 
-func handleSubcommand(tokens []commandToken, spec model.Subcommand, persistentOptions []model.Option, argsDepleted bool, acceptedTokens []model.ProcessedToken) (suggestions []model.TermSuggestion) {
+func handleSubcommand(tokens []commandToken, spec model.Subcommand, persistentOptions []model.Option, argsDepleted bool, acceptedTokens []model.ProcessedToken) (suggestions model.TermSuggestions) {
 	if len(tokens) == 0 {
 		return getSubcommandDrivenRecommendation(spec, persistentOptions, nil, argsDepleted, acceptedTokens)
 	} else if !tokens[0].complete {
@@ -163,7 +174,7 @@ func handleSubcommand(tokens []commandToken, spec model.Subcommand, persistentOp
 	return handleArg(tokens, spec.Args, spec, persistentOptions, acceptedTokens)
 }
 
-func handleOption(tokens []commandToken, option model.Option, spec model.Subcommand, persistentOptions []model.Option, acceptedTokens []model.ProcessedToken) (suggestions []model.TermSuggestion) {
+func handleOption(tokens []commandToken, option model.Option, spec model.Subcommand, persistentOptions []model.Option, acceptedTokens []model.ProcessedToken) (suggestions model.TermSuggestions) {
 	if len(tokens) == 0 {
 		slog.Error("invalid state reached, option with no tokens")
 		return
@@ -186,7 +197,7 @@ persistenceDetermined:
 	return handleArg(tokens[1:], option.Args, spec, persistentOptions, acceptedTokens)
 }
 
-func handleArg(tokens []commandToken, args []model.Arg, spec model.Subcommand, persistentOptions []model.Option, acceptedTokens []model.ProcessedToken) (suggestions []model.TermSuggestion) {
+func handleArg(tokens []commandToken, args []model.Arg, spec model.Subcommand, persistentOptions []model.Option, acceptedTokens []model.ProcessedToken) (suggestions model.TermSuggestions) {
 	if len(args) == 0 {
 		return handleSubcommand(tokens, spec, persistentOptions, true, acceptedTokens)
 	} else if len(tokens) == 0 {
@@ -226,7 +237,7 @@ func handleArg(tokens []commandToken, args []model.Arg, spec model.Subcommand, p
 	return handleArg(tokens[1:], args[1:], spec, persistentOptions, getPersistentTokens(acceptedTokens))
 }
 
-func loadSuggestions(cmd string) (suggestions []model.TermSuggestion, charsInLastCmd int) {
+func loadSuggestions(cmd string) (suggestions model.TermSuggestions, charsInLastCmd int) {
 	activeCmd := ParseCommand(cmd)
 	if len(activeCmd) <= 0 {
 		return
@@ -246,15 +257,16 @@ func loadSuggestions(cmd string) (suggestions []model.TermSuggestion, charsInLas
 	return
 }
 
-func LoadSuggestions(cmd string) ([]Suggestion, int) {
+func LoadSuggestions(cmd string) ([]Suggestion, string, int) {
 	if cmd == lastSuggestionCmd {
-		return lastSuggestion, lastCmdRunes
+		return lastSuggestion, lastArgDescription, lastCmdRunes
 	}
 	termSuggestions, lastRunes := loadSuggestions(cmd)
+
 	suggestions := []Suggestion{}
-	for _, suggestion := range termSuggestions {
+	for _, suggestion := range termSuggestions.Suggestions {
 		suggestions = append(suggestions, Suggestion{Name: suggestion.Name, Description: suggestion.Description})
 	}
-	lastSuggestionCmd, lastSuggestion, lastCmdRunes = cmd, suggestions, lastRunes
-	return suggestions, lastRunes
+	lastSuggestionCmd, lastSuggestion, lastCmdRunes, lastArgDescription = cmd, suggestions, lastRunes, termSuggestions.ArgumentDescription
+	return suggestions, termSuggestions.ArgumentDescription, lastRunes
 }

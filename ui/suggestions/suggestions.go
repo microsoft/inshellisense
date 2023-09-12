@@ -19,6 +19,7 @@ type Model struct {
 	cursor                  int
 	userInputCursorLocation int
 	suggestions             []autocomplete.Suggestion
+	argDescription          string
 	keyMap                  KeyMap
 	windowWidth             int
 	windowHeight            int
@@ -98,7 +99,7 @@ func (m Model) Update(msg tea.Msg, command string, userInputCursorLocation int) 
 		m.windowWidth = msg.Width
 	}
 	m.userInputCursorLocation = userInputCursorLocation
-	m.suggestions, m.runesToRemove = autocomplete.LoadSuggestions(command)
+	m.suggestions, m.argDescription, m.runesToRemove = autocomplete.LoadSuggestions(command)
 	if len(m.suggestions) == 0 {
 		m.cursor = 0
 	}
@@ -157,13 +158,30 @@ func (m Model) renderDescription(width int) string {
 	return style.Render(wordWrap(m.suggestions[m.cursor].Description, width))
 }
 
+func (m Model) renderArgumentDescription(width int) string {
+	argDescriptionWidth := utils.Clamp(len(m.argDescription), 0, width)
+	maxLeftPaddingDescription := m.windowWidth - argDescriptionWidth - BorderOffset
+	var style = lipgloss.
+		NewStyle().
+		MarginLeft(utils.Clamp(m.userInputCursorLocation, 0, maxLeftPaddingDescription)).
+		Width(argDescriptionWidth).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("63"))
+
+	return style.Render(wordWrap(m.argDescription, argDescriptionWidth))
+}
+
 func (m Model) View() string {
-	if len(m.suggestions) == 0 {
+	if len(m.suggestions) == 0 && m.argDescription == "" {
 		return ""
 	}
 
 	suggestionWidth := min(m.windowWidth-BorderOffset, SuggestionWidth)
 	descriptionWidth := min(m.windowWidth-BorderOffset, DescriptionWidth)
+
+	if len(m.suggestions) == 0 && m.argDescription != "" {
+		return m.renderArgumentDescription(descriptionWidth)
+	}
 
 	suggestionsView := m.renderSuggestions(suggestionWidth)
 	descriptionView := m.renderDescription(descriptionWidth)
