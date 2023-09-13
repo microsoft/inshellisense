@@ -34,12 +34,15 @@ func walk(includeFiles bool) []model.TermSuggestion {
 			continue
 		}
 		description := file
+		suggestionType := model.TermSuggestionTypeFile
 		if dirItem.IsDir() {
 			description = directory
+			suggestionType = model.TermSuggestionTypeFolder
 		}
 		suggestions = append(suggestions, model.TermSuggestion{
 			Name:        dirItem.Name(),
 			Description: description,
+			Type:        suggestionType,
 		})
 	}
 	return suggestions

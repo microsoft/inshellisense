@@ -106,12 +106,13 @@ func (m Model) Update(msg tea.Msg, command string, userInputCursorLocation int) 
 	return m
 }
 
-func (m Model) renderSuggestion(suggestion string, position, cursor, width int) string {
-	content := wordTrunc(suggestion, width)
+func (m Model) renderSuggestion(suggestion autocomplete.Suggestion, position, cursor, width int) string {
+	content := suggestion.NamePrefix + " " + suggestion.Name
+	truncatedContent := wordTrunc(content, width)
 	if position == m.cursor%MaxSuggestions {
-		return lipgloss.NewStyle().Background(lipgloss.Color("#7D56F4")).Width(width).Render(content)
+		return lipgloss.NewStyle().Background(lipgloss.Color("#7D56F4")).Width(width).Render(truncatedContent)
 	}
-	return lipgloss.NewStyle().Render(content)
+	return lipgloss.NewStyle().Render(truncatedContent)
 }
 
 func wordWrap(content string, width int) string {
@@ -147,7 +148,7 @@ func (m Model) renderSuggestions(width int) string {
 	r := make([]string, len(m.suggestions))
 
 	for idx, suggestion := range m.suggestions {
-		r[idx] = m.renderSuggestion(suggestion.Name, idx, m.cursor, width)
+		r[idx] = m.renderSuggestion(suggestion, idx, m.cursor, width)
 	}
 
 	if m.argDescription != "" {

@@ -9,28 +9,12 @@ type Subcommand struct {
 	FilterStrategy FilterStrategy
 }
 
-func (s Subcommand) GetName() []string {
-	return s.Name
-}
-
-func (s Subcommand) GetDescription() string {
-	return s.Description
-}
-
 type Option struct {
 	Name         []string //single or array string, required
 	Args         []Arg    //single or array Arg, optional
 	Description  string   //single, optional
 	IsPersistent bool
 	ExclusiveOn  []string
-}
-
-func (o Option) GetName() []string {
-	return o.Name
-}
-
-func (o Option) GetDescription() string {
-	return o.Description
 }
 
 type Arg struct {
@@ -58,15 +42,19 @@ type TermSuggestions struct {
 type TermSuggestion struct {
 	Name        string
 	Description string
+	Type        TermSuggestionType
 }
 
-func (t TermSuggestion) GetName() []string {
-	return []string{t.Name}
-}
+type TermSuggestionType string
 
-func (t TermSuggestion) GetDescription() string {
-	return t.Description
-}
+const (
+	TermSuggestionTypeFolder     TermSuggestionType = "folder"
+	TermSuggestionTypeFile       TermSuggestionType = "file"
+	TermSuggestionTypeArg        TermSuggestionType = "arg"
+	TermSuggestionTypeSubcommand TermSuggestionType = "subcommand"
+	TermSuggestionTypeOption     TermSuggestionType = "option"
+	TermSuggestionTypeDefault    TermSuggestionType = ""
+)
 
 type ProcessedToken struct {
 	Token   string
@@ -99,4 +87,12 @@ const (
 
 var (
 	Templates = []Template{TemplateFilepaths, TemplateFolders, TemplateHistory, TemplateHelp}
+	TermIcons = map[TermSuggestionType]string{
+		TermSuggestionTypeFolder:     "📁",
+		TermSuggestionTypeFile:       "📄",
+		TermSuggestionTypeSubcommand: "📦",
+		TermSuggestionTypeOption:     "⚙️ ",
+		TermSuggestionTypeArg:        "💪",
+		TermSuggestionTypeDefault:    "💪",
+	}
 )

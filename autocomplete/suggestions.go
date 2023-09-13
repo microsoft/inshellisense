@@ -10,33 +10,21 @@ import (
 	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
-type matchable interface {
-	GetName() []string
-	GetDescription() string
+type match struct {
+	name string
+	rank int
+	item model.TermSuggestion
 }
 
-func fuzzyMatch[M matchable](input string, targets []M, suggestions *[]model.TermSuggestion) {
-	type match struct {
-		name string
-		rank int
-		item M
-	}
+func fuzzyMatch(input string, targets []model.TermSuggestion, suggestions *[]model.TermSuggestion) {
 	matchers := []match{}
 	for _, item := range targets {
-		bestName := ""
-		bestNameRank := -1
-		for _, n := range item.GetName() {
-			rank := fuzzy.RankMatch(input, n)
-			if rank > bestNameRank {
-				bestName = n
-				bestNameRank = rank
-			}
-		}
-		if bestNameRank != -1 {
+		rank := fuzzy.RankMatch(input, item.Name)
+		if rank != -1 {
 			matchers = append(matchers, match{
-				name: bestName,
+				name: item.Name,
 				item: item,
-				rank: bestNameRank,
+				rank: rank,
 			})
 		}
 	}
@@ -46,34 +34,33 @@ func fuzzyMatch[M matchable](input string, targets []M, suggestions *[]model.Ter
 	for _, m := range matchers {
 		*suggestions = append(*suggestions, model.TermSuggestion{
 			Name:        m.name,
-			Description: m.item.GetDescription(),
+			Description: m.item.Description,
+			Type:        m.item.Type,
 		})
 	}
 }
 
 func getFuzzyFilteredRecommendations(input string, suggestions *[]model.TermSuggestion) {
 	results := []model.TermSuggestion{}
-	fuzzyMatch[model.TermSuggestion](input, *suggestions, &results)
+	fuzzyMatch(input, *suggestions, &results)
 	*suggestions = results
 }
 
-func prefixMatch[M matchable](input string, subcommands []M, suggestions *[]model.TermSuggestion) {
-	for _, sub := range subcommands {
-		for _, n := range sub.GetName() {
-			if strings.HasPrefix(n, input) {
-				*suggestions = append(*suggestions, model.TermSuggestion{
-					Name:        n,
-					Description: sub.GetDescription(),
-				})
-				break
-			}
+func prefixMatch(input string, targets []model.TermSuggestion, suggestions *[]model.TermSuggestion) {
+	for _, targ := range targets {
+		if strings.HasPrefix(targ.Name, input) {
+			*suggestions = append(*suggestions, model.TermSuggestion{
+				Name:        targ.Name,
+				Description: targ.Description,
+				Type:        targ.Type,
+			})
 		}
 	}
 }
 
 func getPrefixFilteredRecommendations(input string, suggestions *[]model.TermSuggestion) {
 	results := []model.TermSuggestion{}
-	prefixMatch[model.TermSuggestion](input, *suggestions, &results)
+	prefixMatch(input, *suggestions, &results)
 	*suggestions = results
 }
 
@@ -100,6 +87,7 @@ func getSuggestionDrivenRecommendations(suggestionSet []model.Suggestion, sugges
 		*suggestions = append(*suggestions, model.TermSuggestion{
 			Name:        getLongName(suggestion.Name),
 			Description: suggestion.Description,
+			Type:        model.TermSuggestionTypeDefault,
 		})
 	}
 }
@@ -109,6 +97,7 @@ func getSubcommandDrivenRecommendations(spec model.Subcommand, suggestions *[]mo
 		*suggestions = append(*suggestions, model.TermSuggestion{
 			Name:        getLongName(sub.Name),
 			Description: sub.Description,
+			Type:        model.TermSuggestionTypeSubcommand,
 		})
 	}
 }
@@ -118,6 +107,7 @@ func getOptionDrivenRecommendations(options []model.Option, suggestions *[]model
 		*suggestions = append(*suggestions, model.TermSuggestion{
 			Name:        getShortName(op.Name),
 			Description: op.Description,
+			Type:        model.TermSuggestionTypeOption,
 		})
 	}
 }

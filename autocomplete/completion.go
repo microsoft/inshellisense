@@ -18,6 +18,7 @@ var (
 
 type Suggestion struct {
 	Name        string
+	NamePrefix  string
 	Description string
 }
 
@@ -287,7 +288,8 @@ func LoadSuggestions(cmd string) ([]Suggestion, string, int) {
 
 	suggestions := []Suggestion{}
 	for _, suggestion := range termSuggestions.Suggestions {
-		suggestions = append(suggestions, Suggestion{Name: suggestion.Name, Description: suggestion.Description})
+		icon := model.TermIcons[suggestion.Type]
+		suggestions = append(suggestions, Suggestion{Name: suggestion.Name, NamePrefix: icon, Description: suggestion.Description})
 	}
 	lastSuggestionCmd, lastSuggestion, lastCmdRunes, lastArgDescription = cmd, suggestions, lastRunes, termSuggestions.ArgumentDescription
 	return suggestions, termSuggestions.ArgumentDescription, lastRunes
