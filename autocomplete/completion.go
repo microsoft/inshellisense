@@ -84,6 +84,28 @@ func getPersistentTokens(tokens []model.ProcessedToken) []model.ProcessedToken {
 	return persistentTokens
 }
 
+func getPersistentOptions(existingOptions []model.Option, newOptions []model.Option) []model.Option {
+	exists := make(map[string]struct{})
+	for _, existingOption := range existingOptions {
+		for _, key := range existingOption.Name {
+			exists[key] = struct{}{}
+		}
+	}
+	for _, newOption := range newOptions {
+		hasNewKeys := false
+		for _, key := range newOption.Name {
+			if _, ok := exists[key]; !ok {
+				hasNewKeys = true
+				break
+			}
+		}
+		if newOption.IsPersistent && hasNewKeys {
+			existingOptions = append(existingOptions, newOption)
+		}
+	}
+	return existingOptions
+}
+
 func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken, argsDepleted bool, argsFromSubcommand bool, acceptedTokens []model.ProcessedToken) model.TermSuggestions {
 	suggestions := []model.TermSuggestion{}
 	allOptions := append(spec.Options, persistentOptions...)
@@ -158,11 +180,8 @@ func handleSubcommand(tokens []commandToken, spec model.Subcommand, persistentOp
 	} else if !tokens[0].complete {
 		return getSubcommandDrivenRecommendation(spec, persistentOptions, &tokens[0], argsDepleted, argsUsed, acceptedTokens)
 	}
-	for _, option := range spec.Options {
-		if option.IsPersistent {
-			persistentOptions = append(persistentOptions, option)
-		}
-	}
+
+	persistentOptions = getPersistentOptions(persistentOptions, spec.Options)
 	activeCmd := tokens[0]
 	if activeCmd.isOption {
 		if option := getOption(activeCmd.token, append(spec.Options, persistentOptions...)); option != nil {
