@@ -84,25 +84,23 @@ func getPersistentTokens(tokens []model.ProcessedToken) []model.ProcessedToken {
 	return persistentTokens
 }
 
-func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken, onlyRecommendSubcommands bool, noSubcommandOptionRecommendations bool, acceptedTokens []model.ProcessedToken) model.TermSuggestions {
+func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken, argsDepleted bool, argsFromSubcommand bool, acceptedTokens []model.ProcessedToken) model.TermSuggestions {
 	suggestions := []model.TermSuggestion{}
 	allOptions := append(spec.Options, persistentOptions...)
 
-	if onlyRecommendSubcommands {
-		if !noSubcommandOptionRecommendations {
-			getSubcommandDrivenRecommendations(spec, &suggestions)
+	if argsDepleted && argsFromSubcommand {
+		return model.TermSuggestions{
+			Suggestions: suggestions,
 		}
-	} else {
-		if len(spec.Args) != 0 {
-			activeArg := spec.Args[0]
-			getSuggestionDrivenRecommendations(activeArg.Suggestions, &suggestions)
-			getTemplateDrivenRecommendations(activeArg.Templates, &suggestions)
-		}
-		if !noSubcommandOptionRecommendations {
-			getSubcommandDrivenRecommendations(spec, &suggestions)
-			getOptionDrivenRecommendations(allOptions, &suggestions)
-		}
-
+	}
+	if len(spec.Args) != 0 {
+		activeArg := spec.Args[0]
+		getSuggestionDrivenRecommendations(activeArg.Suggestions, &suggestions)
+		getTemplateDrivenRecommendations(activeArg.Templates, &suggestions)
+	}
+	if !argsFromSubcommand {
+		getSubcommandDrivenRecommendations(spec, &suggestions)
+		getOptionDrivenRecommendations(allOptions, &suggestions)
 	}
 
 	removeDuplicateRecommendation(&suggestions, acceptedTokens)
@@ -153,8 +151,6 @@ func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persist
 		Suggestions:         suggestions,
 	}
 }
-
-// argsUsed
 
 func handleSubcommand(tokens []commandToken, spec model.Subcommand, persistentOptions []model.Option, argsDepleted, argsUsed bool, acceptedTokens []model.ProcessedToken) (suggestions model.TermSuggestions) {
 	if len(tokens) == 0 {
