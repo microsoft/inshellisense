@@ -118,6 +118,7 @@ func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions 
 	}
 	if len(spec.Args) != 0 {
 		activeArg := spec.Args[0]
+		getGeneratorDrivenRecommendations(activeArg.Generator, &suggestions)
 		getSuggestionDrivenRecommendations(activeArg.Suggestions, &suggestions)
 		getTemplateDrivenRecommendations(activeArg.Templates, &suggestions)
 	}
@@ -146,6 +147,7 @@ func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persist
 	activeArg := args[0]
 	allOptions := append(spec.Options, persistentOptions...)
 
+	getGeneratorDrivenRecommendations(activeArg.Generator, &suggestions)
 	getSuggestionDrivenRecommendations(activeArg.Suggestions, &suggestions)
 	getTemplateDrivenRecommendations(activeArg.Templates, &suggestions)
 

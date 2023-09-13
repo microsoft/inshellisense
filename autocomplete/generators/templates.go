@@ -3,6 +3,7 @@ package generators
 import (
 	"log/slog"
 	"os"
+	"slices"
 
 	"github.com/cpendery/clac/autocomplete/model"
 )
@@ -64,4 +65,24 @@ func History() []model.TermSuggestion {
 // TODO: implement help template
 func Help() []model.TermSuggestion {
 	return []model.TermSuggestion{}
+}
+
+func RunTemplates(templates []model.Template) []model.TermSuggestion {
+	suggestions := []model.TermSuggestion{}
+	for _, template := range templates {
+		switch template {
+		case model.TemplateFilepaths:
+			suggestions = append(suggestions, Filepaths()...)
+		case model.TemplateFolders:
+			if slices.Contains(templates, model.TemplateFilepaths) {
+				continue
+			}
+			suggestions = append(suggestions, Folders()...)
+		case model.TemplateHelp:
+			suggestions = append(suggestions, Help()...)
+		case model.TemplateHistory:
+			suggestions = append(suggestions, History()...)
+		}
+	}
+	return suggestions
 }

@@ -1,7 +1,6 @@
 package autocomplete
 
 import (
-	"slices"
 	"sort"
 	"strings"
 
@@ -64,22 +63,15 @@ func getPrefixFilteredRecommendations(input string, suggestions *[]model.TermSug
 	*suggestions = results
 }
 
-func getTemplateDrivenRecommendations(templates []model.Template, suggestions *[]model.TermSuggestion) {
-	for _, template := range templates {
-		switch template {
-		case model.TemplateFilepaths:
-			*suggestions = append(*suggestions, generators.Filepaths()...)
-		case model.TemplateFolders:
-			if slices.Contains(templates, model.TemplateFilepaths) {
-				continue
-			}
-			*suggestions = append(*suggestions, generators.Folders()...)
-		case model.TemplateHelp:
-			*suggestions = append(*suggestions, generators.Help()...)
-		case model.TemplateHistory:
-			*suggestions = append(*suggestions, generators.History()...)
-		}
+func getGeneratorDrivenRecommendations(g *model.Generator, suggestions *[]model.TermSuggestion) {
+	if g != nil {
+		*suggestions = append(*suggestions, generators.Run(*g)...)
 	}
+
+}
+
+func getTemplateDrivenRecommendations(templates []model.Template, suggestions *[]model.TermSuggestion) {
+	*suggestions = append(*suggestions, generators.RunTemplates(templates)...)
 }
 
 func getSuggestionDrivenRecommendations(suggestionSet []model.Suggestion, suggestions *[]model.TermSuggestion) {

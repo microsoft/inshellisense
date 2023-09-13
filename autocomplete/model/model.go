@@ -53,6 +53,7 @@ const (
 	TermSuggestionTypeArg        TermSuggestionType = "arg"
 	TermSuggestionTypeSubcommand TermSuggestionType = "subcommand"
 	TermSuggestionTypeOption     TermSuggestionType = "option"
+	TermSuggestionTypeAI         TermSuggestionType = "ai"
 	TermSuggestionTypeDefault    TermSuggestionType = ""
 )
 
@@ -63,9 +64,10 @@ type ProcessedToken struct {
 
 type Generator struct {
 	Script      string
-	Function    func() string
-	PostProcess func(string) []Suggestion
+	Function    func() []TermSuggestion
+	PostProcess func(string) []TermSuggestion
 	Template    []Template
+	SplitOn     string
 }
 
 type Template string
@@ -91,8 +93,9 @@ var (
 		TermSuggestionTypeFolder:     "📁",
 		TermSuggestionTypeFile:       "📄",
 		TermSuggestionTypeSubcommand: "📦",
-		TermSuggestionTypeOption:     "⚙️ ",
+		TermSuggestionTypeOption:     "💲",
 		TermSuggestionTypeArg:        "💪",
 		TermSuggestionTypeDefault:    "💪",
+		TermSuggestionTypeAI:         "🔮",
 	}
 )
