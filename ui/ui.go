@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/cpendery/clac/ui/suggestions"
+	"github.com/cpendery/clac/ui/theme"
 	"github.com/cpendery/clac/ui/utils"
 )
 
@@ -28,7 +29,7 @@ const (
 
 func Start() model {
 	ti := textinput.New()
-	ti.Cursor.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
+	ti.Cursor.Style = lipgloss.NewStyle().Foreground(theme.CursorForeground)
 	ti.Focus()
 	sug := suggestions.New()
 

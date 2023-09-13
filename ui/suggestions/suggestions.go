@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/cpendery/clac/autocomplete"
+	"github.com/cpendery/clac/ui/theme"
 	"github.com/cpendery/clac/ui/utils"
 	"github.com/mattn/go-runewidth"
 	"github.com/muesli/reflow/wordwrap"
@@ -100,7 +101,7 @@ func (m Model) Update(msg tea.Msg, command string, userInputCursorLocation int) 
 	}
 	m.userInputCursorLocation = userInputCursorLocation
 	m.suggestions, m.argDescription, m.runesToRemove = autocomplete.LoadSuggestions(command)
-	if len(m.suggestions) == 0 {
+	if m.cursor > len(m.suggestions)-1 {
 		m.cursor = 0
 	}
 	return m
@@ -110,7 +111,7 @@ func (m Model) renderSuggestion(suggestion autocomplete.Suggestion, position, cu
 	content := suggestion.NamePrefix + " " + suggestion.Name
 	truncatedContent := wordTrunc(content, width)
 	if position == m.cursor%MaxSuggestions {
-		return lipgloss.NewStyle().Background(lipgloss.Color("#7D56F4")).Width(width).Render(truncatedContent)
+		return lipgloss.NewStyle().Background(theme.ActiveSuggestionBackground).Width(width).Render(truncatedContent)
 	}
 	return lipgloss.NewStyle().Render(truncatedContent)
 }
@@ -142,7 +143,7 @@ func (m Model) renderSuggestions(width int) string {
 		Bold(true).
 		Width(width).
 		BorderStyle(suggestionBorder).
-		BorderForeground(lipgloss.Color("63"))
+		BorderForeground(theme.BorderForeground)
 
 	m.suggestions = pageSuggestions(m.suggestions, m.cursor)
 	r := make([]string, len(m.suggestions))
@@ -155,7 +156,7 @@ func (m Model) renderSuggestions(width int) string {
 		descriptionStyle := lipgloss.NewStyle().
 			Width(width).
 			Border(ArgumentDescriptionBorder, false, true, true, true).
-			BorderForeground(lipgloss.Color("63"))
+			BorderForeground(theme.BorderForeground)
 
 		return lipgloss.JoinVertical(
 			lipgloss.Left,
@@ -170,7 +171,7 @@ func (m Model) renderDescription(width int) string {
 		Bold(true).
 		Width(width).
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("63"))
+		BorderForeground(theme.BorderForeground)
 
 	return style.Render(wordWrap(m.suggestions[m.cursor].Description, width))
 }
@@ -183,7 +184,7 @@ func (m Model) renderArgumentDescription(width int) string {
 		MarginLeft(utils.Clamp(m.userInputCursorLocation, 0, maxLeftPaddingDescription)).
 		Width(argDescriptionWidth).
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("63"))
+		BorderForeground(theme.BorderForeground)
 
 	return style.Render(wordWrap(m.argDescription, argDescriptionWidth))
 }
