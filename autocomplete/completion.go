@@ -124,7 +124,7 @@ func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions 
 	}
 	if !argsFromSubcommand {
 		getSubcommandDrivenRecommendations(spec, &suggestions)
-		getOptionDrivenRecommendations(allOptions, &suggestions)
+		getOptionDrivenRecommendations(allOptions, &suggestions, acceptedTokens)
 	}
 
 	removeDuplicateRecommendation(&suggestions, acceptedTokens)
@@ -153,7 +153,7 @@ func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persist
 
 	if activeArg.IsOptional {
 		getSubcommandDrivenRecommendations(spec, &suggestions)
-		getOptionDrivenRecommendations(allOptions, &suggestions)
+		getOptionDrivenRecommendations(allOptions, &suggestions, acceptedTokens)
 	}
 
 	removeDuplicateRecommendation(&suggestions, acceptedTokens)

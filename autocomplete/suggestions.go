@@ -1,6 +1,7 @@
 package autocomplete
 
 import (
+	"log"
 	"sort"
 	"strings"
 
@@ -94,8 +95,22 @@ func getSubcommandDrivenRecommendations(spec model.Subcommand, suggestions *[]mo
 	}
 }
 
-func getOptionDrivenRecommendations(options []model.Option, suggestions *[]model.TermSuggestion) {
+func getOptionDrivenRecommendations(options []model.Option, suggestions *[]model.TermSuggestion, processedTokens []model.ProcessedToken) {
+	log.Println(processedTokens)
+	usedTokens := make(map[string]struct{})
+	for _, processedToken := range processedTokens {
+		usedTokens[processedToken.Token] = struct{}{}
+	}
 	for _, op := range options {
+		hasBeenExcluded := false
+		for _, exclusiveToken := range op.ExclusiveOn {
+			if _, exclude := usedTokens[exclusiveToken]; exclude {
+				hasBeenExcluded = true
+			}
+		}
+		if hasBeenExcluded {
+			continue
+		}
 		*suggestions = append(*suggestions, model.TermSuggestion{
 			Name:        getShortName(op.Name),
 			Description: op.Description,
