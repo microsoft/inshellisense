@@ -132,10 +132,15 @@ func pageSuggestions(suggestions []autocomplete.Suggestion, cursorLocation int) 
 }
 
 func (m Model) renderSuggestions(width int) string {
+	suggestionBorder := lipgloss.NormalBorder()
+	if m.argDescription != "" {
+		suggestionBorder = SuggestionWithDescriptionBorder
+	}
+
 	var style = lipgloss.NewStyle().
 		Bold(true).
 		Width(width).
-		BorderStyle(lipgloss.NormalBorder()).
+		BorderStyle(suggestionBorder).
 		BorderForeground(lipgloss.Color("63"))
 
 	m.suggestions = pageSuggestions(m.suggestions, m.cursor)
@@ -145,6 +150,17 @@ func (m Model) renderSuggestions(width int) string {
 		r[idx] = m.renderSuggestion(suggestion.Name, idx, m.cursor, width)
 	}
 
+	if m.argDescription != "" {
+		descriptionStyle := lipgloss.NewStyle().
+			Width(width).
+			Border(ArgumentDescriptionBorder, false, true, true, true).
+			BorderForeground(lipgloss.Color("63"))
+
+		return lipgloss.JoinVertical(
+			lipgloss.Left,
+			style.Render(strings.Join(r, "\n")),
+			descriptionStyle.Render(m.argDescription))
+	}
 	return style.Render(strings.Join(r, "\n"))
 }
 
