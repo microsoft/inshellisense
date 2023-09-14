@@ -110,6 +110,10 @@ func getPersistentOptions(existingOptions []model.Option, newOptions []model.Opt
 func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken, argsDepleted bool, argsFromSubcommand bool, acceptedTokens []model.ProcessedToken) model.TermSuggestions {
 	suggestions := []model.TermSuggestion{}
 	allOptions := append(spec.Options, persistentOptions...)
+	var partialToken *string = nil
+	if partialCmd != nil {
+		partialToken = &partialCmd.token
+	}
 
 	if argsDepleted && argsFromSubcommand {
 		return model.TermSuggestions{
@@ -118,24 +122,15 @@ func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions 
 	}
 	if len(spec.Args) != 0 {
 		activeArg := spec.Args[0]
-		getGeneratorDrivenRecommendations(activeArg.Generator, &suggestions)
-		getSuggestionDrivenRecommendations(activeArg.Suggestions, &suggestions)
-		getTemplateDrivenRecommendations(activeArg.Templates, &suggestions)
+		getGeneratorDrivenRecommendations(activeArg.Generator, &suggestions, partialToken, spec.FilterStrategy)
+		getSuggestionDrivenRecommendations(activeArg.Suggestions, &suggestions, partialToken, spec.FilterStrategy)
+		getTemplateDrivenRecommendations(activeArg.Templates, &suggestions, partialToken, spec.FilterStrategy)
 	}
 	if !argsFromSubcommand {
-		getSubcommandDrivenRecommendations(spec, &suggestions)
-		getOptionDrivenRecommendations(allOptions, &suggestions, acceptedTokens)
+		getSubcommandDrivenRecommendations(spec, &suggestions, partialToken, spec.FilterStrategy)
+		getOptionDrivenRecommendations(allOptions, &suggestions, acceptedTokens, partialToken, spec.FilterStrategy)
 	}
-
 	removeDuplicateRecommendation(&suggestions, acceptedTokens)
-	if partialCmd != nil {
-		switch spec.FilterStrategy {
-		case model.FilterStrategyFuzzy:
-			getFuzzyFilteredRecommendations(partialCmd.token, &suggestions)
-		case model.FilterStrategyPrefix, model.FilterStrategyEmpty:
-			getPrefixFilteredRecommendations(partialCmd.token, &suggestions)
-		}
-	}
 
 	return model.TermSuggestions{
 		Suggestions: suggestions,
@@ -146,25 +141,20 @@ func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persist
 	suggestions := []model.TermSuggestion{}
 	activeArg := args[0]
 	allOptions := append(spec.Options, persistentOptions...)
+	var partialToken *string = nil
+	if partialCmd != nil {
+		partialToken = &partialCmd.token
+	}
 
-	getGeneratorDrivenRecommendations(activeArg.Generator, &suggestions)
-	getSuggestionDrivenRecommendations(activeArg.Suggestions, &suggestions)
-	getTemplateDrivenRecommendations(activeArg.Templates, &suggestions)
+	getGeneratorDrivenRecommendations(activeArg.Generator, &suggestions, partialToken, activeArg.FilterStrategy)
+	getSuggestionDrivenRecommendations(activeArg.Suggestions, &suggestions, partialToken, activeArg.FilterStrategy)
+	getTemplateDrivenRecommendations(activeArg.Templates, &suggestions, partialToken, activeArg.FilterStrategy)
 
 	if activeArg.IsOptional {
-		getSubcommandDrivenRecommendations(spec, &suggestions)
-		getOptionDrivenRecommendations(allOptions, &suggestions, acceptedTokens)
+		getSubcommandDrivenRecommendations(spec, &suggestions, partialToken, activeArg.FilterStrategy)
+		getOptionDrivenRecommendations(allOptions, &suggestions, acceptedTokens, partialToken, activeArg.FilterStrategy)
 	}
-
 	removeDuplicateRecommendation(&suggestions, acceptedTokens)
-	if partialCmd != nil {
-		switch spec.FilterStrategy {
-		case model.FilterStrategyFuzzy:
-			getFuzzyFilteredRecommendations(partialCmd.token, &suggestions)
-		case model.FilterStrategyPrefix, model.FilterStrategyEmpty:
-			getPrefixFilteredRecommendations(partialCmd.token, &suggestions)
-		}
-	}
 
 	argDescriptionSuggestion := ""
 	if len(suggestions) == 0 {

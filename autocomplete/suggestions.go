@@ -1,7 +1,6 @@
 package autocomplete
 
 import (
-	"log"
 	"sort"
 	"strings"
 
@@ -10,97 +9,113 @@ import (
 	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
-type match struct {
-	name string
-	rank int
-	item model.TermSuggestion
+type matchable interface {
+	GetName() []string
+	GetDescription() string
+	GetType() model.TermSuggestionType
 }
 
-func fuzzyMatch(input string, targets []model.TermSuggestion, suggestions *[]model.TermSuggestion) {
-	matchers := []match{}
+type match[M matchable] struct {
+	name string
+	rank int
+	item M
+}
+
+func fuzzyMatch[M matchable](input string, targets []M) []match[M] {
+	matchers := []match[M]{}
 	for _, item := range targets {
-		rank := fuzzy.RankMatch(input, item.Name)
-		if rank != -1 {
-			matchers = append(matchers, match{
-				name: item.Name,
+		bestName := ""
+		bestNameRank := -1
+		for _, name := range item.GetName() {
+			rank := fuzzy.RankMatch(input, name)
+			if rank > bestNameRank {
+				bestName = name
+				bestNameRank = rank
+			}
+		}
+
+		if bestNameRank != -1 {
+			matchers = append(matchers, match[M]{
+				name: bestName,
 				item: item,
-				rank: rank,
+				rank: bestNameRank,
 			})
 		}
 	}
 	sort.Slice(matchers, func(i, j int) bool {
 		return matchers[i].rank > matchers[j].rank
 	})
-	for _, m := range matchers {
-		*suggestions = append(*suggestions, model.TermSuggestion{
-			Name:        m.name,
-			Description: m.item.Description,
-			Type:        m.item.Type,
-		})
-	}
+	return matchers
 }
 
-func getFuzzyFilteredRecommendations(input string, suggestions *[]model.TermSuggestion) {
-	results := []model.TermSuggestion{}
-	fuzzyMatch(input, *suggestions, &results)
-	*suggestions = results
-}
-
-func prefixMatch(input string, targets []model.TermSuggestion, suggestions *[]model.TermSuggestion) {
+func prefixMatch[M matchable](input string, targets []M) []match[M] {
+	matches := []match[M]{}
 	for _, targ := range targets {
-		if strings.HasPrefix(targ.Name, input) {
+		for _, name := range targ.GetName() {
+			if strings.HasPrefix(name, input) {
+				matches = append(matches, match[M]{
+					name: name,
+					item: targ,
+				})
+				break
+			}
+		}
+	}
+	return matches
+}
+
+func filterMatch[M matchable](items []M, suggestions *[]model.TermSuggestion, input *string, filterStrategy model.FilterStrategy) {
+	if input == nil {
+		for _, item := range items {
 			*suggestions = append(*suggestions, model.TermSuggestion{
-				Name:        targ.Name,
-				Description: targ.Description,
-				Type:        targ.Type,
+				Name:        getShortName(item.GetName()),
+				Description: item.GetDescription(),
+				Type:        item.GetType(),
+			})
+		}
+	} else {
+		var matches []match[M]
+		switch filterStrategy {
+		case model.FilterStrategyFuzzy:
+			matches = fuzzyMatch[M](*input, items)
+		case model.FilterStrategyEmpty, model.FilterStrategyPrefix:
+			matches = prefixMatch[M](*input, items)
+		}
+		for _, match := range matches {
+			*suggestions = append(*suggestions, model.TermSuggestion{
+				Name:        match.name,
+				Description: match.item.GetDescription(),
+				Type:        match.item.GetType(),
 			})
 		}
 	}
 }
 
-func getPrefixFilteredRecommendations(input string, suggestions *[]model.TermSuggestion) {
-	results := []model.TermSuggestion{}
-	prefixMatch(input, *suggestions, &results)
-	*suggestions = results
-}
-
-func getGeneratorDrivenRecommendations(g *model.Generator, suggestions *[]model.TermSuggestion) {
-	if g != nil {
-		*suggestions = append(*suggestions, generators.Run(*g)...)
+func getGeneratorDrivenRecommendations(g *model.Generator, suggestions *[]model.TermSuggestion, input *string, filterStrategy model.FilterStrategy) {
+	if g == nil {
+		return
 	}
-
+	filterMatch[model.TermSuggestion](generators.Run(*g), suggestions, input, filterStrategy)
 }
 
-func getTemplateDrivenRecommendations(templates []model.Template, suggestions *[]model.TermSuggestion) {
-	*suggestions = append(*suggestions, generators.RunTemplates(templates)...)
+func getTemplateDrivenRecommendations(templates []model.Template, suggestions *[]model.TermSuggestion, input *string, filterStrategy model.FilterStrategy) {
+	filterMatch[model.TermSuggestion](generators.RunTemplates(templates), suggestions, input, filterStrategy)
 }
 
-func getSuggestionDrivenRecommendations(suggestionSet []model.Suggestion, suggestions *[]model.TermSuggestion) {
-	for _, suggestion := range suggestionSet {
-		*suggestions = append(*suggestions, model.TermSuggestion{
-			Name:        getLongName(suggestion.Name),
-			Description: suggestion.Description,
-			Type:        model.TermSuggestionTypeDefault,
-		})
-	}
+func getSuggestionDrivenRecommendations(suggestionSet []model.Suggestion, suggestions *[]model.TermSuggestion, input *string, filterStrategy model.FilterStrategy) {
+	filterMatch[model.Suggestion](suggestionSet, suggestions, input, filterStrategy)
 }
 
-func getSubcommandDrivenRecommendations(spec model.Subcommand, suggestions *[]model.TermSuggestion) {
-	for _, sub := range spec.Subcommands {
-		*suggestions = append(*suggestions, model.TermSuggestion{
-			Name:        getLongName(sub.Name),
-			Description: sub.Description,
-			Type:        model.TermSuggestionTypeSubcommand,
-		})
-	}
+func getSubcommandDrivenRecommendations(spec model.Subcommand, suggestions *[]model.TermSuggestion, input *string, filterStrategy model.FilterStrategy) {
+	filterMatch[model.Subcommand](spec.Subcommands, suggestions, input, filterStrategy)
 }
 
-func getOptionDrivenRecommendations(options []model.Option, suggestions *[]model.TermSuggestion, processedTokens []model.ProcessedToken) {
-	log.Println(processedTokens)
+func getOptionDrivenRecommendations(options []model.Option, suggestions *[]model.TermSuggestion, processedTokens []model.ProcessedToken, input *string, filterStrategy model.FilterStrategy) {
 	usedTokens := make(map[string]struct{})
 	for _, processedToken := range processedTokens {
 		usedTokens[processedToken.Token] = struct{}{}
 	}
+	validOptions := []model.Option{}
 	for _, op := range options {
 		hasBeenExcluded := false
 		for _, exclusiveToken := range op.ExclusiveOn {
@@ -111,12 +126,9 @@ func getOptionDrivenRecommendations(options []model.Option, suggestions *[]model
 		if hasBeenExcluded {
 			continue
 		}
-		*suggestions = append(*suggestions, model.TermSuggestion{
-			Name:        getShortName(op.Name),
-			Description: op.Description,
-			Type:        model.TermSuggestionTypeOption,
-		})
+		validOptions = append(validOptions, op)
 	}
+	filterMatch[model.Option](validOptions, suggestions, input, filterStrategy)
 }
 
 func removeDuplicateRecommendation(suggestions *[]model.TermSuggestion, processedTokens []model.ProcessedToken) {
