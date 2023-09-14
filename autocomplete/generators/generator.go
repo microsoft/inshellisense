@@ -6,9 +6,17 @@ import (
 	"strings"
 
 	"github.com/cpendery/clac/autocomplete/model"
+	"github.com/google/uuid"
+)
+
+var (
+	generatorCache = make(map[uuid.UUID][]model.TermSuggestion)
 )
 
 func Run(g model.Generator) []model.TermSuggestion {
+	if cachedSuggestions, executed := generatorCache[g.Id]; executed {
+		return cachedSuggestions
+	}
 	suggestions := []model.TermSuggestion{}
 	if g.Script != "" {
 		args := strings.Split(g.Script, " ")
@@ -38,6 +46,7 @@ func Run(g model.Generator) []model.TermSuggestion {
 	}
 
 	suggestions = append(suggestions, RunTemplates(g.Template)...)
+	generatorCache[g.Id] = suggestions
 
 	return suggestions
 }

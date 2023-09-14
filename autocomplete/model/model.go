@@ -1,5 +1,7 @@
 package model
 
+import "github.com/google/uuid"
+
 type Subcommand struct {
 	Name           []string //single or array string, required
 	Description    string
@@ -63,6 +65,7 @@ type ProcessedToken struct {
 }
 
 type Generator struct {
+	Id          uuid.UUID
 	Script      string
 	Function    func() []TermSuggestion
 	PostProcess func(string) []TermSuggestion

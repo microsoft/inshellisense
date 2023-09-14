@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/cpendery/clac/autocomplete/model"
+	"github.com/google/uuid"
 )
 
 const (
@@ -22,10 +23,6 @@ const (
 	tokensToRuneRatio = 4
 	marginRatio       = 0.8
 	maxRunes          = maxTokens * tokensToRuneRatio * marginRatio
-)
-
-var (
-	suggestionCache = make(map[string][]model.TermSuggestion)
 )
 
 type PromptFunction func(executeShellCommand func(string) string) string
@@ -77,10 +74,6 @@ func executeShellCommand(script string) string {
 }
 
 func request(name, prompt, message, splitOn string) []model.TermSuggestion {
-	cacheKey := name + "|" + prompt + "|" + message
-	if suggestions, exists := suggestionCache[cacheKey]; exists {
-		return suggestions
-	}
 	suggestions := []model.TermSuggestion{}
 	jsonBytes, err := json.Marshal(apiRequest{
 		Model: "gpt-3.5-turbo",
@@ -146,12 +139,12 @@ func request(name, prompt, message, splitOn string) []model.TermSuggestion {
 			Type:        model.TermSuggestionTypeAI,
 		})
 	}
-	suggestionCache[cacheKey] = suggestions
 	return suggestions
 }
 
 func AI(name string, prompt PromptFunction, message MessageFunction, splitOn string) *model.Generator {
 	return &model.Generator{
+		Id: uuid.New(),
 		Function: func() []model.TermSuggestion {
 			suggestions := []model.TermSuggestion{}
 			if !enabled() {

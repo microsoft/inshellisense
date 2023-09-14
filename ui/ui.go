@@ -55,8 +55,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			s := currentValue[:len(currentValue)-runesToRemove] + activeSuggestion + " "
 			m.textInput.SetValue(s)
 			m.textInput.SetCursor(len(s))
-			m.suggestions.ResetCursor()
-			return m, nil
 		}
 	case cursor.BlinkMsg:
 		if runtime.GOOS == "windows" {
@@ -69,13 +67,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.textInput.Width = m.windowWidth - widthOffset
 	}
 
-	var cmd tea.Cmd
-
-	m.textInput, cmd = m.textInput.Update(msg)
+	var textInputCmd, suggestionsCmd tea.Cmd
+	m.textInput, textInputCmd = m.textInput.Update(msg)
 	cursorLocation := len(m.textInput.Value()) + len(m.textInput.Prompt)
-	m.suggestions = m.suggestions.Update(msg, m.textInput.Value(), cursorLocation)
+	m.suggestions, suggestionsCmd = m.suggestions.Update(msg, m.textInput.Value(), cursorLocation)
 
-	return m, cmd
+	return m, tea.Batch(textInputCmd, suggestionsCmd)
 }
 
 func (m model) View() string {

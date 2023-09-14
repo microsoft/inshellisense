@@ -11,6 +11,7 @@ import (
 	"github.com/cpendery/clac/autocomplete"
 	"github.com/cpendery/clac/ui/theme"
 	"github.com/cpendery/clac/ui/utils"
+	"github.com/google/uuid"
 	"github.com/mattn/go-runewidth"
 	"github.com/muesli/reflow/wordwrap"
 	"github.com/muesli/reflow/wrap"
@@ -25,6 +26,7 @@ type Model struct {
 	windowWidth             int
 	windowHeight            int
 	runesToRemove           int
+	suggestionId            uuid.UUID
 }
 
 const (
@@ -33,6 +35,13 @@ const (
 	BorderOffset     = 2
 	MaxSuggestions   = 5
 )
+
+type SuggestionMessage struct {
+	Id                  uuid.UUID
+	Suggestions         []autocomplete.Suggestion
+	ArgumentDescription string
+	RunesToRemove       int
+}
 
 type KeyMap struct {
 	LineUp   key.Binding
@@ -62,6 +71,18 @@ func New() Model {
 	}
 }
 
+func SuggestCmd(cmd string, suggestionId uuid.UUID) tea.Cmd {
+	return func() tea.Msg {
+		suggestions, argDescription, runesToRemove := autocomplete.LoadSuggestions(cmd)
+		return SuggestionMessage{
+			Suggestions:         suggestions,
+			ArgumentDescription: argDescription,
+			RunesToRemove:       runesToRemove,
+			Id:                  suggestionId,
+		}
+	}
+}
+
 func (m *Model) cursorUp() {
 	m.cursor = utils.Clamp(m.cursor-1, 0, len(m.suggestions)-1)
 }
@@ -82,7 +103,8 @@ func (m *Model) ResetCursor() {
 	m.cursor = 0
 }
 
-func (m Model) Update(msg tea.Msg, command string, userInputCursorLocation int) Model {
+func (m Model) Update(msg tea.Msg, command string, userInputCursorLocation int) (Model, tea.Cmd) {
+	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
@@ -91,6 +113,9 @@ func (m Model) Update(msg tea.Msg, command string, userInputCursorLocation int) 
 		case key.Matches(msg, m.keyMap.LineDown):
 			m.cursorDown()
 		}
+		m.suggestions, m.argDescription, m.runesToRemove = []autocomplete.Suggestion{}, "", 0
+		m.suggestionId = uuid.New()
+		cmds = append(cmds, SuggestCmd(command, m.suggestionId))
 	case cursor.BlinkMsg:
 		if runtime.GOOS == "windows" {
 			m.windowWidth, m.windowHeight = utils.GetWindowSize()
@@ -98,13 +123,16 @@ func (m Model) Update(msg tea.Msg, command string, userInputCursorLocation int) 
 	case tea.WindowSizeMsg:
 		m.windowHeight = msg.Height
 		m.windowWidth = msg.Width
+	case SuggestionMessage:
+		if m.suggestionId == msg.Id {
+			m.suggestions, m.argDescription, m.runesToRemove = msg.Suggestions, msg.ArgumentDescription, msg.RunesToRemove
+		}
 	}
 	m.userInputCursorLocation = userInputCursorLocation
-	m.suggestions, m.argDescription, m.runesToRemove = autocomplete.LoadSuggestions(command)
 	if m.cursor > len(m.suggestions)-1 {
 		m.cursor = 0
 	}
-	return m
+	return m, tea.Batch(cmds...)
 }
 
 func (m Model) renderSuggestion(suggestion autocomplete.Suggestion, position, cursor, width int) string {
