@@ -3,11 +3,13 @@ package ui
 import (
 	"fmt"
 	"runtime"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/cpendery/clac/autocomplete"
 	"github.com/cpendery/clac/ui/suggestions"
 	"github.com/cpendery/clac/ui/theme"
 	"github.com/cpendery/clac/ui/utils"
@@ -18,17 +20,20 @@ type model struct {
 	suggestions  suggestions.Model
 	windowHeight int
 	windowWidth  int
+	complete     bool
 }
 
 const (
-	prompt       = "> "
-	promptOffset = len(prompt)
-	cursorOffset = 1
-	widthOffset  = promptOffset + cursorOffset
+	clacOutputEnvVar = "CLAC_COMPLETED_CMD"
+	prompt           = "> "
+	promptOffset     = len(prompt)
+	cursorOffset     = 1
+	widthOffset      = promptOffset + cursorOffset
 )
 
-func Start() model {
+func Start(startingContent string) model {
 	ti := textinput.New()
+	ti.SetValue(strings.TrimSpace(startingContent))
 	ti.Cursor.Style = lipgloss.NewStyle().Foreground(theme.CursorForeground)
 	ti.Focus()
 	sug := suggestions.New()
@@ -44,7 +49,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
-		case tea.KeyEnter, tea.KeyCtrlC, tea.KeyEsc:
+		case tea.KeyEnter:
+			autocomplete.CacheResult(m.textInput.Value())
+			m.complete = true
+			return m, tea.Quit
+		case tea.KeyCtrlC, tea.KeyEsc:
+			m.complete = true
 			return m, tea.Quit
 		case tea.KeyTab:
 			if !m.suggestions.HasActiveSuggestion() {
@@ -76,6 +86,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
+	if m.complete {
+		return ""
+	}
 	return fmt.Sprintf(
 		"%s\n%s",
 		m.textInput.View(),
