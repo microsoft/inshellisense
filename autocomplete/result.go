@@ -47,3 +47,13 @@ func ReadResult() string {
 	}
 	return string(content)
 }
+
+func ClearResult() {
+	path, err := xdg.CacheFile(cacheFilePath)
+	if err != nil {
+		slog.Error("failed to load cache file", slog.String("error", err.Error()))
+	}
+	if err := os.Truncate(path, 0); err != nil {
+		slog.Error("failed to clear cache file", slog.String("error", err.Error()))
+	}
+}

@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"io"
+	"log/slog"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -20,6 +22,7 @@ more productive
 
 complete documentation is available at https://github.com/cpendery/clac`,
 		SilenceUsage: true,
+		Args:         cobra.ArbitraryArgs,
 		RunE:         rootExec,
 	}
 	outputCmd     bool
@@ -28,7 +31,7 @@ complete documentation is available at https://github.com/cpendery/clac`,
 
 func init() {
 	rootCmd.Flags().BoolVarP(&outputCmd, "output-cmd", "o", false, "outputs the last cmd from a clac execution")
-	rootCmd.Flags().BoolVarP(&outputCmd, "logging", "l", false, "enable logging to the `clac.log` file")
+	rootCmd.Flags().BoolVarP(&enableLogging, "logging", "l", false, "enable logging to the `clac.log` file")
 }
 
 func rootExec(cmd *cobra.Command, args []string) error {
@@ -37,12 +40,16 @@ func rootExec(cmd *cobra.Command, args []string) error {
 		_, err := os.Stdout.WriteString(result)
 		return err
 	}
+	autocomplete.ClearResult()
+
 	if enableLogging {
 		f, err := tea.LogToFile("clac.log", "debug")
 		if err != nil {
 			return err
 		}
 		defer f.Close()
+	} else {
+		slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
 	}
 
 	startingInput := ""
