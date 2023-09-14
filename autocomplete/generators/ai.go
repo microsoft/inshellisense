@@ -16,7 +16,6 @@ import (
 )
 
 const (
-	enableAiEnvVar    = "CLAC_ENABLE_AUTOCOMPLETE_AI"
 	apiKeyEnvVar      = "CLAC_AI_TOKEN"
 	apiEndpoint       = "https://api.openai.com/v1/chat/completions"
 	maxTokens         = 4097
@@ -50,11 +49,7 @@ type apiMessage struct {
 }
 
 func enabled() bool {
-	enabled := os.Getenv(enableAiEnvVar)
-	token := os.Getenv(apiKeyEnvVar)
-	s1 := strings.ToLower(enabled) == "true"
-	s2 := len(token) != 0
-	return s1 && s2
+	return len(os.Getenv(apiKeyEnvVar)) != 0
 }
 
 func executeShellCommand(script string) string {
