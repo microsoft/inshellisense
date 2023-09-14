@@ -1,2 +1,7 @@
 node_modules/
 .fig/
+*.log
+__debug_*.exe
+debug.test*.exe
+clac
+.env*
