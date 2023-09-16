@@ -58,12 +58,6 @@ func New() Model {
 		LineDown: key.NewBinding(
 			key.WithKeys("down"),
 		),
-		PageUp: key.NewBinding(
-			key.WithKeys("pgup"),
-		),
-		PageDown: key.NewBinding(
-			key.WithKeys("pgdown"),
-		),
 	}
 	return Model{
 		cursor: 0,
@@ -127,11 +121,11 @@ func (m Model) Update(msg tea.Msg, command string, userInputCursorLocation int) 
 		if m.suggestionId == msg.Id {
 			m.suggestions, m.argDescription, m.runesToRemove = msg.Suggestions, msg.ArgumentDescription, msg.RunesToRemove
 		}
+		if m.cursor > len(m.suggestions)-1 {
+			m.cursor = 0
+		}
 	}
 	m.userInputCursorLocation = userInputCursorLocation
-	if m.cursor > len(m.suggestions)-1 {
-		m.cursor = 0
-	}
 	return m, tea.Batch(cmds...)
 }
 

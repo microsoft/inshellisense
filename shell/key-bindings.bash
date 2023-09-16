@@ -1,7 +1,3 @@
-__clac_cmd() {
-    return "./clac"
-}
-
 __clac__() {
     ./clac "$READLINE_LINE"
     output=$(./clac -o)

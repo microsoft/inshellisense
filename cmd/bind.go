@@ -36,6 +36,12 @@ func runBindCmd(_ *cobra.Command, args []string) error {
 	switch userSelectedShell {
 	case "bash":
 		return shell.CreateBashBinding()
+	case "windows-powershell":
+		return shell.CreateWindowsPowershellBinding()
+	case "powershell":
+		return shell.CreatePowershellBinding()
+	case "zsh":
+		return shell.CreateZshBinding()
 	}
 	return nil
 }
