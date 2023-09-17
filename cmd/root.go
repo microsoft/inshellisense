@@ -13,7 +13,7 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   `clac <command>`,
+		Use:   `clac [command]`,
 		Short: "command line autocomplete",
 		Long: `clac - command line autocomplete
 

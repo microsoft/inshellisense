@@ -5,3 +5,5 @@ __debug_*.exe
 debug.test*.exe
 clac
 .env*
+dist/
+t*.md
