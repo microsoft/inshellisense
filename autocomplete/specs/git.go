@@ -2755,7 +2755,7 @@ func init() {
 			Description: `Add file contents to the index`,
 			Args: []model.Arg{{
 				Name:       "pathspec",
-				Generator:  nil, // TODO: port over generator
+				Generator:  git.AddFileGenerator(),
 				IsOptional: true,
 				IsVariadic: true,
 			}},

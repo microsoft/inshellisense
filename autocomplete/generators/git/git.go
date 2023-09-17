@@ -1,8 +1,11 @@
 package git
 
 import (
+	"strings"
+
 	"github.com/cpendery/clac/autocomplete/generators"
 	"github.com/cpendery/clac/autocomplete/model"
+	"github.com/google/uuid"
 )
 
 func CommitMessageGenerator() *model.Generator {
@@ -22,4 +25,31 @@ func CommitMessageGenerator() *model.Generator {
 		},
 		"\n",
 	)
+}
+
+func AddFileGenerator() *model.Generator {
+	return &model.Generator{
+		Id:     uuid.New(),
+		Script: "git --no-optional-locks status --short",
+		PostProcess: func(s string) []model.TermSuggestion {
+			suggestions := []model.TermSuggestion{}
+			lines := strings.Split(s, "\n")
+			for _, line := range lines {
+				baseRune := strings.IndexRune(line, 0)
+				if baseRune == 'M' || baseRune == 'A' {
+					continue
+				}
+				splits := strings.Split(line, " ")
+				if len(splits) <= 1 {
+					continue
+				}
+				filename := splits[len(splits)-1]
+				suggestions = append(suggestions, model.TermSuggestion{
+					Name:        filename,
+					Description: "Unstaged/Untracked File",
+				})
+			}
+			return suggestions
+		},
+	}
 }
