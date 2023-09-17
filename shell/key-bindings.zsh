@@ -1,6 +1,6 @@
 clac-widget() {
-    ./clac "${(qqq)LBUFFER}"
-    output=$(./clac -o)
+    clac "${(qqq)LBUFFER}"
+    output=$(clac -o)
     eval "$output"
 }
 

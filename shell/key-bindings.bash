@@ -1,6 +1,6 @@
 __clac__() {
-    ./clac "$READLINE_LINE"
-    output=$(./clac -o)
+    clac "$READLINE_LINE"
+    output=$(clac -o)
     eval "$output"
 }
 

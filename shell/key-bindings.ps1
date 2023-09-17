@@ -12,13 +12,13 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+a' -ScriptBlock {
     [Microsoft.PowerShell.PSConsoleReadLine]::KillLine()
 
     if ($command) {
-        Start-Process -NoNewWindow -Wait ".\clac" "$command"
+        Start-Process -NoNewWindow -Wait "clac" "$command"
     } else {
-        Start-Process -NoNewWindow -Wait ".\clac"
+        Start-Process -NoNewWindow -Wait "clac"
     }
 
     $pinfo = New-Object System.Diagnostics.ProcessStartInfo
-    $pinfo.FileName = ".\clac"
+    $pinfo.FileName = "clac"
     $pinfo.RedirectStandardError = $true
     $pinfo.RedirectStandardOutput = $true
     $pinfo.UseShellExecute = $false

@@ -49,7 +49,7 @@ winget:
     commit_msg_template: "{{ .PackageIdentifier }}: {{ .Tag }}"
     path: manifests/g/goreleaser/1.19
     homepage: "https://github.com/cpendery/clac"
-    skip_upload: false
+    skip_upload: true
     release_notes: "{{.Changelog}}"
     tags:
       - golang
