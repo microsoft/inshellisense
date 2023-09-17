@@ -122,7 +122,7 @@ func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions 
 	}
 	if len(spec.Args) != 0 {
 		activeArg := spec.Args[0]
-		getGeneratorDrivenRecommendations(activeArg.Generator, &suggestions, partialToken, spec.FilterStrategy)
+		getGeneratorDrivenRecommendations(activeArg.Generator, &suggestions, partialToken, spec.FilterStrategy, acceptedTokens)
 		getSuggestionDrivenRecommendations(activeArg.Suggestions, &suggestions, partialToken, spec.FilterStrategy)
 		getTemplateDrivenRecommendations(activeArg.Templates, &suggestions, partialToken, spec.FilterStrategy)
 	}
@@ -146,7 +146,7 @@ func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persist
 		partialToken = &partialCmd.token
 	}
 
-	getGeneratorDrivenRecommendations(activeArg.Generator, &suggestions, partialToken, activeArg.FilterStrategy)
+	getGeneratorDrivenRecommendations(activeArg.Generator, &suggestions, partialToken, activeArg.FilterStrategy, acceptedTokens)
 	getSuggestionDrivenRecommendations(activeArg.Suggestions, &suggestions, partialToken, activeArg.FilterStrategy)
 	getTemplateDrivenRecommendations(activeArg.Templates, &suggestions, partialToken, activeArg.FilterStrategy)
 
@@ -249,7 +249,7 @@ func handleArg(tokens []commandToken, args []model.Arg, spec model.Subcommand, p
 		}
 		return
 	}
-	return handleArg(tokens[1:], args[1:], spec, persistentOptions, getPersistentTokens(acceptedTokens), fromOption)
+	return handleArg(tokens[1:], args[1:], spec, persistentOptions, acceptedTokens, fromOption)
 }
 
 func loadSuggestions(cmd string) (suggestions model.TermSuggestions, charsInLastCmd int) {

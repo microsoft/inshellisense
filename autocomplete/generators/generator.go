@@ -13,8 +13,8 @@ var (
 	generatorCache = make(map[uuid.UUID][]model.TermSuggestion)
 )
 
-func Run(g model.Generator) []model.TermSuggestion {
-	if cachedSuggestions, executed := generatorCache[g.Id]; executed {
+func Run(g model.Generator, token []string) []model.TermSuggestion {
+	if cachedSuggestions, executed := generatorCache[g.Id]; executed && !g.SkipCache {
 		return cachedSuggestions
 	}
 	suggestions := []model.TermSuggestion{}
@@ -42,7 +42,7 @@ func Run(g model.Generator) []model.TermSuggestion {
 	}
 
 	if g.Function != nil {
-		suggestions = append(suggestions, g.Function()...)
+		suggestions = append(suggestions, g.Function(token)...)
 	}
 
 	suggestions = append(suggestions, RunTemplates(g.Template)...)

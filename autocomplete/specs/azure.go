@@ -85,7 +85,7 @@ func init() {
 						{Name: []string{"show"}, Description: "Get a key's attributes and, if it's an asymmetric key, its public material.", Options: []model.Option{
 							{Name: []string{"--id"}, Description: "Id of the key. If specified all other 'Id' arguments should be omitted."},
 							{Name: []string{"--name", "-n"}, Description: "Name of the key. Required if --id is not specified", Args: []model.Arg{
-								{Name: "key name"},
+								{Name: "key name", Generator: azure.ListKeyVaultsKeysGenerator},
 							}},
 							{Name: []string{"--vault-name"}, Description: "Name of the Vault.", Args: []model.Arg{
 								{Name: "vault name", Generator: azure.ListKeyVaultsGenerator},

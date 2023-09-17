@@ -91,11 +91,15 @@ func filterMatch[M matchable](items []M, suggestions *[]model.TermSuggestion, in
 	}
 }
 
-func getGeneratorDrivenRecommendations(g *model.Generator, suggestions *[]model.TermSuggestion, input *string, filterStrategy model.FilterStrategy) {
+func getGeneratorDrivenRecommendations(g *model.Generator, suggestions *[]model.TermSuggestion, input *string, filterStrategy model.FilterStrategy, processedTokens []model.ProcessedToken) {
 	if g == nil {
 		return
 	}
-	filterMatch[model.TermSuggestion](generators.Run(*g), suggestions, input, filterStrategy)
+	termTokens := []string{}
+	for _, t := range processedTokens {
+		termTokens = append(termTokens, t.Token)
+	}
+	filterMatch[model.TermSuggestion](generators.Run(*g, termTokens), suggestions, input, filterStrategy)
 }
 
 func getTemplateDrivenRecommendations(templates []model.Template, suggestions *[]model.TermSuggestion, input *string, filterStrategy model.FilterStrategy) {

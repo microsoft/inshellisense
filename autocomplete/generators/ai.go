@@ -140,7 +140,7 @@ func request(name, prompt, message, splitOn string) []model.TermSuggestion {
 func AI(name string, prompt PromptFunction, message MessageFunction, splitOn string) *model.Generator {
 	return &model.Generator{
 		Id: uuid.New(),
-		Function: func() []model.TermSuggestion {
+		Function: func(_ []string) []model.TermSuggestion {
 			suggestions := []model.TermSuggestion{}
 			if !enabled() {
 				return suggestions

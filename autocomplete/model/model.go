@@ -67,10 +67,11 @@ type ProcessedToken struct {
 type Generator struct {
 	Id          uuid.UUID
 	Script      string
-	Function    func() []TermSuggestion
+	Function    func([]string) []TermSuggestion
 	PostProcess func(string) []TermSuggestion
 	Template    []Template
 	SplitOn     string
+	SkipCache   bool
 }
 
 type Template string
