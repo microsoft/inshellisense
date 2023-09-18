@@ -53,7 +53,10 @@ func ClearResult() {
 	if err != nil {
 		slog.Error("failed to load cache file", slog.String("error", err.Error()))
 	}
-	if err := os.Truncate(path, 0); err != nil {
-		slog.Error("failed to clear cache file", slog.String("error", err.Error()))
+	os.Stat(path)
+	if _, err := os.Stat(path); err == nil {
+		if err := os.Truncate(path, 0); err != nil {
+			slog.Error("failed to clear cache file", slog.String("error", err.Error()))
+		}
 	}
 }
