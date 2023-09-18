@@ -137,7 +137,7 @@ func getSubcommandDrivenRecommendation(spec model.Subcommand, persistentOptions 
 	}
 }
 
-func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken, acceptedTokens []model.ProcessedToken) model.TermSuggestions {
+func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persistentOptions []model.Option, partialCmd *commandToken, acceptedTokens []model.ProcessedToken, variadicArgIsBound bool) model.TermSuggestions {
 	suggestions := []model.TermSuggestion{}
 	activeArg := args[0]
 	allOptions := append(spec.Options, persistentOptions...)
@@ -150,7 +150,7 @@ func getArgDrivenRecommendation(args []model.Arg, spec model.Subcommand, persist
 	getSuggestionDrivenRecommendations(activeArg.Suggestions, &suggestions, partialToken, activeArg.FilterStrategy)
 	getTemplateDrivenRecommendations(activeArg.Templates, &suggestions, partialToken, activeArg.FilterStrategy)
 
-	if activeArg.IsOptional {
+	if (activeArg.IsOptional && !activeArg.IsVariadic) || (activeArg.IsVariadic && activeArg.IsOptional && !variadicArgIsBound) {
 		getSubcommandDrivenRecommendations(spec, &suggestions, partialToken, activeArg.FilterStrategy)
 		getOptionDrivenRecommendations(allOptions, &suggestions, acceptedTokens, partialToken, activeArg.FilterStrategy)
 	}
@@ -186,7 +186,7 @@ func handleSubcommand(tokens []commandToken, spec model.Subcommand, persistentOp
 		return handleSubcommand(tokens[1:], *subcommand, persistentOptions, false, false, getPersistentTokens(acceptedTokens))
 	}
 
-	return handleArg(tokens, spec.Args, spec, persistentOptions, acceptedTokens, false)
+	return handleArg(tokens, spec.Args, spec, persistentOptions, acceptedTokens, false, false)
 }
 
 func handleOption(tokens []commandToken, option model.Option, spec model.Subcommand, persistentOptions []model.Option, acceptedTokens []model.ProcessedToken) (suggestions model.TermSuggestions) {
@@ -209,16 +209,16 @@ persistenceDetermined:
 	if len(option.Args) == 0 {
 		return handleSubcommand(tokens[1:], spec, persistentOptions, false, false, acceptedTokens)
 	}
-	return handleArg(tokens[1:], option.Args, spec, persistentOptions, acceptedTokens, true)
+	return handleArg(tokens[1:], option.Args, spec, persistentOptions, acceptedTokens, true, false)
 }
 
-func handleArg(tokens []commandToken, args []model.Arg, spec model.Subcommand, persistentOptions []model.Option, acceptedTokens []model.ProcessedToken, fromOption bool) (suggestions model.TermSuggestions) {
+func handleArg(tokens []commandToken, args []model.Arg, spec model.Subcommand, persistentOptions []model.Option, acceptedTokens []model.ProcessedToken, fromOption, fromVariadic bool) (suggestions model.TermSuggestions) {
 	if len(args) == 0 {
 		return handleSubcommand(tokens, spec, persistentOptions, true, !fromOption, acceptedTokens)
 	} else if len(tokens) == 0 {
-		return getArgDrivenRecommendation(args, spec, persistentOptions, nil, acceptedTokens)
+		return getArgDrivenRecommendation(args, spec, persistentOptions, nil, acceptedTokens, fromVariadic)
 	} else if !tokens[0].complete {
-		return getArgDrivenRecommendation(args, spec, persistentOptions, &tokens[0], acceptedTokens)
+		return getArgDrivenRecommendation(args, spec, persistentOptions, &tokens[0], acceptedTokens, fromVariadic)
 	}
 
 	activeCmd := tokens[0]
@@ -238,7 +238,7 @@ func handleArg(tokens []commandToken, args []model.Arg, spec model.Subcommand, p
 	activeArg := args[0]
 	acceptedTokens = append(acceptedTokens, model.ProcessedToken{Token: activeCmd.token, Persist: false})
 	if activeArg.IsVariadic {
-		return handleArg(tokens[1:], args, spec, persistentOptions, acceptedTokens, fromOption)
+		return handleArg(tokens[1:], args, spec, persistentOptions, acceptedTokens, fromOption, true)
 	} else if activeArg.IsCommand {
 		if len(tokens) <= 1 {
 			return
@@ -249,7 +249,7 @@ func handleArg(tokens []commandToken, args []model.Arg, spec model.Subcommand, p
 		}
 		return
 	}
-	return handleArg(tokens[1:], args[1:], spec, persistentOptions, acceptedTokens, fromOption)
+	return handleArg(tokens[1:], args[1:], spec, persistentOptions, acceptedTokens, fromOption, false)
 }
 
 func loadSuggestions(cmd string) (suggestions model.TermSuggestions, charsInLastCmd int) {
