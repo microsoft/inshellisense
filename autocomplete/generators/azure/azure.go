@@ -2,7 +2,6 @@ package azure
 
 import (
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"os/exec"
 	"strings"
@@ -60,7 +59,7 @@ var ListKeyVaultsKeysGenerator = &model.Generator{
 			return suggestions
 		}
 
-		output, err := exec.Command("az", fmt.Sprintf("keyvault key list --vault-name %s -o json", *vaultName)).Output()
+		output, err := exec.Command("az", "keyvault", "key", "list", "--vault-name", strings.Trim(*vaultName, `"'`), "-o", "json").Output()
 		if err != nil {
 			slog.Error("unable to request list keys", slog.String("error", err.Error()))
 			return suggestions
