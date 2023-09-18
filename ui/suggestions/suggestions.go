@@ -60,8 +60,9 @@ func New() Model {
 		),
 	}
 	return Model{
-		cursor: 0,
-		keyMap: keyBindings,
+		cursor:       0,
+		keyMap:       keyBindings,
+		suggestionId: uuid.New(),
 	}
 }
 
@@ -75,6 +76,10 @@ func SuggestCmd(cmd string, suggestionId uuid.UUID) tea.Cmd {
 			Id:                  suggestionId,
 		}
 	}
+}
+
+func (m *Model) Init(command string) tea.Cmd {
+	return SuggestCmd(command, m.suggestionId)
 }
 
 func (m *Model) cursorUp() {

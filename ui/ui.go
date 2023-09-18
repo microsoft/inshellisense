@@ -3,7 +3,6 @@ package ui
 import (
 	"fmt"
 	"runtime"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -33,7 +32,7 @@ const (
 
 func Start(startingContent string) model {
 	ti := textinput.New()
-	ti.SetValue(strings.TrimSpace(startingContent))
+	ti.SetValue(startingContent)
 	ti.Cursor.Style = lipgloss.NewStyle().Foreground(theme.CursorForeground)
 	ti.Focus()
 	sug := suggestions.New()
@@ -42,7 +41,7 @@ func Start(startingContent string) model {
 }
 
 func (m model) Init() tea.Cmd {
-	return textinput.Blink
+	return tea.Batch(textinput.Blink, m.suggestions.Init(m.textInput.Value()))
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
