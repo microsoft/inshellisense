@@ -2,34 +2,28 @@
 
 clac provides IDE style autocomplete aka `inshellisense` in every shell
 
-https://github.com/cpendery/clac/assets/35637443/031599a2-5240-4b57-bcb1-a10ca8152b30
+<p align="center"><img alt="demo of clac working" src="https://github.com/cpendery/clac/assets/35637443/544f81dc-dada-40b5-bb1f-a736b4e58e73" height="300px"/></p>
 
 clac is built on Fig's [autocomplete specs](https://github.com/withfig/autocomplete) which
 provide support for 600+ command line tools.
 
 ## Supported Integrations
 
-| Shells             | IDEs               | Terminals       | OS      |
-| ------------------ | ------------------ | --------------- | ------- |
-| zsh                | Visual Studio Code | Terminal        | Mac     |
-| bash               | JetBrains Suite    | iTerm/iTerm2    | Windows |
-| pwsh (Powershell)  | Android Studio     | Hyper           | Linux   |
-| Windows Powershell |                    | Xterm.js & More |
+| Shells             | IDEs               |  OS      |
+| ------------------ | ------------------ | -------- |
+| zsh                | Visual Studio Code |  Mac     |
+| bash               | JetBrains Suite    |  Windows |
+| pwsh (Powershell)  | Android Studio     |  Linux   |
+| Windows Powershell |                    |          |
 
 ## Getting Started
 
 ### Installation
 
-#### MacOS & Linux
+#### MacOS, Linux, & Windows
 
 ```shell
 go install github.com/cpendery/clac@latest
-```
-
-#### Windows
-
-```shell
-choco install clac
 ```
 
 ### Quickstart
