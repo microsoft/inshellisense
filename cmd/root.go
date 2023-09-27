@@ -36,13 +36,6 @@ func init() {
 }
 
 func rootExec(cmd *cobra.Command, args []string) error {
-	if outputCmd {
-		result := autocomplete.ReadResult()
-		_, err := os.Stdout.WriteString(result)
-		return err
-	}
-	autocomplete.ClearResult()
-
 	if enableLogging {
 		f, err := tea.LogToFile("clac.log", "debug")
 		if err != nil {
@@ -52,6 +45,13 @@ func rootExec(cmd *cobra.Command, args []string) error {
 	} else {
 		slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
 	}
+
+	if outputCmd {
+		result := autocomplete.ReadResult()
+		_, err := os.Stdout.WriteString(result)
+		return err
+	}
+	autocomplete.ClearResult()
 
 	startingInput := ""
 	if len(args) >= 1 {
