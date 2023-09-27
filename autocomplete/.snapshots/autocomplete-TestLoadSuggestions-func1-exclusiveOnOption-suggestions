@@ -1,0 +1,12 @@
+([]string) (len=10) {
+  (string) (len=9) "--nobreak",
+  (string) (len=9) "--nocolor",
+  (string) (len=12) "--nofilename",
+  (string) (len=10) "--nofollow",
+  (string) (len=9) "--nogroup",
+  (string) (len=11) "--noheading",
+  (string) (len=8) "--nommap",
+  (string) (len=13) "--nomultiline",
+  (string) (len=11) "--norecurse",
+  (string) (len=11) "--nonumbers"
+}

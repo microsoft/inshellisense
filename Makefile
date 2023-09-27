@@ -12,3 +12,11 @@ clean:
 .PHONY: build
 build:
 	go build -o clac main.go
+
+.PHONY: snapshot
+snapshot:
+	UPDATE_SNAPSHOTS=true go test ./...
+
+.PHONY: test
+test:
+	go test ./...
