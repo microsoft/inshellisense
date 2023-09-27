@@ -6,12 +6,14 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"strings"
 
 	"github.com/adrg/xdg"
 )
 
 var (
-	SupportedShells = []string{"bash", "windows-powershell", "powershell"}
+	SupportedShells     = []string{"bash", "zsh", "windows-powershell", "powershell"}
+	SupportedShellsText = "[" + strings.Join(SupportedShells, ", ") + "]"
 )
 
 const (

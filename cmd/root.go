@@ -21,9 +21,10 @@ clac provides inshellisense for the command line to make developers
 more productive
 
 complete documentation is available at https://github.com/cpendery/clac`,
-		SilenceUsage: true,
-		Args:         cobra.ArbitraryArgs,
-		RunE:         rootExec,
+		SilenceUsage:      true,
+		Args:              cobra.ArbitraryArgs,
+		RunE:              rootExec,
+		CompletionOptions: cobra.CompletionOptions{HiddenDefaultCmd: true},
 	}
 	outputCmd     bool
 	enableLogging bool
@@ -31,7 +32,7 @@ complete documentation is available at https://github.com/cpendery/clac`,
 
 func init() {
 	rootCmd.Flags().BoolVarP(&outputCmd, "output-cmd", "o", false, "outputs the last cmd from a clac execution")
-	rootCmd.Flags().BoolVarP(&enableLogging, "logging", "l", false, "enable logging to the `clac.log` file")
+	rootCmd.Flags().BoolVarP(&enableLogging, "logging", "l", false, "enable logging to clac.log")
 }
 
 func rootExec(cmd *cobra.Command, args []string) error {
