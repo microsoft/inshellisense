@@ -4,20 +4,34 @@
 package autocomplete
 
 import (
+	"errors"
 	"io"
 	"os"
+	"path/filepath"
 
 	"log/slog"
 
-	"github.com/adrg/xdg"
+	"github.com/microsoft/clac/utils"
 )
 
-const (
-	cacheFilePath = "clac/clac.cache"
-)
+func cacheFile() (string, error) {
+	folder, err := utils.ClacFolder()
+	if err != nil {
+		return "", err
+	}
+	cacheFile := filepath.Join(folder, "clac.cache")
+	if _, err := os.Stat(cacheFile); errors.Is(err, os.ErrNotExist) {
+		f, err := os.Create(cacheFile)
+		if err != nil {
+			return "", err
+		}
+		defer f.Close()
+	}
+	return cacheFile, nil
+}
 
 func CacheResult(result string) {
-	path, err := xdg.CacheFile(cacheFilePath)
+	path, err := cacheFile()
 	if err != nil {
 		slog.Error("unable to create cache file", slog.String("error", err.Error()))
 		return
@@ -33,7 +47,7 @@ func CacheResult(result string) {
 }
 
 func ReadResult() string {
-	path, err := xdg.CacheFile(cacheFilePath)
+	path, err := cacheFile()
 	if err != nil {
 		slog.Error("unable to create cache file", slog.String("error", err.Error()))
 		return ""
@@ -52,7 +66,7 @@ func ReadResult() string {
 }
 
 func ClearResult() {
-	path, err := xdg.CacheFile(cacheFilePath)
+	path, err := cacheFile()
 	if err != nil {
 		slog.Error("failed to load cache file", slog.String("error", err.Error()))
 	}

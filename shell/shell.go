@@ -6,12 +6,13 @@ package shell
 import (
 	_ "embed"
 	"fmt"
+	"io"
 	"os"
-	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/adrg/xdg"
+	"github.com/microsoft/clac/utils"
 )
 
 var (
@@ -34,70 +35,81 @@ var powershellBindings []byte
 var zshBindings []byte
 
 func CreateBashBinding() error {
-	return createShBinding("key-bindings.bash", ".bashrc", bashBindings)
+	keyBindingFilename := "key-bindings.bash"
+	bindingsPath := fmt.Sprintf("~/.clac/%s", keyBindingFilename)
+	bindScript := fmt.Sprintf("[ -f %s ] && source %s", bindingsPath, bindingsPath)
+	return createBinding(keyBindingFilename, ".bashrc", bindScript, bashBindings)
 }
 
-func CreateZshBinding() error {
-	return createShBinding("key-bindings.zsh", ".zshrc", zshBindings)
-}
-
-func createShBinding(keyBindingFilename, rcFilename string, bindingData []byte) error {
-	if err := os.MkdirAll(path.Join(xdg.Home, clacHomeFolder), 0770); err != nil {
-		return fmt.Errorf("unable to create .clac folder: %w", err)
+func createBinding(keyBindingFilename, shellConfigFile, bindScript string, bindingData []byte) error {
+	clacFolderPath, err := utils.ClacFolder()
+	if err != nil {
+		return err
 	}
 
-	f, err := os.Create(path.Join(xdg.Home, clacHomeFolder, keyBindingFilename))
+	f, err := os.Create(filepath.Join(clacFolderPath, keyBindingFilename))
 	if err != nil {
 		return fmt.Errorf("unable to create keybindings file: %w", err)
 	}
+	defer f.Close()
 
-	if _, err = f.Write(bashBindings); err != nil {
+	if _, err = f.Write(bindingData); err != nil {
 		return fmt.Errorf("unable to write to keybindings file: %w", err)
 	}
 
-	f, err = os.OpenFile(path.Join(xdg.Home, rcFilename), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	homeDir, _ := os.UserHomeDir()
+	shellConfigPath := filepath.Join(homeDir, shellConfigFile)
+	if _, err := os.Stat(shellConfigPath); err == nil {
+		f, err = os.Open(shellConfigPath)
+		if err != nil {
+			return fmt.Errorf("unable to read shell config file: %w", err)
+		}
+		b, err := io.ReadAll(f)
+		if err != nil {
+			return fmt.Errorf("unable to read shell config file: %w", err)
+		}
+		if err := f.Close(); err != nil {
+			return fmt.Errorf("unable to close shell config file: %w", err)
+		}
+		if strings.Contains(string(b), bindScript) {
+			return nil
+		}
+	}
+
+	f, err = os.OpenFile(filepath.Join(homeDir, shellConfigFile), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
+		return fmt.Errorf("unable to append to shell config file: %w", err)
+	}
+	defer f.Close()
+
+	if _, err := fmt.Fprintf(f, "\n%s", bindScript); err != nil {
 		return fmt.Errorf("unable to append to rc file: %w", err)
 	}
-
-	bindingsPath := fmt.Sprintf("~/.clac/%s", keyBindingFilename)
-	if _, err := fmt.Fprintf(f, "\n[ -f %s ] && source %s", bindingsPath, bindingsPath); err != nil {
-		return fmt.Errorf("unable to append to rc file: %w", err)
-	}
-
-	return err
+	return nil
 }
 
 func CreateWindowsPowershellBinding() error {
-	homeDir, _ := os.UserHomeDir()
-	profilePath := path.Join(homeDir, "Documents", "WindowsPowershell")
-	return createPShellBinding(profilePath, "Microsoft.PowerShell_profile.ps1")
+	return createPShellBinding(filepath.Join("Documents", "WindowsPowershell", "Microsoft.PowerShell_profile.ps1"))
 }
 
 func CreatePowershellBinding() error {
-	homeDir, _ := os.UserHomeDir()
 	profilePath := ""
 	switch runtime.GOOS {
 	case "windows":
-		profilePath = path.Join(homeDir, "Documents", "Powershell")
+		profilePath = filepath.Join("Documents", "Powershell")
 	case "linux", "darwin":
-		profilePath = path.Join("~", ".config", "powershell")
+		profilePath = filepath.Join(".config", "powershell")
 	}
-	return createPShellBinding(profilePath, "Microsoft.PowerShell_profile.ps1")
+	return createPShellBinding(filepath.Join(profilePath, "Microsoft.PowerShell_profile.ps1"))
 }
 
-func createPShellBinding(profileLocation string, profileFile string) error {
-	if err := os.MkdirAll(profileLocation, 0600); err != nil {
-		return fmt.Errorf("unable to create powershell's profile directory: %w", err)
-	}
-	profilePath := path.Join(profileLocation, profileFile)
-	f, err := os.OpenFile(profilePath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+func createPShellBinding(profileFile string) error {
+	keyBindingFilename := "key-bindings.ps1"
+	clacFolderPath, err := utils.ClacFolder()
 	if err != nil {
-		return fmt.Errorf("unable to open/create powershell's profile file: %w", err)
+		return err
 	}
-
-	if _, err := f.Write(powershellBindings); err != nil {
-		return fmt.Errorf("unable to append keybindings to powershell's profile: %w", err)
-	}
-	return nil
+	bindingsPath := filepath.Join(clacFolderPath, keyBindingFilename)
+	bindScript := fmt.Sprintf("if(Test-Path '%s' -PathType Leaf){. %s}", bindingsPath, bindingsPath)
+	return createBinding(keyBindingFilename, profileFile, bindScript, powershellBindings)
 }
