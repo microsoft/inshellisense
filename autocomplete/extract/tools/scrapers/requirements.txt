@@ -1,0 +1,4 @@
+beautifulsoup4 >4.12, < 5.0
+aiohttp >3.8, < 4.0
+pydantic >2.4, < 3.0
+asyncio >3.4, < 4.0

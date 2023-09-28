@@ -7,3 +7,4 @@ clac
 .env*
 dist/
 t*.md
+__pycache__
