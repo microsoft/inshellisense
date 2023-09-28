@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package generators
 
 import (
@@ -5,8 +8,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/cpendery/clac/autocomplete/model"
 	"github.com/google/uuid"
+	"github.com/microsoft/clac/autocomplete/model"
 )
 
 var (

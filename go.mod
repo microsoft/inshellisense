@@ -1,4 +1,4 @@
-module github.com/cpendery/clac
+module github.com/microsoft/clac
 
 go 1.21.0
 

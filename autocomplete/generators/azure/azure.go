@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package azure
 
 import (
@@ -6,8 +9,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/cpendery/clac/autocomplete/model"
 	"github.com/google/uuid"
+	"github.com/microsoft/clac/autocomplete/model"
 )
 
 type azListKeyvaultsResponse struct {

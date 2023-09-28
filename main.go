@@ -1,7 +1,10 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package main
 
 import (
-	"github.com/cpendery/clac/cmd"
+	"github.com/microsoft/clac/cmd"
 )
 
 func main() {

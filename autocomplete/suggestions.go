@@ -1,12 +1,15 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package autocomplete
 
 import (
 	"sort"
 	"strings"
 
-	"github.com/cpendery/clac/autocomplete/generators"
-	"github.com/cpendery/clac/autocomplete/model"
 	"github.com/lithammer/fuzzysearch/fuzzy"
+	"github.com/microsoft/clac/autocomplete/generators"
+	"github.com/microsoft/clac/autocomplete/model"
 )
 
 type matchable interface {

@@ -1,11 +1,14 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package autocomplete
 
 import (
 	"log/slog"
 	"regexp"
 
-	"github.com/cpendery/clac/autocomplete/model"
-	"github.com/cpendery/clac/autocomplete/specs"
+	"github.com/microsoft/clac/autocomplete/model"
+	"github.com/microsoft/clac/autocomplete/specs"
 )
 
 var (

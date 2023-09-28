@@ -1,11 +1,14 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package git
 
 import (
 	"strings"
 
-	"github.com/cpendery/clac/autocomplete/generators"
-	"github.com/cpendery/clac/autocomplete/model"
 	"github.com/google/uuid"
+	"github.com/microsoft/clac/autocomplete/generators"
+	"github.com/microsoft/clac/autocomplete/model"
 )
 
 func CommitMessageGenerator() *model.Generator {

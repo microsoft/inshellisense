@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package cmd
 
 import (
@@ -6,8 +9,8 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/cpendery/clac/autocomplete"
-	"github.com/cpendery/clac/ui"
+	"github.com/microsoft/clac/autocomplete"
+	"github.com/microsoft/clac/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +23,7 @@ var (
 clac provides inshellisense for the command line to make developers
 more productive
 
-complete documentation is available at https://github.com/cpendery/clac`,
+complete documentation is available at https://github.com/microsoft/clac`,
 		SilenceUsage:      true,
 		Args:              cobra.ArbitraryArgs,
 		RunE:              rootExec,

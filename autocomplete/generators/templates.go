@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package generators
 
 import (
@@ -5,7 +8,7 @@ import (
 	"os"
 	"slices"
 
-	"github.com/cpendery/clac/autocomplete/model"
+	"github.com/microsoft/clac/autocomplete/model"
 )
 
 // * - filepaths: show folders and filepaths. Allow autoexecute on filepaths

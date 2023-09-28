@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package ui
 
 import (
@@ -8,10 +11,10 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/cpendery/clac/autocomplete"
-	"github.com/cpendery/clac/ui/suggestions"
-	"github.com/cpendery/clac/ui/theme"
-	"github.com/cpendery/clac/ui/utils"
+	"github.com/microsoft/clac/autocomplete"
+	"github.com/microsoft/clac/ui/suggestions"
+	"github.com/microsoft/clac/ui/theme"
+	"github.com/microsoft/clac/ui/utils"
 )
 
 type model struct {

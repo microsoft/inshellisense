@@ -1,6 +1,7 @@
 .PHONY: codegen
 codegen:
 	cd autocomplete/extract && npm test
+	python autocomplete/extract/tools/scrapers/azure.py 
 
 .PHONY: clean
 clean:

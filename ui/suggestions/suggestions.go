@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package suggestions
 
 import (
@@ -8,11 +11,11 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/cpendery/clac/autocomplete"
-	"github.com/cpendery/clac/ui/theme"
-	"github.com/cpendery/clac/ui/utils"
 	"github.com/google/uuid"
 	"github.com/mattn/go-runewidth"
+	"github.com/microsoft/clac/autocomplete"
+	"github.com/microsoft/clac/ui/theme"
+	"github.com/microsoft/clac/ui/utils"
 	"github.com/muesli/reflow/wordwrap"
 	"github.com/muesli/reflow/wrap"
 )

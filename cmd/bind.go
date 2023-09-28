@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package cmd
 
 import (
@@ -5,7 +8,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/cpendery/clac/shell"
+	"github.com/microsoft/clac/shell"
 	"github.com/spf13/cobra"
 )
 
