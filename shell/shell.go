@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	SupportedShells     = []string{"bash", "zsh", "windows-powershell", "powershell"}
+	SupportedShells     = []string{"bash", "windows-powershell", "powershell"}
 	SupportedShellsText = "[" + strings.Join(SupportedShells, ", ") + "]"
 )
 

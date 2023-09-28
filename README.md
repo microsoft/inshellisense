@@ -11,10 +11,9 @@ provide support for 600+ command line tools.
 
 | Shells             | IDEs               | OS      |
 | ------------------ | ------------------ | ------- |
-| zsh                | Visual Studio Code | Mac     |
-| bash               | JetBrains Suite    | Windows |
-| pwsh (Powershell)  | Android Studio     | Linux   |
-| Windows Powershell |                    |         |
+| bash               | Visual Studio Code | Mac     |
+| Windows Powershell |                    | Windows |
+| pwsh (Powershell)  |                    | Linux   |
 
 ## Getting Started
 
@@ -31,14 +30,6 @@ go install github.com/microsoft/clac@latest
 After completing the installation, bind `clac` to the terminal you'd like to use
 it with via the `clac bind [shell]` command. This will create a custom keybinding
 for `CTRL+a` to trigger the autocomplete session & execution.
-
-## Inspirations
-
-- [syft](https://github.com/anchore/syft) & [grype](https://github.com/anchore/grype)
-- [fig](https://github.com/withfig/autocomplete)
-- [warp](https://www.warp.dev/)
-- [fzf](https://github.com/junegunn/fzf)
-- [bubbletea](https://github.com/charmbracelet/bubbletea)
 
 ## Contributing
 
