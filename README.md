@@ -4,7 +4,7 @@ clac provides IDE style autocomplete aka `inshellisense` in every shell
 
 <p align="center"><img alt="demo of clac working" src="https://github.com/microsoft/clac/assets/35637443/544f81dc-dada-40b5-bb1f-a736b4e58e73" height="300px"/></p>
 
-clac is built on Fig's [autocomplete specs](https://github.com/withfig/autocomplete) which
+clac is a terminal native implementation of fig's [autocomplete specs](https://github.com/withfig/autocomplete) which
 provide support for 600+ command line tools.
 
 ## Supported Integrations
@@ -30,6 +30,11 @@ go install github.com/microsoft/clac@latest
 After completing the installation, bind `clac` to the terminal you'd like to use
 it with via the `clac bind [shell]` command. This will create a custom keybinding
 for `CTRL+a` to trigger the autocomplete session & execution.
+
+### AI Autocomplete
+
+Some generators use Open AI's api to generate intelligent solutions to your commands.
+To use this feature, you'll need to set the `CLAC_AI_TOKEN` environment variable to your Open AI api key.
 
 ## Contributing
 
