@@ -132,5 +132,5 @@ def gen_golang_file(subcommand: Subcommand, scraper_filename: str) -> str:
             )
 
             func init() {{
-                Specs["name"] = {__gen_subcommand(subcommand)}
+                Specs["{subcommand.name}"] = {__gen_subcommand(subcommand)}
             }}"""

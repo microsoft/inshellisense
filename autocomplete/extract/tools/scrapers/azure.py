@@ -12,6 +12,8 @@ from model import Arg, BaseCommand, Option, Subcommand, gen_golang_file
 from pydantic import HttpUrl
 from tqdm import tqdm
 
+DISABLE_EXTENSIONS = True
+
 
 async def get(url: HttpUrl) -> str:
     async with ClientSession() as session:
@@ -34,6 +36,11 @@ async def load_root_commands() -> list[BaseCommand]:
     commands = []
     for row in command_table_body.find_all("tr"):
         columns = row.find_all("td")
+
+        is_extension = "extension" == columns[2].text.lower().strip()
+        if is_extension and DISABLE_EXTENSIONS:
+            continue
+
         command = clean_command_name(columns[0])
         description = columns[1].text.strip()
         command_link = columns[0].find("a").get("href")
@@ -68,6 +75,11 @@ async def load_subcommand_group_urls(url: HttpUrl) -> list[str]:
     for row in command_table_body.find_all("tr"):
         columns = row.find_all("td")
         command_link = columns[0].find("a").get("href")
+
+        is_extension = "extension" == columns[2].text.lower().strip()
+        if is_extension and DISABLE_EXTENSIONS:
+            continue
+
         trimmed_url = urldefrag(
             f"{base_url}{command_link}",
         ).url
@@ -216,10 +228,11 @@ def _to_subcommand(name: str, cmd_struct: dict | Subcommand | str | None) -> Sub
 
 
 async def load_subcommand(base_command: BaseCommand, counter) -> Subcommand:
+    base_command_name = base_command.command.strip().split(" ")[-1]
     if base_command.command_link is None:
         counter.update()
         return Subcommand(
-            name=base_command.command,
+            name=base_command_name,
             description=base_command.description,
             subcommands=[],
         )
@@ -276,7 +289,7 @@ async def load_subcommand(base_command: BaseCommand, counter) -> Subcommand:
 
     counter.update()
     return Subcommand(
-        name=base_command.command,
+        name=base_command_name,
         description=base_command.description,
         subcommands=[
             _to_subcommand(key, cmd_dict[key])
