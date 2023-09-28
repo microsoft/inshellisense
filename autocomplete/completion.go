@@ -189,6 +189,10 @@ func handleSubcommand(tokens []commandToken, spec model.Subcommand, persistentOp
 		return handleSubcommand(tokens[1:], *subcommand, persistentOptions, false, false, getPersistentTokens(acceptedTokens))
 	}
 
+	if len(spec.Args) == 0 { // not subcommand or option & no args exist
+		return
+	}
+
 	return handleArg(tokens, spec.Args, spec, persistentOptions, acceptedTokens, false, false)
 }
 

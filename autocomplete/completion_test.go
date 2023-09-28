@@ -28,7 +28,7 @@ func TestLoadSuggestions(t *testing.T) {
 		{Name: "providedArgDescription", Cmd: "act completion bash -a "},
 		{Name: "completedOptionWithArg", Cmd: "act completion bash -a 'actor' "},
 		{Name: "command", Cmd: "sudo git sta", Skip: true}, // TODO: fix skipped test
-		{Name: "nestedNonCommands", Cmd: "az az ", Skip: true}, // TODO: fix skipped test
+		{Name: "nestedNonCommands", Cmd: "az az "},
 	}
 	for _, test := range tests {
 		test := test
