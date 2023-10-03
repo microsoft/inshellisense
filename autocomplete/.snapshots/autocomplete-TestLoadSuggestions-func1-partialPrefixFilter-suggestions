@@ -1,5 +1,0 @@
-([]string) (len=3) {
-  (string) (len=5) "stage",
-  (string) (len=6) "status",
-  (string) (len=5) "stash"
-}
