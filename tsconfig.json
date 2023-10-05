@@ -1,0 +1,9 @@
+{
+    "extends": "@tsconfig/node18/tsconfig.json",
+    "include": ["src/**/*"],
+    "compilerOptions": {
+        "jsx": "react",
+        "outDir": "./build",
+        "types": ["@withfig/autocomplete-types"]
+    }
+  }
