@@ -7,10 +7,6 @@ const DescriptionWidth = 30;
 const BorderWidth = 2;
 const ActiveSuggestionBackgroundColor = "#7D56F4";
 
-const rightPad = (str: string, len: number) => {
-  return str + " ".repeat(len - str.length);
-};
-
 function Description({ description }: { description: string }) {
   if (description.length !== 0) {
     return (
@@ -46,7 +42,7 @@ function SuggestionList({
         return (
           <Box key={idx}>
             <Text backgroundColor={bgColor} wrap="truncate-end">
-              {rightPad(name, SuggestionWidth - BorderWidth)}
+              {name.padEnd(SuggestionWidth - BorderWidth, " ")}
             </Text>
           </Box>
         );
