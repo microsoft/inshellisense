@@ -1,9 +1,13 @@
 {
-    "extends": "@tsconfig/node18/tsconfig.json",
-    "include": ["src/**/*"],
-    "compilerOptions": {
-        "jsx": "react",
-        "outDir": "./build",
-        "types": ["@withfig/autocomplete-types"]
+  "extends": "@tsconfig/node18/tsconfig.json",
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "build", "src/**/*.test.ts", "src/**/*.spec.ts"],
+  "compilerOptions": {
+    "jsx": "react",
+    "outDir": "./build",
+    "types": ["@withfig/autocomplete-types", "jest"],
+    "paths": {
+      "@/*": ["./src/*"]
     }
   }
+}

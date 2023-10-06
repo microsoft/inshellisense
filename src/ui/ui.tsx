@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Text,
   Box,
@@ -7,10 +7,10 @@ import {
   measureElement,
   DOMElement,
 } from "ink";
-import { getSuggestions } from "../runtime/runtime.js";
+import wrapAnsi from "wrap-ansi";
+import { getSuggestions } from "@/runtime/runtime.js";
 import Cursor from "./cursor.js";
 import Suggestions from "./suggestions.js";
-import wrapAnsi from "wrap-ansi";
 
 const Prompt = "> ";
 

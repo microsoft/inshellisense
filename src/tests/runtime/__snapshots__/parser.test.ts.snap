@@ -1,0 +1,321 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`parseCommand cmd  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+]
+`;
+
+exports[`parseCommand cmd "value'  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": false,
+    "isOption": false,
+    "token": ""value' ",
+  },
+]
+`;
+
+exports[`parseCommand cmd "value'\\"\\""  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": ""value'\\"\\""",
+  },
+]
+`;
+
+exports[`parseCommand cmd 'value'  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "'value'",
+  },
+]
+`;
+
+exports[`parseCommand cmd --flag value 1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": true,
+    "isOption": true,
+    "token": "--flag",
+  },
+  {
+    "complete": false,
+    "isOption": false,
+    "token": "value",
+  },
+]
+`;
+
+exports[`parseCommand cmd --flag="value"  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": true,
+    "isOption": true,
+    "token": "--flag",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": ""value"",
+  },
+]
+`;
+
+exports[`parseCommand cmd --flag='value'  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": true,
+    "isOption": true,
+    "token": "--flag",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "'value'",
+  },
+]
+`;
+
+exports[`parseCommand cmd --flag=value 1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": true,
+    "isOption": true,
+    "token": "--flag",
+  },
+  {
+    "complete": false,
+    "isOption": false,
+    "token": "value",
+  },
+]
+`;
+
+exports[`parseCommand cmd -f  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": true,
+    "isOption": true,
+    "token": "-f",
+  },
+]
+`;
+
+exports[`parseCommand cmd -f 'value'  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": true,
+    "isOption": true,
+    "token": "-f",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "'value'",
+  },
+]
+`;
+
+exports[`parseCommand cmd -f 1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": false,
+    "isOption": false,
+    "token": "-f",
+  },
+]
+`;
+
+exports[`parseCommand cmd -f 2`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": false,
+    "isOption": false,
+    "token": "-f",
+  },
+]
+`;
+
+exports[`parseCommand cmd -f value  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": true,
+    "isOption": true,
+    "token": "-f",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "value",
+  },
+]
+`;
+
+exports[`parseCommand cmd -f= 1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": true,
+    "isOption": true,
+    "token": "-f",
+  },
+]
+`;
+
+exports[`parseCommand cmd -f="value"  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": true,
+    "isOption": true,
+    "token": "-f",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": ""value"",
+  },
+]
+`;
+
+exports[`parseCommand cmd -f='val 1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": true,
+    "isOption": true,
+    "token": "-f",
+  },
+  {
+    "complete": false,
+    "isOption": false,
+    "token": "'val",
+  },
+]
+`;
+
+exports[`parseCommand cmd -f=value  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": true,
+    "isOption": true,
+    "token": "-f",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "value",
+  },
+]
+`;
+
+exports[`parseCommand cmd 1`] = `
+[
+  {
+    "complete": false,
+    "isOption": false,
+    "token": "cmd",
+  },
+]
+`;
+
+exports[`parseCommand cmd value  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "value",
+  },
+]
+`;
