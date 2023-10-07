@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Text, useInput, Box, measureElement, DOMElement } from "ink";
 import { Suggestion } from "../runtime/model.js";
 
@@ -61,14 +61,16 @@ export default function Suggestions({
 
   // TODO: tweak this logic to be more accurate as it gives bad offsets on wrap
   const wrappedPadding = leftPadding % windowWidth;
-
   const maxPadding = activeDescription.length !== 0 ? windowWidth - SuggestionWidth - DescriptionWidth : windowWidth - SuggestionWidth;
-
   const swapDescription = wrappedPadding > maxPadding;
-
   const swappedPadding = swapDescription ? Math.max(wrappedPadding - DescriptionWidth, 0) : wrappedPadding;
-
   const clampedLeftPadding = Math.min(Math.min(wrappedPadding, swappedPadding), maxPadding);
+
+  useEffect(() => {
+    if (suggestions.length <= activeSuggestionIndex) {
+      setActiveSuggestionIndex(Math.max(suggestions.length - 1, 0));
+    }
+  }, [suggestions]);
 
   useInput((_, key) => {
     if (key.upArrow) {
