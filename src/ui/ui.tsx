@@ -6,8 +6,6 @@ import { Suggestion } from "../runtime/model.js";
 import Cursor from "./cursor.js";
 import Suggestions from "./suggestions.js";
 
-// TODO: fix issue where we are not rendering some rows of the suggestion UI
-
 const Prompt = "> ";
 
 function UI() {

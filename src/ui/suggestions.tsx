@@ -59,7 +59,6 @@ export default function Suggestions({
   const activePagedSuggestionIndex = activeSuggestionIndex % MaxSuggestions;
   const activeDescription = pagedSuggestions.at(activePagedSuggestionIndex)?.description || "";
 
-  // TODO: tweak this logic to be more accurate as it gives bad offsets on wrap
   const wrappedPadding = leftPadding % windowWidth;
   const maxPadding = activeDescription.length !== 0 ? windowWidth - SuggestionWidth - DescriptionWidth : windowWidth - SuggestionWidth;
   const swapDescription = wrappedPadding > maxPadding;
