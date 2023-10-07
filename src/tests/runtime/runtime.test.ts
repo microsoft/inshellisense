@@ -14,6 +14,7 @@ const testData = [
   { name: "completedOptionWithArg", command: "act completion bash -a 'actor' " },
   { name: "command", command: "sudo git sta" },
   { name: "nestedNonCommands", command: "az az ", skip: true }, // TODO: fix skipped test
+  { name: "loadSpec", command: "aws acm add" },
 ];
 
 describe(`parseCommand`, () => {

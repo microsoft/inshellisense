@@ -1,15 +1,5 @@
-import { exec } from "node:child_process";
 import { runTemplates } from "./template.js";
-
-const buildExecuteShellCommand =
-  (timeout: number) =>
-  async (command: string, cwd?: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      exec(command, { timeout }, (_, stdout, stderr) => {
-        resolve(stdout || stderr);
-      });
-    });
-  };
+import { buildExecuteShellCommand } from "./utils.js";
 
 const getGeneratorContext = (): Fig.GeneratorContext => {
   return {

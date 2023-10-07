@@ -5,6 +5,7 @@ import speclist, {
 import { parseCommand, CommandToken } from "./parser.js";
 import { getArgDrivenRecommendation, getSubcommandDrivenRecommendation } from "./suggestion.js";
 import { SuggestionBlob } from "./model.js";
+import { buildExecuteShellCommand } from "./utils.js";
 
 const specSet: any = {};
 (speclist as string[]).forEach((s) => {
@@ -33,8 +34,19 @@ const loadSpec = async (cmd: CommandToken[]): Promise<Fig.Spec | undefined> => {
     return loadedSpecs[rootToken.token];
   }
   if (specSet[rootToken.token]) {
-    return (await import(specSet[rootToken.token])).default;
+    const spec = (await import(specSet[rootToken.token])).default;
+    loadedSpecs[rootToken.token] = spec;
+    return spec;
   }
+};
+
+// this load spec function should only be used for `loadSpec` on the fly as it is cacheless
+const lazyLoadSpec = async (key: string): Promise<Fig.Spec | undefined> => {
+  return (await import(`@withfig/autocomplete/build/${key}.js`)).default;
+};
+
+const lazyLoadSpecLocation = async (location: Fig.SpecLocation): Promise<Fig.Spec | undefined> => {
+  return; //TODO: implement spec location loading
 };
 
 export const getSuggestions = async (cmd: string): Promise<SuggestionBlob | undefined> => {
@@ -62,7 +74,8 @@ const getPersistentOptions = (persistentOptions: Fig.Option[], options?: Fig.Opt
 };
 
 // TODO: handle subcommands that are versioned
-const getSubcommand = (spec: Fig.Spec): Fig.Subcommand | undefined => {
+const getSubcommand = (spec?: Fig.Spec): Fig.Subcommand | undefined => {
+  if (spec == null) return;
   if (typeof spec === "function") {
     const potentialSubcommand = spec();
     if (potentialSubcommand.hasOwnProperty("name")) {
@@ -73,17 +86,45 @@ const getSubcommand = (spec: Fig.Spec): Fig.Subcommand | undefined => {
   return spec;
 };
 
-// TODO: implement loadspec
-const genSubcommand = (command: string, parentCommand: Fig.Subcommand): Fig.Subcommand | undefined => {
-  switch (typeof parentCommand.loadSpec) {
+const executeShellCommand = buildExecuteShellCommand(5000);
+
+const genSubcommand = async (command: string, parentCommand: Fig.Subcommand): Promise<Fig.Subcommand | undefined> => {
+  const subcommandIdx = parentCommand.subcommands?.findIndex((s) => s.name === command);
+  if (subcommandIdx == null) return;
+  const subcommand = parentCommand.subcommands?.at(subcommandIdx);
+  if (subcommand == null) return;
+
+  // this pulls in the spec from the load spec and overwrites the subcommand in the parent with the loaded spec.
+  // then it returns the subcommand and clears the loadSpec field so that it doesn't get called again
+  switch (typeof subcommand.loadSpec) {
     case "function":
-
+      const partSpec = await subcommand.loadSpec(command, executeShellCommand);
+      if (partSpec instanceof Array) {
+        const locationSpecs = (await Promise.all(partSpec.map((s) => lazyLoadSpecLocation(s)))).filter((s) => s != null) as Fig.Spec[];
+        const subcommands = locationSpecs.map((s) => getSubcommand(s)).filter((s) => s != null) as Fig.Subcommand[];
+        (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = {
+          ...subcommand,
+          ...(subcommands.find((s) => s?.name == command) ?? []),
+          loadSpec: undefined,
+        };
+        return (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx];
+      } else if (partSpec.hasOwnProperty("type")) {
+        const locationSingleSpec = await lazyLoadSpecLocation(partSpec as Fig.SpecLocation);
+        (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = { ...subcommand, ...(getSubcommand(locationSingleSpec) ?? []), loadSpec: undefined };
+        return (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx];
+      } else {
+        (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = { ...subcommand, ...partSpec, loadSpec: undefined };
+        return (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx];
+      }
     case "string":
-
+      const spec = await lazyLoadSpec(subcommand.loadSpec as string);
+      (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = { ...subcommand, ...(getSubcommand(spec) ?? []), loadSpec: undefined };
+      return (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx];
     case "object":
-
+      (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = { ...subcommand, ...(subcommand.loadSpec ?? {}), loadSpec: undefined };
+      return (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx];
     case "undefined":
-      return parentCommand.subcommands?.find((s) => s.name === command);
+      return subcommand;
   }
 };
 
@@ -145,7 +186,7 @@ const runArg = async (
       return;
     }
 
-    const nextSubcommand = genSubcommand(activeToken.token, subcommand);
+    const nextSubcommand = await genSubcommand(activeToken.token, subcommand);
     if (nextSubcommand != null) {
       return runSubcommand(tokens.slice(1), nextSubcommand, persistentOptions, getPersistentTokens(acceptedTokens.concat(activeToken)));
     }
@@ -193,7 +234,7 @@ const runSubcommand = async (
     return;
   }
 
-  const nextSubcommand = genSubcommand(activeToken.token, subcommand);
+  const nextSubcommand = await genSubcommand(activeToken.token, subcommand);
   if (nextSubcommand != null) {
     return runSubcommand(
       tokens.slice(1),
