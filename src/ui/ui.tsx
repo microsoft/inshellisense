@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Text, Box, useInput, render as inkRender, measureElement, DOMElement } from "ink";
+import { Text, Box, render as inkRender, measureElement, DOMElement, useApp } from "ink";
 import wrapAnsi from "wrap-ansi";
+
 import { getSuggestions } from "../runtime/runtime.js";
 import { Suggestion } from "../runtime/model.js";
-import Cursor from "./cursor.js";
 import Suggestions from "./suggestions.js";
-
+import Input from "./input.js";
 const Prompt = "> ";
 
+// TODO: support tab completion
 function UI() {
   const [command, setCommand] = useState("");
   const [activeSuggestion, setActiveSuggestion] = useState<Suggestion>();
@@ -28,23 +29,11 @@ function UI() {
     });
   }, [command]);
 
-  useInput((input, key) => {
-    if (key.backspace) {
-      setCommand([...command].slice(0, -1).join(""));
-    } else {
-      setCommand(command + input);
-    }
-  });
-
   return (
     <Box flexDirection="column" ref={measureRef}>
       <Box>
         <Text>
-          <Text>
-            {Prompt}
-            {command}
-          </Text>
-          <Cursor />
+          <Input value={command} setValue={setCommand} prompt={Prompt} />
         </Text>
       </Box>
       <Suggestions leftPadding={leftPadding} setActiveSuggestion={setActiveSuggestion} suggestions={suggestions} />
