@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { Text, useInput, Box, measureElement, DOMElement } from "ink";
+import { Suggestion } from "../runtime/model.js";
 
 const MaxSuggestions = 5;
 const SuggestionWidth = 40;
@@ -19,34 +20,25 @@ function Description({ description }: { description: string }) {
   }
 }
 
-function SuggestionList({
-  suggestions,
-  activeSuggestionIdx,
-}: {
-  suggestions: Fig.Suggestion[];
-  activeSuggestionIdx: number;
-}) {
+function SuggestionList({ suggestions, activeSuggestionIdx }: { suggestions: Suggestion[]; activeSuggestionIdx: number }) {
   return (
-    <Box borderStyle="single" width={SuggestionWidth} flexDirection="column">
-      {suggestions.map((suggestion, idx) => {
-        const bgColor =
-          idx === activeSuggestionIdx
-            ? ActiveSuggestionBackgroundColor
-            : undefined;
+    <Box flexDirection="column">
+      <Box borderStyle="single" width={SuggestionWidth} flexDirection="column">
+        {suggestions.map((suggestion, idx) => {
+          const bgColor = idx === activeSuggestionIdx ? ActiveSuggestionBackgroundColor : undefined;
 
-        const rawName = suggestion.displayName ?? (suggestion.name || "");
-        const name =
-          typeof rawName === "string" ? rawName : rawName.at(0) || "";
-        if (name.length === 0) return <></>;
+          const name = suggestion.name;
+          if (name.length === 0) return <></>;
 
-        return (
-          <Box key={idx}>
-            <Text backgroundColor={bgColor} wrap="truncate-end">
-              {name.padEnd(SuggestionWidth - BorderWidth, " ")}
-            </Text>
-          </Box>
-        );
-      })}
+          return (
+            <Box key={idx}>
+              <Text backgroundColor={bgColor} wrap="truncate-end">
+                {name.padEnd(SuggestionWidth - BorderWidth, " ")}
+              </Text>
+            </Box>
+          );
+        })}
+      </Box>
     </Box>
   );
 }
@@ -57,39 +49,27 @@ export default function Suggestions({
   suggestions,
 }: {
   leftPadding: number;
-  setActiveSuggestion: (_: Fig.Suggestion) => void;
-  suggestions: Fig.Suggestion[];
+  setActiveSuggestion: (_: Suggestion) => void;
+  suggestions: Suggestion[];
 }) {
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   const [windowWidth, setWindowWidth] = useState(500);
 
   const page = Math.floor(activeSuggestionIndex / MaxSuggestions) + 1;
-  const pagedSuggestions = suggestions.filter(
-    (_, idx) =>
-      idx < page * MaxSuggestions && idx >= (page - 1) * MaxSuggestions
-  );
+  const pagedSuggestions = suggestions.filter((_, idx) => idx < page * MaxSuggestions && idx >= (page - 1) * MaxSuggestions);
   const activePagedSuggestionIndex = activeSuggestionIndex % MaxSuggestions;
-  const activeDescription =
-    pagedSuggestions.at(activePagedSuggestionIndex)?.description || "";
+  const activeDescription = pagedSuggestions.at(activePagedSuggestionIndex)?.description || "";
 
   // TODO: tweak this logic to be more accurate as it gives bad offsets on wrap
   const wrappedPadding = leftPadding % windowWidth;
 
-  const maxPadding =
-    activeDescription.length !== 0
-      ? windowWidth - SuggestionWidth - DescriptionWidth
-      : windowWidth - SuggestionWidth;
+  const maxPadding = activeDescription.length !== 0 ? windowWidth - SuggestionWidth - DescriptionWidth : windowWidth - SuggestionWidth;
 
   const swapDescription = wrappedPadding > maxPadding;
 
-  const swappedPadding = swapDescription
-    ? Math.max(wrappedPadding - DescriptionWidth, 0)
-    : wrappedPadding;
+  const swappedPadding = swapDescription ? Math.max(wrappedPadding - DescriptionWidth, 0) : wrappedPadding;
 
-  const clampedLeftPadding = Math.min(
-    Math.min(wrappedPadding, swappedPadding),
-    maxPadding
-  );
+  const clampedLeftPadding = Math.min(Math.min(wrappedPadding, swappedPadding), maxPadding);
 
   useInput((_, key) => {
     if (key.upArrow) {
@@ -97,9 +77,7 @@ export default function Suggestions({
       setActiveSuggestion(suggestions[activeSuggestionIndex]);
     }
     if (key.downArrow) {
-      setActiveSuggestionIndex(
-        Math.min(activeSuggestionIndex + 1, suggestions.length - 1)
-      );
+      setActiveSuggestionIndex(Math.min(activeSuggestionIndex + 1, suggestions.length - 1));
       setActiveSuggestion(suggestions[activeSuggestionIndex]);
     }
   });
@@ -119,17 +97,11 @@ export default function Suggestions({
         {swapDescription ? (
           <>
             <Description description={activeDescription} />
-            <SuggestionList
-              suggestions={pagedSuggestions}
-              activeSuggestionIdx={activePagedSuggestionIndex}
-            />
+            <SuggestionList suggestions={pagedSuggestions} activeSuggestionIdx={activePagedSuggestionIndex} />
           </>
         ) : (
           <>
-            <SuggestionList
-              suggestions={pagedSuggestions}
-              activeSuggestionIdx={activePagedSuggestionIndex}
-            />
+            <SuggestionList suggestions={pagedSuggestions} activeSuggestionIdx={activePagedSuggestionIndex} />
             <Description description={activeDescription} />
           </>
         )}

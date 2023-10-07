@@ -3,3 +3,8 @@ export type Suggestion = {
   description?: string;
   icon: string;
 };
+
+export type SuggestionBlob = {
+  suggestions: Suggestion[];
+  argumentDescription?: string;
+};

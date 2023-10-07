@@ -5,9 +5,6 @@
   "compilerOptions": {
     "jsx": "react",
     "outDir": "./build",
-    "types": ["@withfig/autocomplete-types", "jest"],
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "types": ["@withfig/autocomplete-types", "jest"]
   }
 }

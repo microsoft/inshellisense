@@ -1,23 +1,19 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  Text,
-  Box,
-  useInput,
-  render as inkRender,
-  measureElement,
-  DOMElement,
-} from "ink";
+import { Text, Box, useInput, render as inkRender, measureElement, DOMElement } from "ink";
 import wrapAnsi from "wrap-ansi";
-import { getSuggestions } from "@/runtime/runtime.js";
+import { getSuggestions } from "../runtime/runtime.js";
+import { Suggestion } from "../runtime/model.js";
 import Cursor from "./cursor.js";
 import Suggestions from "./suggestions.js";
+
+// TODO: fix issue where we are not rendering some rows of the suggestion UI
 
 const Prompt = "> ";
 
 function UI() {
   const [command, setCommand] = useState("");
-  const [activeSuggestion, setActiveSuggestion] = useState<Fig.Suggestion>();
-  const [suggestions, setSuggestions] = useState<Fig.Suggestion[]>([]);
+  const [activeSuggestion, setActiveSuggestion] = useState<Suggestion>();
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [windowWidth, setWindowWidth] = useState(500);
   const leftPadding = getLeftPadding(windowWidth, command);
 
@@ -29,7 +25,9 @@ function UI() {
   }, []);
 
   useEffect(() => {
-    setSuggestions(getSuggestions(command));
+    getSuggestions(command).then((suggestions) => {
+      setSuggestions(suggestions?.suggestions ?? []);
+    });
   }, [command]);
 
   useInput((input, key) => {
@@ -51,11 +49,7 @@ function UI() {
           <Cursor />
         </Text>
       </Box>
-      <Suggestions
-        leftPadding={leftPadding}
-        setActiveSuggestion={setActiveSuggestion}
-        suggestions={suggestions}
-      />
+      <Suggestions leftPadding={leftPadding} setActiveSuggestion={setActiveSuggestion} suggestions={suggestions} />
     </Box>
   );
 }
@@ -71,9 +65,5 @@ function getLeftPadding(windowWidth: number, command: string) {
     hard: true,
   });
   const lines = wrappedText.split("\n");
-  return (
-    (lines.length - 1) * windowWidth +
-    lines[lines.length - 1].length +
-    Prompt.length
-  );
+  return (lines.length - 1) * windowWidth + lines[lines.length - 1].length + Prompt.length;
 }

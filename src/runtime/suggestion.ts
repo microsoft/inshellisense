@@ -1,7 +1,7 @@
 import { CommandToken } from "./parser.js";
 import { runGenerator } from "./generator.js";
 import { runTemplates } from "./template.js";
-import { Suggestion } from "./model.js";
+import { Suggestion, SuggestionBlob } from "./model.js";
 
 // TODO: support other suggestion attributes
 enum SuggestionIcons {
@@ -88,11 +88,6 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
         .filter((s) => s != null) as Suggestion[];
   }
 }
-
-export type SuggestionBlob = {
-  suggestions: Suggestion[];
-  argumentDescription?: string;
-};
 
 type FilterStrategy = "fuzzy" | "prefix" | "default";
 

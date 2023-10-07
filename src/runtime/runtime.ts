@@ -3,7 +3,8 @@ import speclist, {
   // @ts-ignore
 } from "@withfig/autocomplete/build/index.js";
 import { parseCommand, CommandToken } from "./parser.js";
-import { SuggestionBlob, getArgDrivenRecommendation, getSubcommandDrivenRecommendation } from "./suggestion.js";
+import { getArgDrivenRecommendation, getSubcommandDrivenRecommendation } from "./suggestion.js";
+import { SuggestionBlob } from "./model.js";
 
 const specSet: any = {};
 (speclist as string[]).forEach((s) => {
