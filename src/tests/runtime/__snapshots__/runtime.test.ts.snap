@@ -17,6 +17,37 @@ exports[`parseCommand alreadyUsedOption 1`] = `
 
 exports[`parseCommand alreadyUsedSuggestion 1`] = `undefined`;
 
+exports[`parseCommand command 1`] = `
+{
+  "suggestions": [
+    {
+      "allNames": [
+        "stage",
+      ],
+      "description": "Add file contents to the staging area",
+      "icon": "📦",
+      "name": "stage",
+    },
+    {
+      "allNames": [
+        "status",
+      ],
+      "description": "Show the working tree status",
+      "icon": "📦",
+      "name": "status",
+    },
+    {
+      "allNames": [
+        "stash",
+      ],
+      "description": "Temporarily stores all the modified tracked files",
+      "icon": "📦",
+      "name": "stash",
+    },
+  ],
+}
+`;
+
 exports[`parseCommand completePrefixFilter 1`] = `
 {
   "suggestions": [

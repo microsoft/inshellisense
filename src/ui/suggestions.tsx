@@ -24,20 +24,19 @@ function SuggestionList({ suggestions, activeSuggestionIdx }: { suggestions: Sug
   return (
     <Box flexDirection="column">
       <Box borderStyle="single" width={SuggestionWidth} flexDirection="column">
-        {suggestions.map((suggestion, idx) => {
-          const bgColor = idx === activeSuggestionIdx ? ActiveSuggestionBackgroundColor : undefined;
+        {suggestions
+          .map((suggestion, idx) => {
+            const bgColor = idx === activeSuggestionIdx ? ActiveSuggestionBackgroundColor : undefined;
 
-          const name = suggestion.name;
-          if (name.length === 0) return <></>;
-
-          return (
-            <Box key={idx}>
-              <Text backgroundColor={bgColor} wrap="truncate-end">
-                {name.padEnd(SuggestionWidth - BorderWidth, " ")}
-              </Text>
-            </Box>
-          );
-        })}
+            return (
+              <Box key={idx}>
+                <Text backgroundColor={bgColor} wrap="truncate-end">
+                  {suggestion.name.padEnd(SuggestionWidth - BorderWidth, " ")}
+                </Text>
+              </Box>
+            );
+          })
+          .filter((node) => node !== undefined)}
       </Box>
     </Box>
   );

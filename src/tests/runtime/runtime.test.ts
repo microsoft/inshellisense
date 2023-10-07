@@ -12,7 +12,7 @@ const testData = [
   { name: "noOptionsSuggestedAfterVariadicArg", command: "ls item -" },
   { name: "providedArgDescription", command: "act completion bash -a " },
   { name: "completedOptionWithArg", command: "act completion bash -a 'actor' " },
-  { name: "command", command: "sudo git sta", skip: true }, // TODO: fix skipped test
+  { name: "command", command: "sudo git sta" },
   { name: "nestedNonCommands", command: "az az ", skip: true }, // TODO: fix skipped test
 ];
 

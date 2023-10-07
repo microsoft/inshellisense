@@ -155,12 +155,14 @@ const runArg = async (
   if (activeArg.isVariadic) {
     return runArg(tokens.slice(1), args, subcommand, persistentOptions, acceptedTokens.concat(activeToken), fromOption, true);
   } else if (activeArg.isCommand) {
-    if (tokens.length <= 1) {
+    if (tokens.length <= 0) {
       return;
     }
-    const activeCmd = tokens[1];
-    // TODO: handle subcommands that isCommands
-    return;
+    const spec = await loadSpec(tokens);
+    if (spec == null) return;
+    const subcommand = getSubcommand(spec);
+    if (subcommand == null) return;
+    return runSubcommand(tokens.slice(1), subcommand);
   }
   return runArg(tokens.slice(1), args.slice(1), subcommand, persistentOptions, acceptedTokens.concat(activeToken), fromOption, false);
 };

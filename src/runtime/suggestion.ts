@@ -3,7 +3,6 @@ import { runGenerator } from "./generator.js";
 import { runTemplates } from "./template.js";
 import { Suggestion, SuggestionBlob } from "./model.js";
 
-// TODO: support other suggestion attributes
 enum SuggestionIcons {
   File = "📄",
   Folder = "📁",
