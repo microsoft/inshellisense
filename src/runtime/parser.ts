@@ -1,7 +1,8 @@
-type CommandToken = {
+export type CommandToken = {
   token: string;
   complete: boolean;
   isOption: boolean;
+  isPersistent?: boolean;
 };
 
 const cmdDelim = /(\|\|)|(&&)|(;)/;
@@ -9,10 +10,10 @@ const spaceRegex = /\s/;
 
 export const parseCommand = (command: string): CommandToken[] => {
   const lastCommand = command.split(cmdDelim).at(-1)?.trimStart();
-  return lastCommand ? parse(lastCommand) : [];
+  return lastCommand ? lex(lastCommand) : [];
 };
 
-const parse = (command: string): CommandToken[] => {
+const lex = (command: string): CommandToken[] => {
   const tokens: CommandToken[] = [];
   let [readingQuotedString, readingFlag, readingCmd] = [false, false, false];
   let readingIdx = 0;

@@ -1,4 +1,4 @@
-import { parseCommand } from "../../runtime/parser";
+import { parseCommand } from "../../runtime/parser.js";
 
 const testData = [
   { command: `cmd --flag value` },
