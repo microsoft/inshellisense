@@ -1,5 +1,6 @@
 export type Suggestion = {
   name: string;
+  allNames: string[];
   description?: string;
   icon: string;
 };

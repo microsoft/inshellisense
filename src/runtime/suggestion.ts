@@ -48,6 +48,7 @@ const toSuggestion = (suggestion: Fig.Suggestion, name?: string, type?: Fig.Sugg
     name: name ?? getLong(suggestion.name),
     description: suggestion.description,
     icon: getIcon(type ?? suggestion.type),
+    allNames: suggestion.name instanceof Array ? suggestion.name : [suggestion.name],
   };
 };
 
@@ -66,10 +67,12 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
           if (s.name == null) return;
           if (s.name instanceof Array) {
             const matchedName = s.name.find((n) => n.toLowerCase().includes(partialCmd.toLowerCase()));
-            return matchedName != null ? { name: matchedName, description: s.description, icon: getIcon(s.type ?? suggestionType) } : undefined;
+            return matchedName != null
+              ? { name: matchedName, description: s.description, icon: getIcon(s.type ?? suggestionType), allNames: s.name }
+              : undefined;
           }
           return s.name.toLowerCase().includes(partialCmd.toLowerCase())
-            ? { name: s.name, description: s.description, icon: getIcon(s.type ?? suggestionType) }
+            ? { name: s.name, description: s.description, icon: getIcon(s.type ?? suggestionType), allNames: [s.name] }
             : undefined;
         })
         .filter((s) => s != null) as Suggestion[];
@@ -79,10 +82,12 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
           if (s.name == null) return;
           if (s.name instanceof Array) {
             const matchedName = s.name.find((n) => n.toLowerCase().startsWith(partialCmd.toLowerCase()));
-            return matchedName != null ? { name: matchedName, description: s.description, icon: getIcon(s.type ?? suggestionType) } : undefined;
+            return matchedName != null
+              ? { name: matchedName, description: s.description, icon: getIcon(s.type ?? suggestionType), allNames: s.name }
+              : undefined;
           }
           return s.name.toLowerCase().startsWith(partialCmd.toLowerCase())
-            ? { name: s.name, description: s.description, icon: getIcon(s.type ?? suggestionType) }
+            ? { name: s.name, description: s.description, icon: getIcon(s.type ?? suggestionType), allNames: [s.name] }
             : undefined;
         })
         .filter((s) => s != null) as Suggestion[];
@@ -135,10 +140,9 @@ const optionSuggestions = (
   return filter<Fig.Option>(validOptions ?? [], filterStrategy, partialCmd, "option");
 };
 
-// TODO: handle case where short option has been seen, but now we recommend long option (see: completedOptionWithArg --actor flag)
 const removeDuplicateSuggestions = (suggestions: Suggestion[], acceptedTokens: CommandToken[]): Suggestion[] => {
   const seen = new Set<string>(acceptedTokens.map((t) => t.token));
-  return suggestions.filter((s) => !seen.has(s.name));
+  return suggestions.filter((s) => s.allNames.every((n) => !seen.has(n)));
 };
 
 // TODO: implement re-ranking globally

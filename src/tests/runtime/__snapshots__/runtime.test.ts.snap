@@ -4,6 +4,9 @@ exports[`parseCommand alreadyUsedOption 1`] = `
 {
   "suggestions": [
     {
+      "allNames": [
+        "--bug-report",
+      ],
       "description": "Display system information for bug report",
       "icon": "⚙️",
       "name": "--bug-report",
@@ -18,6 +21,9 @@ exports[`parseCommand completePrefixFilter 1`] = `
 {
   "suggestions": [
     {
+      "allNames": [
+        "status",
+      ],
       "description": "Show the working tree status",
       "icon": "📦",
       "name": "status",
@@ -30,96 +36,151 @@ exports[`parseCommand completedOptionWithArg 1`] = `
 {
   "suggestions": [
     {
-      "description": "User that triggered the event",
-      "icon": "⚙️",
-      "name": "--actor",
-    },
-    {
+      "allNames": [
+        "--artifact-server-path",
+      ],
       "description": "Defines the path where the artifact server stores uploads and retrieves downloads from. If not specified the artifact server will not start",
       "icon": "⚙️",
       "name": "--artifact-server-path",
     },
     {
+      "allNames": [
+        "--artifact-server-port",
+      ],
       "description": "Defines the port where the artifact server listens (will only bind to localhost)",
       "icon": "⚙️",
       "name": "--artifact-server-port",
     },
     {
+      "allNames": [
+        "--container-architecture",
+      ],
       "description": "Architecture which should be used to run containers, e.g.: linux/amd64. If not specified, will use host default architecture. Requires Docker server API Version 1.41+. Ignored on earlier Docker server platforms",
       "icon": "⚙️",
       "name": "--container-architecture",
     },
     {
+      "allNames": [
+        "--container-daemon-socket",
+      ],
       "description": "Path to Docker daemon socket which will be mounted to containers",
       "icon": "⚙️",
       "name": "--container-daemon-socket",
     },
     {
+      "allNames": [
+        "--directory",
+        "-C",
+      ],
       "description": "Working directory",
       "icon": "⚙️",
       "name": "--directory",
     },
     {
+      "allNames": [
+        "--dryrun",
+        "-n",
+      ],
       "description": "Dryrun mode",
       "icon": "⚙️",
       "name": "--dryrun",
     },
     {
+      "allNames": [
+        "--env-file",
+      ],
       "description": "Environment file to read and use as env in the containers",
       "icon": "⚙️",
       "name": "--env-file",
     },
     {
+      "allNames": [
+        "--github-instance",
+      ],
       "description": "GitHub instance to use. Don't use this if you are not using GitHub Enterprise Server",
       "icon": "⚙️",
       "name": "--github-instance",
     },
     {
+      "allNames": [
+        "--insecure-secrets",
+      ],
       "description": "NOT RECOMMENDED! Doesn't hide secrets while printing logs",
       "icon": "⚙️",
       "name": "--insecure-secrets",
     },
     {
+      "allNames": [
+        "--json",
+      ],
       "description": "Output logs in json format",
       "icon": "⚙️",
       "name": "--json",
     },
     {
+      "allNames": [
+        "--no-recurse",
+      ],
       "description": "Flag to disable running workflows from subdirectories of specified path in '--workflows'/'-W' flag",
       "icon": "⚙️",
       "name": "--no-recurse",
     },
     {
+      "allNames": [
+        "--no-skip-checkout",
+      ],
       "description": "Do not skip actions/checkout",
       "icon": "⚙️",
       "name": "--no-skip-checkout",
     },
     {
+      "allNames": [
+        "--quiet",
+        "-q",
+      ],
       "description": "Disable logging of output from steps",
       "icon": "⚙️",
       "name": "--quiet",
     },
     {
+      "allNames": [
+        "--secret-file",
+      ],
       "description": "File with list of secrets to read from (e.g. --secret-file .secrets)",
       "icon": "⚙️",
       "name": "--secret-file",
     },
     {
+      "allNames": [
+        "--verbose",
+        "-v",
+      ],
       "description": "Verbose output",
       "icon": "⚙️",
       "name": "--verbose",
     },
     {
+      "allNames": [
+        "--workflows",
+        "-W",
+      ],
       "description": "Path to workflow file(s)",
       "icon": "⚙️",
       "name": "--workflows",
     },
     {
+      "allNames": [
+        "--help",
+        "-h",
+      ],
       "description": "Display help",
       "icon": "⚙️",
       "name": "--help",
     },
     {
+      "allNames": [
+        "--no-descriptions",
+      ],
       "description": "Disable completion descriptions",
       "icon": "⚙️",
       "name": "--no-descriptions",
@@ -138,51 +199,82 @@ exports[`parseCommand exclusiveOnOption 1`] = `
 {
   "suggestions": [
     {
+      "allNames": [
+        "--nobreak",
+      ],
       "description": "Print a newline between matches in different files. Enabled by default",
       "icon": "⚙️",
       "name": "--nobreak",
     },
     {
+      "allNames": [
+        "--nocolor",
+      ],
       "description": "Don't print color codes in results",
       "icon": "⚙️",
       "name": "--nocolor",
     },
     {
+      "allNames": [
+        "--nofilename",
+      ],
       "description": "Don't print file names",
       "icon": "⚙️",
       "name": "--nofilename",
     },
     {
+      "allNames": [
+        "--nofollow",
+      ],
       "description": "Don't follow symlinks",
       "icon": "⚙️",
       "name": "--nofollow",
     },
     {
+      "allNames": [
+        "--nogroup",
+      ],
       "description": "Refrains from lumping matches in the same file together, and instead places the filename at the start of each match line",
       "icon": "⚙️",
       "name": "--nogroup",
     },
     {
+      "allNames": [
+        "--noheading",
+      ],
       "description": "Don't print filenames above matching contents",
       "icon": "⚙️",
       "name": "--noheading",
     },
     {
+      "allNames": [
+        "--nommap",
+      ],
       "description": "Don't use of memory-mapped I/O. Defaults to true on platforms where mmap() is faster than read(). (All but macOS.)",
       "icon": "⚙️",
       "name": "--nommap",
     },
     {
+      "allNames": [
+        "--nomultiline",
+      ],
       "description": "Don't match regexes across newlines",
       "icon": "⚙️",
       "name": "--nomultiline",
     },
     {
+      "allNames": [
+        "-n",
+        "--norecurse",
+      ],
       "description": "Don't recurse into directories",
       "icon": "⚙️",
       "name": "--norecurse",
     },
     {
+      "allNames": [
+        "--nonumbers",
+      ],
       "description": "Don't print line numbers",
       "icon": "⚙️",
       "name": "--nonumbers",
@@ -195,11 +287,17 @@ exports[`parseCommand fullyTypedSuggestion 1`] = `
 {
   "suggestions": [
     {
+      "allNames": [
+        "-W",
+      ],
       "description": "Display whiteouts when scanning directories.  (-S) flag)",
       "icon": "⚙️",
       "name": "-W",
     },
     {
+      "allNames": [
+        "-w",
+      ],
       "description": "Force raw printing of non-printable characters.  This is the default when output is not to a terminal",
       "icon": "⚙️",
       "name": "-w",
@@ -219,16 +317,25 @@ exports[`parseCommand partialPrefixFilter 1`] = `
 {
   "suggestions": [
     {
+      "allNames": [
+        "stage",
+      ],
       "description": "Add file contents to the staging area",
       "icon": "📦",
       "name": "stage",
     },
     {
+      "allNames": [
+        "status",
+      ],
       "description": "Show the working tree status",
       "icon": "📦",
       "name": "status",
     },
     {
+      "allNames": [
+        "stash",
+      ],
       "description": "Temporarily stores all the modified tracked files",
       "icon": "📦",
       "name": "stash",
@@ -249,6 +356,9 @@ exports[`parseCommand providedSuggestion 1`] = `
   "argumentDescription": "Shell to generate completions for",
   "suggestions": [
     {
+      "allNames": [
+        "zsh",
+      ],
       "description": undefined,
       "icon": "📀",
       "name": "zsh",
