@@ -1,23 +1,39 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { Text, useInput, Box, measureElement, DOMElement } from "ink";
+import wrapAnsi from "wrap-ansi";
 import { Suggestion } from "../runtime/model.js";
 
 const MaxSuggestions = 5;
 const SuggestionWidth = 40;
 const DescriptionWidth = 30;
+const DescriptionMaxHeight = 6;
 const BorderWidth = 2;
 const ActiveSuggestionBackgroundColor = "#7D56F4";
 
 function Description({ description }: { description: string }) {
+  wrapAnsi(description, DescriptionWidth, { hard: true });
   if (description.length !== 0) {
     return (
       <Box flexDirection="column">
         <Box borderStyle="single" width={DescriptionWidth}>
-          <Text>{description}</Text>
+          <Text>{truncateDescription(description, DescriptionMaxHeight)}</Text>
         </Box>
       </Box>
     );
   }
+}
+
+function truncateDescription(description: string, maxHeight: number) {
+  const wrappedText = wrapAnsi(description, DescriptionWidth - BorderWidth, {
+    trim: false,
+    hard: true,
+  });
+  const lines = wrappedText.split("\n");
+  const truncatedLines = lines.slice(0, maxHeight);
+  if (lines.length > maxHeight) {
+    truncatedLines[maxHeight - 1] = [...truncatedLines[maxHeight - 1]].slice(0, -1).join("") + "…";
+  }
+  return truncatedLines.join("\n");
 }
 
 function SuggestionList({ suggestions, activeSuggestionIdx }: { suggestions: Suggestion[]; activeSuggestionIdx: number }) {
