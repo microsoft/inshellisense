@@ -174,7 +174,6 @@ const removeDuplicateSuggestions = (suggestions: Suggestion[], acceptedTokens: C
   return suggestions.filter((s) => s.allNames.every((n) => !seen.has(n)));
 };
 
-// TODO: implement re-ranking globally
 export const getSubcommandDrivenRecommendation = async (
   subcommand: Fig.Subcommand,
   persistentOptions: Fig.Option[],

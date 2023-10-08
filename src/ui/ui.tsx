@@ -1,16 +1,20 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Text, Box, render as inkRender, measureElement, DOMElement, useApp } from "ink";
+import { Text, Box, render as inkRender, measureElement, DOMElement, useInput, useApp } from "ink";
 import wrapAnsi from "wrap-ansi";
 
 import { getSuggestions } from "../runtime/runtime.js";
 import { Suggestion } from "../runtime/model.js";
 import Suggestions from "./suggestions.js";
 import Input from "./input.js";
-const Prompt = "> ";
+import { executeShellCommandTTY } from "../runtime/utils.js";
 
-// TODO: support tab completion
-function UI() {
-  const [command, setCommand] = useState("");
+const Prompt = "> ";
+let uiResult = "";
+
+function UI({ startingCommand }: { startingCommand: string }) {
+  const { exit } = useApp();
+  const [isExiting, setIsExiting] = useState(false);
+  const [command, setCommand] = useState(startingCommand);
   const [activeSuggestion, setActiveSuggestion] = useState<Suggestion>();
   const [tabCompletionDropSize, setTabCompletionDropSize] = useState(0);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -24,12 +28,34 @@ function UI() {
     }
   }, []);
 
+  useInput((_, key) => {
+    if (key.return) {
+      setIsExiting(true);
+    }
+  });
+
+  useEffect(() => {
+    if (isExiting) {
+      uiResult = command;
+      exit();
+    }
+  }, [isExiting]);
+
   useEffect(() => {
     getSuggestions(command).then((suggestions) => {
       setSuggestions(suggestions?.suggestions ?? []);
       setTabCompletionDropSize(suggestions?.charactersToDrop ?? 0);
     });
   }, [command]);
+
+  if (isExiting) {
+    return (
+      <Text>
+        {Prompt}
+        {command}
+      </Text>
+    );
+  }
 
   return (
     <Box flexDirection="column" ref={measureRef}>
@@ -43,9 +69,11 @@ function UI() {
   );
 }
 
-export const render = () => {
-  const { waitUntilExit } = inkRender(<UI />);
-  return waitUntilExit();
+export const render = async (command: string | undefined) => {
+  const { waitUntilExit } = inkRender(<UI startingCommand={command ?? ""} />);
+  await waitUntilExit();
+
+  return uiResult;
 };
 
 function getLeftPadding(windowWidth: number, command: string) {
