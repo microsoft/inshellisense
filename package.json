@@ -2,8 +2,15 @@
   "name": "@microsoft/clac",
   "version": "0.0.0",
   "description": "IDE style command line auto complete",
-  "main": "./build/index.js",
   "type": "module",
+  "bin": {
+    "clac": "./build/index.js"
+  },
+  "files": [
+    "build/**",
+    "*.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node ./build/index.js",

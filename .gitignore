@@ -1,11 +1,2 @@
 node_modules/
-.fig/
-*.log
-__debug_*.exe
-debug.test*.exe
-clac
-.env*
-dist/
-t*.md
-__pycache__
 build/

@@ -32,5 +32,4 @@ export const action = async (options: RootCommandOptions) => {
   } else {
     process.exit(0);
   }
-  // TODO: cache executed command to add to history
 };
