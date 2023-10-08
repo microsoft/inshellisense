@@ -82,6 +82,10 @@ export default function Suggestions({
   const clampedLeftPadding = Math.min(Math.min(wrappedPadding, swappedPadding), maxPadding);
 
   useEffect(() => {
+    setActiveSuggestion(suggestions[activeSuggestionIndex]);
+  }, [activeSuggestionIndex, suggestions]);
+
+  useEffect(() => {
     if (suggestions.length <= activeSuggestionIndex) {
       setActiveSuggestionIndex(Math.max(suggestions.length - 1, 0));
     }
@@ -90,11 +94,9 @@ export default function Suggestions({
   useInput((_, key) => {
     if (key.upArrow) {
       setActiveSuggestionIndex(Math.max(0, activeSuggestionIndex - 1));
-      setActiveSuggestion(suggestions[activeSuggestionIndex]);
     }
     if (key.downArrow) {
       setActiveSuggestionIndex(Math.min(activeSuggestionIndex + 1, suggestions.length - 1));
-      setActiveSuggestion(suggestions[activeSuggestionIndex]);
     }
   });
 

@@ -61,7 +61,11 @@ export const getSuggestions = async (cmd: string): Promise<SuggestionBlob | unde
   const subcommand = getSubcommand(spec);
   if (subcommand == null) return;
 
-  return runSubcommand(activeCmd.slice(1), subcommand);
+  const result = await runSubcommand(activeCmd.slice(1), subcommand);
+  if (result == null) return;
+  const lastCommand = activeCmd.at(-1);
+  const charactersToDrop = lastCommand?.complete ? 0 : lastCommand?.token.length ?? 0;
+  return { ...result, charactersToDrop };
 };
 
 const getPersistentOptions = (persistentOptions: Fig.Option[], options?: Fig.Option[]) => {

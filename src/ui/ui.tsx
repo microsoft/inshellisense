@@ -12,6 +12,7 @@ const Prompt = "> ";
 function UI() {
   const [command, setCommand] = useState("");
   const [activeSuggestion, setActiveSuggestion] = useState<Suggestion>();
+  const [tabCompletionDropSize, setTabCompletionDropSize] = useState(0);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [windowWidth, setWindowWidth] = useState(500);
   const leftPadding = getLeftPadding(windowWidth, command);
@@ -26,6 +27,7 @@ function UI() {
   useEffect(() => {
     getSuggestions(command).then((suggestions) => {
       setSuggestions(suggestions?.suggestions ?? []);
+      setTabCompletionDropSize(suggestions?.charactersToDrop ?? 0);
     });
   }, [command]);
 
@@ -33,7 +35,7 @@ function UI() {
     <Box flexDirection="column" ref={measureRef}>
       <Box>
         <Text>
-          <Input value={command} setValue={setCommand} prompt={Prompt} />
+          <Input value={command} setValue={setCommand} prompt={Prompt} activeSuggestion={activeSuggestion} tabCompletionDropSize={tabCompletionDropSize} />
         </Text>
       </Box>
       <Suggestions leftPadding={leftPadding} setActiveSuggestion={setActiveSuggestion} suggestions={suggestions} />

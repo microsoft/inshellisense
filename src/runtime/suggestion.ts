@@ -48,6 +48,8 @@ const toSuggestion = (suggestion: Fig.Suggestion, name?: string, type?: Fig.Sugg
     description: suggestion.description,
     icon: getIcon(type ?? suggestion.type),
     allNames: suggestion.name instanceof Array ? suggestion.name : [suggestion.name],
+    priority: suggestion.priority ?? 50,
+    insertValue: suggestion.insertValue,
   };
 };
 
@@ -67,11 +69,25 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
           if (s.name instanceof Array) {
             const matchedName = s.name.find((n) => n.toLowerCase().includes(partialCmd.toLowerCase()));
             return matchedName != null
-              ? { name: matchedName, description: s.description, icon: getIcon(s.type ?? suggestionType), allNames: s.name }
+              ? {
+                  name: matchedName,
+                  description: s.description,
+                  icon: getIcon(s.type ?? suggestionType),
+                  allNames: s.name,
+                  priority: s.priority ?? 50,
+                  insertValue: s.insertValue,
+                }
               : undefined;
           }
           return s.name.toLowerCase().includes(partialCmd.toLowerCase())
-            ? { name: s.name, description: s.description, icon: getIcon(s.type ?? suggestionType), allNames: [s.name] }
+            ? {
+                name: s.name,
+                description: s.description,
+                icon: getIcon(s.type ?? suggestionType),
+                allNames: [s.name],
+                priority: s.priority ?? 50,
+                insertValue: s.insertValue,
+              }
             : undefined;
         })
         .filter((s) => s != null) as Suggestion[];
@@ -82,11 +98,25 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
           if (s.name instanceof Array) {
             const matchedName = s.name.find((n) => n.toLowerCase().startsWith(partialCmd.toLowerCase()));
             return matchedName != null
-              ? { name: matchedName, description: s.description, icon: getIcon(s.type ?? suggestionType), allNames: s.name }
+              ? {
+                  name: matchedName,
+                  description: s.description,
+                  icon: getIcon(s.type ?? suggestionType),
+                  allNames: s.name,
+                  insertValue: s.insertValue,
+                  priority: s.priority ?? 50,
+                }
               : undefined;
           }
           return s.name.toLowerCase().startsWith(partialCmd.toLowerCase())
-            ? { name: s.name, description: s.description, icon: getIcon(s.type ?? suggestionType), allNames: [s.name] }
+            ? {
+                name: s.name,
+                description: s.description,
+                icon: getIcon(s.type ?? suggestionType),
+                allNames: [s.name],
+                insertValue: s.insertValue,
+                priority: s.priority ?? 50,
+              }
             : undefined;
         })
         .filter((s) => s != null) as Suggestion[];
@@ -169,8 +199,12 @@ export const getSubcommandDrivenRecommendation = async (
     suggestions.push(...optionSuggestions(allOptions, acceptedTokens, subcommand.filterStrategy, partialCmd));
     suggestions.push(...subcommandSuggestions(subcommand.subcommands, subcommand.filterStrategy, partialCmd));
   }
+
   return {
-    suggestions: removeDuplicateSuggestions(suggestions, acceptedTokens),
+    suggestions: removeDuplicateSuggestions(
+      suggestions.sort((a, b) => b.priority - a.priority),
+      acceptedTokens
+    ),
   };
 };
 
@@ -196,7 +230,10 @@ export const getArgDrivenRecommendation = async (
   }
 
   return {
-    suggestions: removeDuplicateSuggestions(suggestions, acceptedTokens),
+    suggestions: removeDuplicateSuggestions(
+      suggestions.sort((a, b) => b.priority - a.priority),
+      acceptedTokens
+    ),
     argumentDescription: activeArg.description ?? activeArg.name,
   };
 };

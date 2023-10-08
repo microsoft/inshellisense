@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { useInput, Text } from "ink";
 import chalk from "chalk";
+import { Suggestion } from "../runtime/model.js";
 
 const BlinkSpeed = 530;
 const CursorColor = "#FFFFFF";
 
-export default function Input({ value, setValue, prompt }: { value: string; setValue: (_: string) => void; prompt: string }) {
+export default function Input({
+  value,
+  setValue,
+  prompt,
+  activeSuggestion,
+  tabCompletionDropSize,
+}: {
+  value: string;
+  setValue: (_: string) => void;
+  prompt: string;
+  activeSuggestion: Suggestion | undefined;
+  tabCompletionDropSize: number;
+}) {
   const [cursorLocation, setCursorLocation] = useState(value.length);
   const [cursorBlink, setCursorBlink] = useState(true);
 
@@ -26,6 +39,13 @@ export default function Input({ value, setValue, prompt }: { value: string; setV
       setCursorLocation(Math.max(cursorLocation - 1, 0));
     } else if (key.rightArrow) {
       setCursorLocation(Math.min(cursorLocation + 1, value.length));
+    } else if (key.tab) {
+      if (activeSuggestion) {
+        // TOOD: support insertValue
+        const newValue = [...value].slice(0, cursorLocation - tabCompletionDropSize).join("") + activeSuggestion.name + " ";
+        setValue(newValue);
+        setCursorLocation(newValue.length);
+      }
     } else if (input) {
       setValue([...value].slice(0, cursorLocation).join("") + input + [...value].slice(cursorLocation).join(""));
       setCursorLocation(cursorLocation + input.length);

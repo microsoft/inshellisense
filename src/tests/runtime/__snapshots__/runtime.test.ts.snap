@@ -2,6 +2,7 @@
 
 exports[`parseCommand alreadyUsedOption 1`] = `
 {
+  "charactersToDrop": 3,
   "suggestions": [
     {
       "allNames": [
@@ -9,7 +10,9 @@ exports[`parseCommand alreadyUsedOption 1`] = `
       ],
       "description": "Display system information for bug report",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--bug-report",
+      "priority": 50,
     },
   ],
 }
@@ -19,6 +22,7 @@ exports[`parseCommand alreadyUsedSuggestion 1`] = `undefined`;
 
 exports[`parseCommand command 1`] = `
 {
+  "charactersToDrop": 3,
   "suggestions": [
     {
       "allNames": [
@@ -26,7 +30,9 @@ exports[`parseCommand command 1`] = `
       ],
       "description": "Add file contents to the staging area",
       "icon": "📦",
+      "insertValue": undefined,
       "name": "stage",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -34,7 +40,9 @@ exports[`parseCommand command 1`] = `
       ],
       "description": "Show the working tree status",
       "icon": "📦",
+      "insertValue": undefined,
       "name": "status",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -42,7 +50,9 @@ exports[`parseCommand command 1`] = `
       ],
       "description": "Temporarily stores all the modified tracked files",
       "icon": "📦",
+      "insertValue": undefined,
       "name": "stash",
+      "priority": 50,
     },
   ],
 }
@@ -50,6 +60,7 @@ exports[`parseCommand command 1`] = `
 
 exports[`parseCommand completePrefixFilter 1`] = `
 {
+  "charactersToDrop": 4,
   "suggestions": [
     {
       "allNames": [
@@ -57,7 +68,9 @@ exports[`parseCommand completePrefixFilter 1`] = `
       ],
       "description": "Show the working tree status",
       "icon": "📦",
+      "insertValue": undefined,
       "name": "status",
+      "priority": 50,
     },
   ],
 }
@@ -65,6 +78,7 @@ exports[`parseCommand completePrefixFilter 1`] = `
 
 exports[`parseCommand completedOptionWithArg 1`] = `
 {
+  "charactersToDrop": 0,
   "suggestions": [
     {
       "allNames": [
@@ -72,7 +86,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "Defines the path where the artifact server stores uploads and retrieves downloads from. If not specified the artifact server will not start",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--artifact-server-path",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -80,7 +96,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "Defines the port where the artifact server listens (will only bind to localhost)",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--artifact-server-port",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -88,7 +106,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "Architecture which should be used to run containers, e.g.: linux/amd64. If not specified, will use host default architecture. Requires Docker server API Version 1.41+. Ignored on earlier Docker server platforms",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--container-architecture",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -96,7 +116,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "Path to Docker daemon socket which will be mounted to containers",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--container-daemon-socket",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -105,7 +127,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "Working directory",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--directory",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -114,7 +138,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "Dryrun mode",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--dryrun",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -122,7 +148,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "Environment file to read and use as env in the containers",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--env-file",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -130,7 +158,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "GitHub instance to use. Don't use this if you are not using GitHub Enterprise Server",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--github-instance",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -138,7 +168,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "NOT RECOMMENDED! Doesn't hide secrets while printing logs",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--insecure-secrets",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -146,7 +178,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "Output logs in json format",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--json",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -154,7 +188,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "Flag to disable running workflows from subdirectories of specified path in '--workflows'/'-W' flag",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--no-recurse",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -162,7 +198,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "Do not skip actions/checkout",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--no-skip-checkout",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -171,7 +209,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "Disable logging of output from steps",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--quiet",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -179,7 +219,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "File with list of secrets to read from (e.g. --secret-file .secrets)",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--secret-file",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -188,7 +230,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "Verbose output",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--verbose",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -197,7 +241,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "Path to workflow file(s)",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--workflows",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -206,7 +252,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "Display help",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--help",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -214,7 +262,9 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       ],
       "description": "Disable completion descriptions",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--no-descriptions",
+      "priority": 50,
     },
   ],
 }
@@ -222,12 +272,14 @@ exports[`parseCommand completedOptionWithArg 1`] = `
 
 exports[`parseCommand emptySuggestions 1`] = `
 {
+  "charactersToDrop": 2,
   "suggestions": [],
 }
 `;
 
 exports[`parseCommand exclusiveOnOption 1`] = `
 {
+  "charactersToDrop": 4,
   "suggestions": [
     {
       "allNames": [
@@ -235,7 +287,9 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       ],
       "description": "Print a newline between matches in different files. Enabled by default",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--nobreak",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -243,7 +297,9 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       ],
       "description": "Don't print color codes in results",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--nocolor",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -251,7 +307,9 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       ],
       "description": "Don't print file names",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--nofilename",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -259,7 +317,9 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       ],
       "description": "Don't follow symlinks",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--nofollow",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -267,7 +327,9 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       ],
       "description": "Refrains from lumping matches in the same file together, and instead places the filename at the start of each match line",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--nogroup",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -275,7 +337,9 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       ],
       "description": "Don't print filenames above matching contents",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--noheading",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -283,7 +347,9 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       ],
       "description": "Don't use of memory-mapped I/O. Defaults to true on platforms where mmap() is faster than read(). (All but macOS.)",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--nommap",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -291,7 +357,9 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       ],
       "description": "Don't match regexes across newlines",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--nomultiline",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -300,7 +368,9 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       ],
       "description": "Don't recurse into directories",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--norecurse",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -308,7 +378,9 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       ],
       "description": "Don't print line numbers",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "--nonumbers",
+      "priority": 50,
     },
   ],
 }
@@ -316,6 +388,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
 
 exports[`parseCommand fullyTypedSuggestion 1`] = `
 {
+  "charactersToDrop": 2,
   "suggestions": [
     {
       "allNames": [
@@ -323,7 +396,9 @@ exports[`parseCommand fullyTypedSuggestion 1`] = `
       ],
       "description": "Display whiteouts when scanning directories.  (-S) flag)",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "-W",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -331,7 +406,9 @@ exports[`parseCommand fullyTypedSuggestion 1`] = `
       ],
       "description": "Force raw printing of non-printable characters.  This is the default when output is not to a terminal",
       "icon": "⚙️",
+      "insertValue": undefined,
       "name": "-w",
+      "priority": 50,
     },
   ],
 }
@@ -339,6 +416,7 @@ exports[`parseCommand fullyTypedSuggestion 1`] = `
 
 exports[`parseCommand loadSpec 1`] = `
 {
+  "charactersToDrop": 3,
   "suggestions": [
     {
       "allNames": [
@@ -346,7 +424,9 @@ exports[`parseCommand loadSpec 1`] = `
       ],
       "description": "Adds one or more tags to an ACM certificate. Tags are labels that you can use to identify and organize your AWS resources. Each tag consists of a key and an optional value. You specify the certificate on input by its Amazon Resource Name (ARN). You specify the tag by using a key-value pair.  You can apply a tag to just one certificate if you want to identify a specific characteristic of that certificate, or you can apply the same tag to multiple certificates if you want to filter for a common relationship among those certificates. Similarly, you can apply the same tag to multiple resources if you want to specify a relationship among those resources. For example, you can add the same tag to an ACM certificate and an Elastic Load Balancing load balancer to indicate that they are both used by the same website. For more information, see Tagging ACM certificates.  To remove one or more tags, use the RemoveTagsFromCertificate action. To view all of the tags that have been applied to the certificate, use the ListTagsForCertificate action",
       "icon": "📦",
+      "insertValue": undefined,
       "name": "add-tags-to-certificate",
+      "priority": 50,
     },
   ],
 }
@@ -355,12 +435,14 @@ exports[`parseCommand loadSpec 1`] = `
 exports[`parseCommand noOptionsSuggestedAfterVariadicArg 1`] = `
 {
   "argumentDescription": undefined,
+  "charactersToDrop": 1,
   "suggestions": [],
 }
 `;
 
 exports[`parseCommand partialPrefixFilter 1`] = `
 {
+  "charactersToDrop": 3,
   "suggestions": [
     {
       "allNames": [
@@ -368,7 +450,9 @@ exports[`parseCommand partialPrefixFilter 1`] = `
       ],
       "description": "Add file contents to the staging area",
       "icon": "📦",
+      "insertValue": undefined,
       "name": "stage",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -376,7 +460,9 @@ exports[`parseCommand partialPrefixFilter 1`] = `
       ],
       "description": "Show the working tree status",
       "icon": "📦",
+      "insertValue": undefined,
       "name": "status",
+      "priority": 50,
     },
     {
       "allNames": [
@@ -384,7 +470,9 @@ exports[`parseCommand partialPrefixFilter 1`] = `
       ],
       "description": "Temporarily stores all the modified tracked files",
       "icon": "📦",
+      "insertValue": undefined,
       "name": "stash",
+      "priority": 50,
     },
   ],
 }
@@ -393,6 +481,7 @@ exports[`parseCommand partialPrefixFilter 1`] = `
 exports[`parseCommand providedArgDescription 1`] = `
 {
   "argumentDescription": "actor",
+  "charactersToDrop": 0,
   "suggestions": [],
 }
 `;
@@ -400,6 +489,7 @@ exports[`parseCommand providedArgDescription 1`] = `
 exports[`parseCommand providedSuggestion 1`] = `
 {
   "argumentDescription": "Shell to generate completions for",
+  "charactersToDrop": 0,
   "suggestions": [
     {
       "allNames": [
@@ -407,7 +497,9 @@ exports[`parseCommand providedSuggestion 1`] = `
       ],
       "description": undefined,
       "icon": "📀",
+      "insertValue": undefined,
       "name": "zsh",
+      "priority": 50,
     },
   ],
 }
