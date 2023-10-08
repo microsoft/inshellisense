@@ -6,7 +6,6 @@ import { getSuggestions } from "../runtime/runtime.js";
 import { Suggestion } from "../runtime/model.js";
 import Suggestions from "./suggestions.js";
 import Input from "./input.js";
-import { executeShellCommandTTY } from "../runtime/utils.js";
 
 const Prompt = "> ";
 let uiResult = "";

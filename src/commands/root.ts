@@ -1,4 +1,4 @@
-import { render } from "../ui/ui.js";
+import { render } from "../ui/ui-root.js";
 import { executeShellCommandTTY } from "../runtime/utils.js";
 
 const shells = ["bash", "powershell", "pwsh"];
