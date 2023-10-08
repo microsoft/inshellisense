@@ -2,7 +2,7 @@
 
 `sa` provides IDE style autocomplete, `inshellisense`, for shells. It's a terminal native runtime of for [autocomplete](https://github.com/withfig/autocomplete) which has support for 600+ command line tools. `sa` supports Windows, Linux, & MacOS.
 
-<p align="center"><img alt="demo of sa working" src="https://github.com/microsoft/clac/assets/35637443/544f81dc-dada-40b5-bb1f-a736b4e58e73" height="300px"/></p>
+<p align="center"><img alt="demo of sa working" src="/docs/demo.gif" height="300px"/></p>
 
 ## Getting Started
 
