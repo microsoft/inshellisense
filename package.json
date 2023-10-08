@@ -8,6 +8,7 @@
   },
   "files": [
     "build/**",
+    "shell/**",
     "*.md",
     "LICENSE"
   ],
