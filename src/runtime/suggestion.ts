@@ -174,6 +174,10 @@ const removeDuplicateSuggestions = (suggestions: Suggestion[], acceptedTokens: C
   return suggestions.filter((s) => s.allNames.every((n) => !seen.has(n)));
 };
 
+const removeEmptySuggestion = (suggestions: Suggestion[]): Suggestion[] => {
+  return suggestions.filter((s) => s.name.length > 0);
+};
+
 export const getSubcommandDrivenRecommendation = async (
   subcommand: Fig.Subcommand,
   persistentOptions: Fig.Option[],
@@ -188,21 +192,24 @@ export const getSubcommandDrivenRecommendation = async (
   const suggestions: Suggestion[] = [];
   const argLength = subcommand.args instanceof Array ? subcommand.args.length : subcommand.args ? 1 : 0;
   const allOptions = persistentOptions.concat(subcommand.options ?? []);
+
+  if (!argsFromSubcommand) {
+    suggestions.push(...subcommandSuggestions(subcommand.subcommands, subcommand.filterStrategy, partialCmd));
+    suggestions.push(...optionSuggestions(allOptions, acceptedTokens, subcommand.filterStrategy, partialCmd));
+  }
   if (argLength != 0) {
     const activeArg = subcommand.args instanceof Array ? subcommand.args[0] : subcommand.args;
     suggestions.push(...(await generatorSuggestions(activeArg?.generators, acceptedTokens, activeArg?.filterStrategy, partialCmd)));
     suggestions.push(...suggestionSuggestions(activeArg?.suggestions, activeArg?.filterStrategy, partialCmd));
     suggestions.push(...templateSuggestions(activeArg?.template, activeArg?.filterStrategy, partialCmd));
   }
-  if (!argsFromSubcommand) {
-    suggestions.push(...optionSuggestions(allOptions, acceptedTokens, subcommand.filterStrategy, partialCmd));
-    suggestions.push(...subcommandSuggestions(subcommand.subcommands, subcommand.filterStrategy, partialCmd));
-  }
 
   return {
-    suggestions: removeDuplicateSuggestions(
-      suggestions.sort((a, b) => b.priority - a.priority),
-      acceptedTokens
+    suggestions: removeEmptySuggestion(
+      removeDuplicateSuggestions(
+        suggestions.sort((a, b) => b.priority - a.priority),
+        acceptedTokens
+      )
     ),
   };
 };
@@ -229,9 +236,11 @@ export const getArgDrivenRecommendation = async (
   }
 
   return {
-    suggestions: removeDuplicateSuggestions(
-      suggestions.sort((a, b) => b.priority - a.priority),
-      acceptedTokens
+    suggestions: removeEmptySuggestion(
+      removeDuplicateSuggestions(
+        suggestions.sort((a, b) => b.priority - a.priority),
+        acceptedTokens
+      )
     ),
     argumentDescription: activeArg.description ?? activeArg.name,
   };

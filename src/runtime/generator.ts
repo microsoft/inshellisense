@@ -15,23 +15,27 @@ const getGeneratorContext = (): Fig.GeneratorContext => {
 // TODO: add support for caching, trigger, & getQueryTerm
 export const runGenerator = async (generator: Fig.Generator, tokens: string[]): Promise<Fig.Suggestion[]> => {
   const { script, postProcess, scriptTimeout, splitOn, custom, template } = generator;
+
   const executeShellCommand = buildExecuteShellCommand(scriptTimeout ?? 5000);
   const suggestions = [];
-  if (script) {
-    const scriptOutput = typeof script === "function" ? script(tokens) : script != null ? await executeShellCommand(script) : "";
-    if (postProcess) {
-      suggestions.push(...postProcess(scriptOutput, tokens));
-    } else if (splitOn) {
-      suggestions.push(...scriptOutput.split(splitOn).map((s) => ({ name: s })));
+  try {
+    if (script) {
+      const scriptOutput = typeof script === "function" ? script(tokens) : script != null ? await executeShellCommand(script) : "";
+      if (postProcess) {
+        suggestions.push(...postProcess(scriptOutput, tokens));
+      } else if (splitOn) {
+        suggestions.push(...scriptOutput.split(splitOn).map((s) => ({ name: s })));
+      }
     }
-  }
 
-  if (custom) {
-    suggestions.push(...(await custom(tokens, executeShellCommand, getGeneratorContext())));
-  }
+    if (custom) {
+      suggestions.push(...(await custom(tokens, executeShellCommand, getGeneratorContext())));
+    }
 
-  if (template != null) {
-    suggestions.push(...runTemplates(template));
-  }
+    if (template != null) {
+      suggestions.push(...runTemplates(template));
+    }
+    return suggestions;
+  } catch (e) {}
   return suggestions;
 };
