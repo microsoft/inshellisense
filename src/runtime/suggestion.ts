@@ -7,7 +7,7 @@ enum SuggestionIcons {
   File = "📄",
   Folder = "📁",
   Subcommand = "📦",
-  Option = "⚙️",
+  Option = "🔗",
   Argument = "💲",
   Mixin = "🏝️",
   Shortcut = "🔥",

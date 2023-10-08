@@ -47,7 +47,7 @@ function SuggestionList({ suggestions, activeSuggestionIdx }: { suggestions: Sug
             return (
               <Box key={idx}>
                 <Text backgroundColor={bgColor} wrap="truncate-end">
-                  {suggestion.name.padEnd(SuggestionWidth - BorderWidth, " ")}
+                  {`${suggestion.icon} ${suggestion.name}`.padEnd(SuggestionWidth - BorderWidth, " ")}
                 </Text>
               </Box>
             );
