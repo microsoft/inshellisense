@@ -6,8 +6,9 @@ type ExecuteShellCommandTTYResult = {
 
 export const buildExecuteShellCommand =
   (timeout: number) =>
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- TODO: use cwd in the future
   async (command: string, cwd?: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       exec(command, { timeout }, (_, stdout, stderr) => {
         resolve(stdout || stderr);
       });

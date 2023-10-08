@@ -87,22 +87,25 @@ export const bind = async (shell: Shell): Promise<void> => {
     await fsAsync.mkdir(saConfigPath);
   }
   switch (shell) {
-    case Shell.Bash:
+    case Shell.Bash: {
       const bashConfigPath = path.join(os.homedir(), ".bashrc");
       await fsAsync.appendFile(bashConfigPath, `\n${bashScriptCommand()}`);
       await fsAsync.copyFile(path.join(__dirname, "..", "..", "shell", "key-bindings.bash"), path.join(os.homedir(), ".sa", "key-bindings.bash"));
       break;
-    case Shell.Powershell:
+    }
+    case Shell.Powershell: {
       const powershellConfigPath = path.join(os.homedir(), "Documents", "WindowsPowershell", "Microsoft.PowerShell_profile.ps1");
       await fsAsync.appendFile(powershellConfigPath, `\n${powershellScriptCommand()}`);
       await fsAsync.copyFile(
         path.join(__dirname, "..", "..", "shell", "key-bindings-powershell.ps1"),
-        path.join(os.homedir(), ".sa", "key-bindings-powershell.ps1")
+        path.join(os.homedir(), ".sa", "key-bindings-powershell.ps1"),
       );
       break;
-    case Shell.Pwsh:
+    }
+    case Shell.Pwsh: {
       await fsAsync.appendFile(pwshConfigPath(), `\n${pwshScriptCommand()}`);
       await fsAsync.copyFile(path.join(__dirname, "..", "..", "shell", "key-bindings-pwsh.ps1"), path.join(os.homedir(), ".sa", "key-bindings-pwsh.ps1"));
       break;
+    }
   }
 };

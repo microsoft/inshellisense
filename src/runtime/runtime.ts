@@ -1,5 +1,6 @@
 import speclist, {
   diffVersionedCompletions as versionedSpeclist,
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
 } from "@withfig/autocomplete/build/index.js";
 import { parseCommand, CommandToken } from "./parser.js";
@@ -7,6 +8,7 @@ import { getArgDrivenRecommendation, getSubcommandDrivenRecommendation } from ".
 import { SuggestionBlob } from "./model.js";
 import { buildExecuteShellCommand } from "./utils.js";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- recursive type, setting as any
 const specSet: any = {};
 (speclist as string[]).forEach((s) => {
   let activeSet = specSet;
@@ -45,6 +47,7 @@ const lazyLoadSpec = async (key: string): Promise<Fig.Spec | undefined> => {
   return (await import(`@withfig/autocomplete/build/${key}.js`)).default;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- will be implemented in below TODO
 const lazyLoadSpecLocation = async (location: Fig.SpecLocation): Promise<Fig.Spec | undefined> => {
   return; //TODO: implement spec location loading
 };
@@ -72,8 +75,8 @@ const getPersistentOptions = (persistentOptions: Fig.Option[], options?: Fig.Opt
   const persistentOptionNames = new Set(persistentOptions.map((o) => (typeof o.name === "string" ? [o.name] : o.name)).flat());
   return persistentOptions.concat(
     (options ?? []).filter(
-      (o) => (typeof o.name == "string" ? !persistentOptionNames.has(o.name) : o.name.some((n) => !persistentOptionNames.has(n))) && o.isPersistent === true
-    )
+      (o) => (typeof o.name == "string" ? !persistentOptionNames.has(o.name) : o.name.some((n) => !persistentOptionNames.has(n))) && o.isPersistent === true,
+    ),
   );
 };
 
@@ -82,7 +85,7 @@ const getSubcommand = (spec?: Fig.Spec): Fig.Subcommand | undefined => {
   if (spec == null) return;
   if (typeof spec === "function") {
     const potentialSubcommand = spec();
-    if (potentialSubcommand.hasOwnProperty("name")) {
+    if (Object.prototype.hasOwnProperty.call(potentialSubcommand, "name")) {
       return potentialSubcommand as Fig.Subcommand;
     }
     return;
@@ -101,7 +104,7 @@ const genSubcommand = async (command: string, parentCommand: Fig.Subcommand): Pr
   // this pulls in the spec from the load spec and overwrites the subcommand in the parent with the loaded spec.
   // then it returns the subcommand and clears the loadSpec field so that it doesn't get called again
   switch (typeof subcommand.loadSpec) {
-    case "function":
+    case "function": {
       const partSpec = await subcommand.loadSpec(command, executeShellCommand);
       if (partSpec instanceof Array) {
         const locationSpecs = (await Promise.all(partSpec.map((s) => lazyLoadSpecLocation(s)))).filter((s) => s != null) as Fig.Spec[];
@@ -112,23 +115,31 @@ const genSubcommand = async (command: string, parentCommand: Fig.Subcommand): Pr
           loadSpec: undefined,
         };
         return (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx];
-      } else if (partSpec.hasOwnProperty("type")) {
+      } else if (Object.prototype.hasOwnProperty.call(partSpec, "type")) {
         const locationSingleSpec = await lazyLoadSpecLocation(partSpec as Fig.SpecLocation);
-        (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = { ...subcommand, ...(getSubcommand(locationSingleSpec) ?? []), loadSpec: undefined };
+        (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = {
+          ...subcommand,
+          ...(getSubcommand(locationSingleSpec) ?? []),
+          loadSpec: undefined,
+        };
         return (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx];
       } else {
         (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = { ...subcommand, ...partSpec, loadSpec: undefined };
         return (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx];
       }
-    case "string":
+    }
+    case "string": {
       const spec = await lazyLoadSpec(subcommand.loadSpec as string);
       (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = { ...subcommand, ...(getSubcommand(spec) ?? []), loadSpec: undefined };
       return (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx];
-    case "object":
+    }
+    case "object": {
       (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = { ...subcommand, ...(subcommand.loadSpec ?? {}), loadSpec: undefined };
       return (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx];
-    case "undefined":
+    }
+    case "undefined": {
       return subcommand;
+    }
   }
 };
 
@@ -149,7 +160,7 @@ const runOption = async (
   option: Fig.Option,
   subcommand: Fig.Subcommand,
   persistentOptions: Fig.Option[],
-  acceptedTokens: CommandToken[]
+  acceptedTokens: CommandToken[],
 ): Promise<SuggestionBlob | undefined> => {
   if (tokens.length === 0) {
     throw new Error("invalid state reached, option expected but no tokens found");
@@ -170,7 +181,7 @@ const runArg = async (
   persistentOptions: Fig.Option[],
   acceptedTokens: CommandToken[],
   fromOption: boolean,
-  fromVariadic: boolean
+  fromVariadic: boolean,
 ): Promise<SuggestionBlob | undefined> => {
   if (args.length === 0) {
     return runSubcommand(tokens, subcommand, persistentOptions, acceptedTokens, true, !fromOption);
@@ -218,7 +229,7 @@ const runSubcommand = async (
   persistentOptions: Fig.Option[] = [],
   acceptedTokens: CommandToken[] = [],
   argsDepleted = false,
-  argsUsed = false
+  argsUsed = false,
 ): Promise<SuggestionBlob | undefined> => {
   if (tokens.length === 0) {
     return getSubcommandDrivenRecommendation(subcommand, persistentOptions, undefined, argsDepleted, argsUsed, acceptedTokens);
@@ -244,7 +255,7 @@ const runSubcommand = async (
       tokens.slice(1),
       nextSubcommand,
       getPersistentOptions(persistentOptions, subcommand.options),
-      getPersistentTokens(acceptedTokens.concat(activeToken))
+      getPersistentTokens(acceptedTokens.concat(activeToken)),
     );
   }
 

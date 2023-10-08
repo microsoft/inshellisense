@@ -32,14 +32,9 @@ const lex = (command: string): CommandToken[] => {
       return;
     }
 
-    if (
-      readingQuotedString &&
-      char === readingQuoteChar &&
-      command.at(idx - 1) !== "\\"
-    ) {
+    if (readingQuotedString && char === readingQuoteChar && command.at(idx - 1) !== "\\") {
       readingQuotedString = false;
-      const complete =
-        idx + 1 < command.length && spaceRegex.test(command[idx + 1]);
+      const complete = idx + 1 < command.length && spaceRegex.test(command[idx + 1]);
       tokens.push({
         token: command.slice(readingIdx, idx + 1),
         complete,

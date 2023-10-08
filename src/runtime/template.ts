@@ -36,7 +36,7 @@ export const runTemplates = async (template: Fig.TemplateStrings[] | Fig.Templat
           case "help":
             return helpTemplate();
         }
-      })
+      }),
     )
   ).flat();
 };

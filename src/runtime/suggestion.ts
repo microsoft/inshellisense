@@ -57,7 +57,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
   suggestions: T[],
   filterStrategy: FilterStrategy | undefined,
   partialCmd: string | undefined,
-  suggestionType: Fig.SuggestionType | undefined
+  suggestionType: Fig.SuggestionType | undefined,
 ): Suggestion[] {
   if (!partialCmd) return suggestions.map((s) => toSuggestion(s, undefined, suggestionType)).filter((s) => s != null) as Suggestion[];
 
@@ -129,7 +129,7 @@ const generatorSuggestions = async (
   generator: Fig.SingleOrArray<Fig.Generator> | undefined,
   acceptedTokens: CommandToken[],
   filterStrategy: FilterStrategy | undefined,
-  partialCmd: string | undefined
+  partialCmd: string | undefined,
 ): Promise<Suggestion[]> => {
   const generators = generator instanceof Array ? generator : generator ? [generator] : [];
   const tokens = acceptedTokens.map((t) => t.token);
@@ -140,7 +140,7 @@ const generatorSuggestions = async (
 const templateSuggestions = async (
   templates: Fig.Template | undefined,
   filterStrategy: FilterStrategy | undefined,
-  partialCmd: string | undefined
+  partialCmd: string | undefined,
 ): Promise<Suggestion[]> => {
   return filter<Fig.Suggestion>(await runTemplates(templates ?? []), filterStrategy, partialCmd, undefined);
 };
@@ -148,7 +148,7 @@ const templateSuggestions = async (
 const suggestionSuggestions = (
   suggestions: (string | Fig.Suggestion)[] | undefined,
   filterStrategy: FilterStrategy | undefined,
-  partialCmd: string | undefined
+  partialCmd: string | undefined,
 ): Suggestion[] => {
   const cleanedSuggestions = suggestions?.map((s) => (typeof s === "string" ? { name: s } : s)) ?? [];
   return filter<Fig.Suggestion>(cleanedSuggestions ?? [], filterStrategy, partialCmd, undefined);
@@ -157,7 +157,7 @@ const suggestionSuggestions = (
 const subcommandSuggestions = (
   subcommands: Fig.Subcommand[] | undefined,
   filterStrategy: FilterStrategy | undefined,
-  partialCmd: string | undefined
+  partialCmd: string | undefined,
 ): Suggestion[] => {
   return filter<Fig.Subcommand>(subcommands ?? [], filterStrategy, partialCmd, "subcommand");
 };
@@ -166,7 +166,7 @@ const optionSuggestions = (
   options: Fig.Option[] | undefined,
   acceptedTokens: CommandToken[],
   filterStrategy: FilterStrategy | undefined,
-  partialCmd: string | undefined
+  partialCmd: string | undefined,
 ): Suggestion[] => {
   const usedOptions = new Set(acceptedTokens.filter((t) => t.isOption).map((t) => t.token));
   const validOptions = options?.filter((o) => o.exclusiveOn?.every((exclusiveOption) => !usedOptions.has(exclusiveOption)) ?? true);
@@ -188,7 +188,7 @@ export const getSubcommandDrivenRecommendation = async (
   partialCmd: string | undefined,
   argsDepleted: boolean,
   argsFromSubcommand: boolean,
-  acceptedTokens: CommandToken[]
+  acceptedTokens: CommandToken[],
 ): Promise<SuggestionBlob | undefined> => {
   if (argsDepleted && argsFromSubcommand) {
     return;
@@ -212,8 +212,8 @@ export const getSubcommandDrivenRecommendation = async (
     suggestions: removeEmptySuggestion(
       removeDuplicateSuggestions(
         suggestions.sort((a, b) => b.priority - a.priority),
-        acceptedTokens
-      )
+        acceptedTokens,
+      ),
     ),
   };
 };
@@ -224,7 +224,7 @@ export const getArgDrivenRecommendation = async (
   persistentOptions: Fig.Option[],
   partialCmd: string | undefined,
   acceptedTokens: CommandToken[],
-  variadicArgBound: boolean
+  variadicArgBound: boolean,
 ): Promise<SuggestionBlob | undefined> => {
   const activeArg = args[0];
   const allOptions = persistentOptions.concat(subcommand.options ?? []);
@@ -243,8 +243,8 @@ export const getArgDrivenRecommendation = async (
     suggestions: removeEmptySuggestion(
       removeDuplicateSuggestions(
         suggestions.sort((a, b) => b.priority - a.priority),
-        acceptedTokens
-      )
+        acceptedTokens,
+      ),
     ),
     argumentDescription: activeArg.description ?? activeArg.name,
   };
