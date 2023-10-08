@@ -10,6 +10,7 @@ import url from "node:url";
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const cacheFolder = ".inshellisense";
 
 export enum Shell {
   Bash = "bash",
@@ -20,16 +21,16 @@ export enum Shell {
 export const supportedShells = [Shell.Bash, Shell.Powershell, Shell.Pwsh];
 
 const bashScriptCommand = (): string => {
-  return `[ -f ~/.sa/key-bindings.bash ] && source ~/.sa/key-bindings.bash`;
+  return `[ -f ~/${cacheFolder}/key-bindings.bash ] && source ~/${cacheFolder}/key-bindings.bash`;
 };
 
 const powershellScriptCommand = (): string => {
-  const bindingsPath = path.join(os.homedir(), ".sa", "key-bindings-powershell.ps1");
+  const bindingsPath = path.join(os.homedir(), cacheFolder, "key-bindings-powershell.ps1");
   return `if(Test-Path '${bindingsPath}' -PathType Leaf){. ${bindingsPath}}`;
 };
 
 const pwshScriptCommand = (): string => {
-  const bindingsPath = path.join(os.homedir(), ".sa", "key-bindings-pwsh.ps1");
+  const bindingsPath = path.join(os.homedir(), cacheFolder, "key-bindings-pwsh.ps1");
   return `if(Test-Path '${bindingsPath}' -PathType Leaf){. ${bindingsPath}}`;
 };
 
@@ -46,9 +47,9 @@ const pwshConfigPath = (): string => {
 };
 
 export const availableBindings = async (): Promise<Shell[]> => {
-  const saConfigPath = path.join(os.homedir(), ".sa");
-  if (!fs.existsSync(saConfigPath)) {
-    await fsAsync.mkdir(saConfigPath);
+  const cliConfigPath = path.join(os.homedir(), cacheFolder);
+  if (!fs.existsSync(cliConfigPath)) {
+    await fsAsync.mkdir(cliConfigPath);
   }
 
   const bindings = [];
@@ -85,15 +86,15 @@ export const availableBindings = async (): Promise<Shell[]> => {
 };
 
 export const bind = async (shell: Shell): Promise<void> => {
-  const saConfigPath = path.join(os.homedir(), ".sa");
-  if (!fs.existsSync(saConfigPath)) {
-    await fsAsync.mkdir(saConfigPath);
+  const cliConfigPath = path.join(os.homedir(), cacheFolder);
+  if (!fs.existsSync(cliConfigPath)) {
+    await fsAsync.mkdir(cliConfigPath);
   }
   switch (shell) {
     case Shell.Bash: {
       const bashConfigPath = path.join(os.homedir(), ".bashrc");
       await fsAsync.appendFile(bashConfigPath, `\n${bashScriptCommand()}`);
-      await fsAsync.copyFile(path.join(__dirname, "..", "..", "shell", "key-bindings.bash"), path.join(os.homedir(), ".sa", "key-bindings.bash"));
+      await fsAsync.copyFile(path.join(__dirname, "..", "..", "shell", "key-bindings.bash"), path.join(os.homedir(), cacheFolder, "key-bindings.bash"));
       break;
     }
     case Shell.Powershell: {
@@ -101,13 +102,13 @@ export const bind = async (shell: Shell): Promise<void> => {
       await fsAsync.appendFile(powershellConfigPath, `\n${powershellScriptCommand()}`);
       await fsAsync.copyFile(
         path.join(__dirname, "..", "..", "shell", "key-bindings-powershell.ps1"),
-        path.join(os.homedir(), ".sa", "key-bindings-powershell.ps1"),
+        path.join(os.homedir(), cacheFolder, "key-bindings-powershell.ps1"),
       );
       break;
     }
     case Shell.Pwsh: {
       await fsAsync.appendFile(pwshConfigPath(), `\n${pwshScriptCommand()}`);
-      await fsAsync.copyFile(path.join(__dirname, "..", "..", "shell", "key-bindings-pwsh.ps1"), path.join(os.homedir(), ".sa", "key-bindings-pwsh.ps1"));
+      await fsAsync.copyFile(path.join(__dirname, "..", "..", "shell", "key-bindings-pwsh.ps1"), path.join(os.homedir(), cacheFolder, "key-bindings-pwsh.ps1"));
       break;
     }
   }

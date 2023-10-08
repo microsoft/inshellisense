@@ -11,15 +11,15 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+a' -ScriptBlock {
     [Microsoft.PowerShell.PSConsoleReadLine]::BeginningOfLine()
     [Microsoft.PowerShell.PSConsoleReadLine]::KillLine()
 
-    $sa = "$env:USERPROFILE\AppData\Roaming\npm\node_modules\@microsoft\sa\build\index.js"
+    $inshellisense = "$env:USERPROFILE\AppData\Roaming\npm\node_modules\@microsoft\inshellisense\build\index.js"
     if ($command) {
-        Start-Process -NoNewWindow -Wait "node" "$sa -c $command -s pwsh"
+        Start-Process -NoNewWindow -Wait "node" "$inshellisense -c $command -s pwsh"
     }
     else {
-        Start-Process -NoNewWindow -Wait "node" "$sa -s pwsh"
+        Start-Process -NoNewWindow -Wait "node" "$inshellisense -s pwsh"
     }
 
-    $executedCommand = node $sa --history
+    $executedCommand = node $inshellisense --history
     if ($executedCommand) {
         [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($executedCommand)
     }

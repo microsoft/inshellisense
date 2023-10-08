@@ -1,24 +1,26 @@
-# sa
+# inshellisense
 
-`sa` provides IDE style autocomplete, `inshellisense`, for shells. It's a terminal native runtime of for [autocomplete](https://github.com/withfig/autocomplete) which has support for 600+ command line tools. `sa` supports Windows, Linux, & MacOS.
+`inshellisense` provides IDE style autocomplete for shells. It's a terminal native runtime of for [autocomplete](https://github.com/withfig/autocomplete) which has support for 600+ command line tools. `inshellisense` supports Windows, Linux, & MacOS.
 
-<p align="center"><img alt="demo of sa working" src="/docs/demo.gif" height="450px"/></p>
+<p align="center"><img alt="demo of inshellisense working" src="/docs/demo.gif" height="450px"/></p>
 
 ## Getting Started
 
 ### Installation
 
 ```shell
-npm install -g @microsoft/sa
+npm install -g @microsoft/inshellisense
 ```
 
 ### Quickstart
 
-After completing the installation, you can already run `sa --shell <shell>` to start the autocomplete session for your desired shell. Additionally, you can bind `sa` to a keybinding of `CTRL+a` by running the below command. This brings the added advantages of automatically starting the autocomplete session with your current shell and injecting any accepted command into your shell's history.
+After completing the installation, you can already run `inshellisense --shell <shell>` to start the autocomplete session for your desired shell. Additionally, you can bind `inshellisense` to a keybinding of `CTRL+a` by running the below command. This brings the added advantages of automatically starting the autocomplete session with your current shell and injecting any accepted command into your shell's history.
 
 ```shell
-sa bind
+inshellisense bind
 ```
+
+Additionally, inshellisense is also aliased under `is` after install for convenience.
 
 ## Contributing
 

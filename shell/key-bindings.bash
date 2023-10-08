@@ -1,7 +1,7 @@
-__sa__() {
-    sa -c "$READLINE_LINE" -s bash
-    history -s $(sa --history)
+__inshellisense__() {
+    inshellisense -c "$READLINE_LINE" -s bash
+    history -s $(inshellisense --history)
     READLINE_LINE=
 }
 
-bind -x '"\C-a": __sa__'
+bind -x '"\C-a": __inshellisense__'
