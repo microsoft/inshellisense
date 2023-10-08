@@ -3,8 +3,8 @@ import path from "node:path";
 import fsAsync from "node:fs/promises";
 import fs from "node:fs";
 
-const folderPath = path.join(os.homedir(), ".clac");
-const cachePath = path.join(os.homedir(), ".clac", "clac.cache");
+const folderPath = path.join(os.homedir(), ".sa");
+const cachePath = path.join(os.homedir(), ".sa", "sa.cache");
 
 export const saveCommand = async (command: string) => {
   if (!fs.existsSync(folderPath)) {

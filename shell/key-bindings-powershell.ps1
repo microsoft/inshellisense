@@ -3,7 +3,7 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+a' -ScriptBlock {
     [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$command, [ref]$null)
 
     $oldPrompt = $function:prompt
-    function prompt {"`r"}
+    function prompt { "`r" }
     [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
     $prompt = $oldPrompt
 
@@ -11,14 +11,15 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+a' -ScriptBlock {
     [Microsoft.PowerShell.PSConsoleReadLine]::BeginningOfLine()
     [Microsoft.PowerShell.PSConsoleReadLine]::KillLine()
 
-    $clac = "$env:USERPROFILE\AppData\Roaming\npm\node_modules\@microsoft\clac\build\index.js"
+    $sa = "$env:USERPROFILE\AppData\Roaming\npm\node_modules\@microsoft\sa\build\index.js"
     if ($command) {
-        Start-Process -NoNewWindow -Wait "node" "$clac -c $command -s powershell"
-    } else {
-        Start-Process -NoNewWindow -Wait "node" "$clac -s powershell"
+        Start-Process -NoNewWindow -Wait "node" "$sa -c $command -s powershell"
+    }
+    else {
+        Start-Process -NoNewWindow -Wait "node" "$sa -s powershell"
     }
 
-    $executedCommand = node $clac --history
+    $executedCommand = node $sa --history
     if ($executedCommand) {
         [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($executedCommand)
     }

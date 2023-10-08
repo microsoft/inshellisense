@@ -8,7 +8,7 @@ import { action, supportedShells } from "./commands/root.js";
 const program = new Command();
 
 program
-  .name("clac")
+  .name("sa")
   .description("IDE style command line auto complete")
   .version("0.0.0", "-v, --version", "output the current version")
   .option("-s, --shell <shell>", `shell to use for command execution, supported shells: ${supportedShells}`)
