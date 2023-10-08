@@ -1,33 +1,42 @@
-const filepathsTemplate = (): Fig.Suggestion[] => {
-  return [];
+import fsAsync from "fs/promises";
+import process from "node:process";
+
+const filepathsTemplate = async (): Promise<Fig.Suggestion[]> => {
+  const files = await fsAsync.readdir(process.cwd(), { withFileTypes: true });
+  return files.filter((f) => f.isFile() || f.isDirectory()).map((f) => ({ name: f.name, priority: 90 }));
 };
 
-const foldersTemplate = (): Fig.Suggestion[] => {
-  return [];
+const foldersTemplate = async (): Promise<Fig.Suggestion[]> => {
+  const files = await fsAsync.readdir(process.cwd(), { withFileTypes: true });
+  return files.filter((f) => f.isDirectory()).map((f) => ({ name: f.name, priority: 90 }));
 };
 
+// TODO: implement history template
 const historyTemplate = (): Fig.Suggestion[] => {
   return [];
 };
 
+// TODO: implement help template
 const helpTemplate = (): Fig.Suggestion[] => {
   return [];
 };
 
-export const runTemplates = (template: Fig.TemplateStrings[] | Fig.Template): Fig.Suggestion[] => {
+export const runTemplates = async (template: Fig.TemplateStrings[] | Fig.Template): Promise<Fig.Suggestion[]> => {
   const templates = template instanceof Array ? template : [template];
-  return templates
-    .map((t) => {
-      switch (t) {
-        case "filepaths":
-          return filepathsTemplate();
-        case "folders":
-          return foldersTemplate();
-        case "history":
-          return historyTemplate();
-        case "help":
-          return helpTemplate();
-      }
-    })
-    .flat();
+  return (
+    await Promise.all(
+      templates.map(async (t) => {
+        switch (t) {
+          case "filepaths":
+            return await filepathsTemplate();
+          case "folders":
+            return await foldersTemplate();
+          case "history":
+            return historyTemplate();
+          case "help":
+            return helpTemplate();
+        }
+      })
+    )
+  ).flat();
 };

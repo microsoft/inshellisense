@@ -33,7 +33,7 @@ export const runGenerator = async (generator: Fig.Generator, tokens: string[]): 
     }
 
     if (template != null) {
-      suggestions.push(...runTemplates(template));
+      suggestions.push(...(await runTemplates(template)));
     }
     return suggestions;
   } catch (e) {}

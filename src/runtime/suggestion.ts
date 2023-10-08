@@ -137,8 +137,12 @@ const generatorSuggestions = async (
   return filter<Fig.Suggestion>(suggestions, filterStrategy, partialCmd, undefined);
 };
 
-const templateSuggestions = (templates: Fig.Template | undefined, filterStrategy: FilterStrategy | undefined, partialCmd: string | undefined): Suggestion[] => {
-  return filter<Fig.Suggestion>(runTemplates(templates ?? []), filterStrategy, partialCmd, undefined);
+const templateSuggestions = async (
+  templates: Fig.Template | undefined,
+  filterStrategy: FilterStrategy | undefined,
+  partialCmd: string | undefined
+): Promise<Suggestion[]> => {
+  return filter<Fig.Suggestion>(await runTemplates(templates ?? []), filterStrategy, partialCmd, undefined);
 };
 
 const suggestionSuggestions = (
@@ -201,7 +205,7 @@ export const getSubcommandDrivenRecommendation = async (
     const activeArg = subcommand.args instanceof Array ? subcommand.args[0] : subcommand.args;
     suggestions.push(...(await generatorSuggestions(activeArg?.generators, acceptedTokens, activeArg?.filterStrategy, partialCmd)));
     suggestions.push(...suggestionSuggestions(activeArg?.suggestions, activeArg?.filterStrategy, partialCmd));
-    suggestions.push(...templateSuggestions(activeArg?.template, activeArg?.filterStrategy, partialCmd));
+    suggestions.push(...(await templateSuggestions(activeArg?.template, activeArg?.filterStrategy, partialCmd)));
   }
 
   return {
@@ -227,7 +231,7 @@ export const getArgDrivenRecommendation = async (
   const suggestions = [
     ...(await generatorSuggestions(args[0].generators, acceptedTokens, activeArg?.filterStrategy, partialCmd)),
     ...suggestionSuggestions(args[0].suggestions, activeArg?.filterStrategy, partialCmd),
-    ...templateSuggestions(args[0].template, activeArg?.filterStrategy, partialCmd),
+    ...(await templateSuggestions(args[0].template, activeArg?.filterStrategy, partialCmd)),
   ];
 
   if ((activeArg.isOptional && !activeArg.isVariadic) || (activeArg.isVariadic && activeArg.isOptional && !variadicArgBound)) {
