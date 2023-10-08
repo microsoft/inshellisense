@@ -10,6 +10,7 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+a' -ScriptBlock {
     [Microsoft.PowerShell.PSConsoleReadLine]::ClearKillRing()
     [Microsoft.PowerShell.PSConsoleReadLine]::BeginningOfLine()
     [Microsoft.PowerShell.PSConsoleReadLine]::KillLine()
+    [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 
     $sa = "$env:USERPROFILE\AppData\Roaming\npm\node_modules\@microsoft\sa\build\index.js"
     if ($command) {
@@ -23,5 +24,4 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+a' -ScriptBlock {
     if ($executedCommand) {
         [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($executedCommand)
     }
-    [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 }
