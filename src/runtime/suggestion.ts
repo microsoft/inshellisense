@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 import { CommandToken } from "./parser.js";
 import { runGenerator } from "./generator.js";
 import { runTemplates } from "./template.js";

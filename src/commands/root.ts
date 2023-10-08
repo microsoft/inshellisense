@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 import { render } from "../ui/ui-root.js";
 import { executeShellCommandTTY } from "../runtime/utils.js";
 import { saveCommand, loadCommand } from "../utils/cache.js";

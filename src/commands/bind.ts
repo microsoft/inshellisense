@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 import { Command } from "commander";
 import { supportedShells } from "../utils/bindings.js";
 import { render } from "../ui/ui-bind.js";

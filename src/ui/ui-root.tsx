@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 import React, { useCallback, useEffect, useState } from "react";
 import { Text, Box, render as inkRender, measureElement, DOMElement, useInput, useApp } from "ink";
 import wrapAnsi from "wrap-ansi";

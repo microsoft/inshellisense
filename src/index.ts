@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+/* eslint-disable header/header */
+
 import { Command } from "commander";
 
 import bind from "./commands/bind.js";

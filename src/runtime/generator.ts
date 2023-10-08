@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 import { runTemplates } from "./template.js";
 import { buildExecuteShellCommand } from "./utils.js";
 

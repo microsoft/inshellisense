@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 module.exports = {
   env: {
     es2021: true,
@@ -20,8 +23,8 @@ module.exports = {
     ecmaVersion: "latest",
     sourceType: "module",
   },
-  plugins: ["@typescript-eslint", "react"],
-  rules: {},
+  plugins: ["@typescript-eslint", "react", "header"],
+  rules: { "header/header": [2, "line", [" Copyright (c) Microsoft Corporation.", " Licensed under the MIT License."]] },
   settings: {
     react: {
       version: "detect",

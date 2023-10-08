@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 import { exec, spawn } from "node:child_process";
 
 type ExecuteShellCommandTTYResult = {

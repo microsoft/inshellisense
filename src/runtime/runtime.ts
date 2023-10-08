@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 import speclist, {
   diffVersionedCompletions as versionedSpeclist,
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 import { parseCommand } from "../../runtime/parser.js";
 
 const testData = [

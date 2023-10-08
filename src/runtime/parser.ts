@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 export type CommandToken = {
   token: string;
   complete: boolean;

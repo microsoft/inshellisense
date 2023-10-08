@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 import { getSuggestions } from "../../runtime/runtime.js";
 
 const testData = [

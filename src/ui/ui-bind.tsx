@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 import React, { useEffect, useState } from "react";
 import { Box, Text, render as inkRender, useInput, useApp } from "ink";
 import chalk from "chalk";
