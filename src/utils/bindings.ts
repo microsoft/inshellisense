@@ -16,12 +16,17 @@ export enum Shell {
   Bash = "bash",
   Powershell = "powershell",
   Pwsh = "pwsh",
+  Zsh = "zsh",
 }
 
-export const supportedShells = [Shell.Bash, Shell.Powershell, Shell.Pwsh];
+export const supportedShells = [Shell.Bash, Shell.Powershell, Shell.Pwsh, Shell.Zsh];
 
 const bashScriptCommand = (): string => {
   return `[ -f ~/${cacheFolder}/key-bindings.bash ] && source ~/${cacheFolder}/key-bindings.bash`;
+};
+
+const zshScriptCommand = (): string => {
+  return `[ -f ~/${cacheFolder}/key-bindings.zsh ] && source ~/${cacheFolder}/key-bindings.zsh`;
 };
 
 const powershellScriptCommand = (): string => {
@@ -63,6 +68,16 @@ export const availableBindings = async (): Promise<Shell[]> => {
     }
   }
 
+  const zshConfigPath = path.join(os.homedir(), ".zshrc");
+  if (!fs.existsSync(zshConfigPath)) {
+    bindings.push(Shell.Zsh);
+  } else {
+    const zshConfigContent = fsAsync.readFile(zshConfigPath, { encoding: "utf-8" });
+    if (!(await zshConfigContent).includes(zshScriptCommand())) {
+      bindings.push(Shell.Zsh);
+    }
+  }
+
   const powershellConfigPath = path.join(os.homedir(), "Documents", "WindowsPowershell", "Microsoft.PowerShell_profile.ps1");
   if (!fs.existsSync(powershellConfigPath)) {
     bindings.push(Shell.Powershell);
@@ -95,6 +110,12 @@ export const bind = async (shell: Shell): Promise<void> => {
       const bashConfigPath = path.join(os.homedir(), ".bashrc");
       await fsAsync.appendFile(bashConfigPath, `\n${bashScriptCommand()}`);
       await fsAsync.copyFile(path.join(__dirname, "..", "..", "shell", "key-bindings.bash"), path.join(os.homedir(), cacheFolder, "key-bindings.bash"));
+      break;
+    }
+    case Shell.Zsh: {
+      const zshConfigPath = path.join(os.homedir(), ".zshrc");
+      await fsAsync.appendFile(zshConfigPath, `\n${zshScriptCommand()}`);
+      await fsAsync.copyFile(path.join(__dirname, "..", "..", "shell", "key-bindings.zsh"), path.join(os.homedir(), cacheFolder, "key-bindings.zsh"));
       break;
     }
     case Shell.Powershell: {

@@ -4,8 +4,8 @@
 import { render } from "../ui/ui-root.js";
 import { executeShellCommandTTY } from "../runtime/utils.js";
 import { saveCommand, loadCommand } from "../utils/cache.js";
+import { supportedShells as shells } from "../utils/bindings.js";
 
-const shells = ["bash", "powershell", "pwsh"];
 export const supportedShells = shells.join(", ");
 
 type RootCommandOptions = {
@@ -21,7 +21,7 @@ export const action = async (options: RootCommandOptions) => {
   }
 
   const shell = options.shell ?? "";
-  if (!shells.includes(shell)) {
+  if (!shells.map((s) => s.valueOf()).includes(shell)) {
     console.error(`Unsupported shell: '${shell}', supported shells: ${supportedShells}`);
     process.exit(1);
   }
