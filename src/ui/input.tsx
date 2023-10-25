@@ -33,10 +33,15 @@ export default function Input({
 
   // TODO: arrow key navigation shortcuts (emacs & vim modes)
   useInput((input, key) => {
-    if (key.backspace) {
+    // TODO: handle delete better on unix systems: https://github.com/vadimdemedes/ink/issues/634
+    const windows = process.platform === "win32";
+    const backspaceKey = windows ? key.backspace : key.backspace || key.delete;
+    const deleteKey = windows ? key.delete : false;
+
+    if (backspaceKey) {
       setValue([...value].slice(0, Math.max(cursorLocation - 1, 0)).join("") + [...value].slice(cursorLocation).join(""));
       setCursorLocation(Math.max(cursorLocation - 1, 0));
-    } else if (key.delete) {
+    } else if (deleteKey) {
       setValue([...value].slice(0, cursorLocation).join("") + [...value].slice(Math.min(value.length, cursorLocation + 1)).join(""));
     } else if (key.leftArrow) {
       setCursorLocation(Math.max(cursorLocation - 1, 0));
