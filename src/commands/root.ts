@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { render } from "../ui/ui-root.js";
-import { executeShellCommandTTY } from "../runtime/utils.js";
+import { executeShellCommandTTY, ExecuteShellCommandTTYResult } from "../runtime/utils.js";
 import { saveCommand, loadCommand } from "../utils/cache.js";
 import { supportedShells as shells } from "../utils/bindings.js";
 
@@ -12,6 +12,7 @@ type RootCommandOptions = {
   shell: string | undefined;
   command: string | undefined;
   history: boolean | undefined;
+  duration: string | undefined;
 };
 
 export const action = async (options: RootCommandOptions) => {
@@ -26,10 +27,23 @@ export const action = async (options: RootCommandOptions) => {
     process.exit(1);
   }
 
-  const commandToExecute = await render(options.command);
-  await saveCommand(commandToExecute);
+  let executed = false;
+  const commands = [];
+  let result: ExecuteShellCommandTTYResult = { code: 0 };
+  while (options.duration === "session" || !executed) {
+    const commandToExecute = await render(options.command);
 
-  const result = await executeShellCommandTTY(shell, commandToExecute);
+    if (commandToExecute == null) {
+      result = { code: 0 };
+      break;
+    }
+
+    commands.push(commandToExecute);
+    result = await executeShellCommandTTY(shell, commandToExecute);
+    executed = true;
+  }
+  await saveCommand(commands);
+
   if (result.code) {
     process.exit(result.code);
   } else {

@@ -10,11 +10,11 @@ const cacheFolder = ".inshellisense";
 const folderPath = path.join(os.homedir(), cacheFolder);
 const cachePath = path.join(os.homedir(), cacheFolder, "inshellisense.cache");
 
-export const saveCommand = async (command: string) => {
+export const saveCommand = async (command: string[]) => {
   if (!fs.existsSync(folderPath)) {
     await fsAsync.mkdir(folderPath);
   }
-  await fsAsync.writeFile(cachePath, command);
+  await fsAsync.writeFile(cachePath, command.map((c, idx) => `${idx.toString().padStart(5)}  ${c}`).join("\n"));
 };
 
 export const loadCommand = async (): Promise<string> => {

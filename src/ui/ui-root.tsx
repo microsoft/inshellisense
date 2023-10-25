@@ -11,7 +11,7 @@ import Suggestions from "./suggestions.js";
 import Input from "./input.js";
 
 const Prompt = "> ";
-let uiResult = "";
+let uiResult = undefined;
 
 function UI({ startingCommand }: { startingCommand: string }) {
   const { exit } = useApp();
@@ -71,7 +71,8 @@ function UI({ startingCommand }: { startingCommand: string }) {
   );
 }
 
-export const render = async (command: string | undefined) => {
+export const render = async (command: string | undefined): Promise<string | undefined> => {
+  uiResult = undefined;
   const { waitUntilExit } = inkRender(<UI startingCommand={command ?? ""} />);
   await waitUntilExit();
 

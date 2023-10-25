@@ -3,7 +3,7 @@
 
 import { exec, spawn } from "node:child_process";
 
-type ExecuteShellCommandTTYResult = {
+export type ExecuteShellCommandTTYResult = {
   code: number | null;
 };
 
