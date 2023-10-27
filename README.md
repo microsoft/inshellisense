@@ -22,6 +22,16 @@ inshellisense bind
 
 Additionally, inshellisense is also aliased under `is` after install for convenience.
 
+## Integrations
+
+inshellisense supports the following shells:
+
+- [bash](https://www.gnu.org/software/bash/)
+- [zsh](https://www.zsh.org/)
+- [fish](https://github.com/fish-shell/fish-shell)
+- [pwsh](https://github.com/PowerShell/PowerShell)
+- [powershell](https://learn.microsoft.com/en-us/powershell/scripting/windows-powershell/starting-windows-powershell) (Windows Powershell)
+
 ## Contributing
 
 This project welcomes contributions and suggestions. Most contributions require you to agree to a
