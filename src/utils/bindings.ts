@@ -17,9 +17,10 @@ export enum Shell {
   Powershell = "powershell",
   Pwsh = "pwsh",
   Zsh = "zsh",
+  Fish = "fish",
 }
 
-export const supportedShells = [Shell.Bash, Shell.Powershell, Shell.Pwsh, Shell.Zsh];
+export const supportedShells = [Shell.Bash, Shell.Powershell, Shell.Pwsh, Shell.Zsh, Shell.Fish];
 
 const bashScriptCommand = (): string => {
   return `[ -f ~/${cacheFolder}/key-bindings.bash ] && source ~/${cacheFolder}/key-bindings.bash`;
@@ -27,6 +28,10 @@ const bashScriptCommand = (): string => {
 
 const zshScriptCommand = (): string => {
   return `[ -f ~/${cacheFolder}/key-bindings.zsh ] && source ~/${cacheFolder}/key-bindings.zsh`;
+};
+
+const fishScriptCommand = (): string => {
+  return `[ -f ~/${cacheFolder}/key-bindings.fish ] && source ~/${cacheFolder}/key-bindings.fish`;
 };
 
 const powershellScriptCommand = (): string => {
@@ -78,6 +83,16 @@ export const availableBindings = async (): Promise<Shell[]> => {
     }
   }
 
+  const fishConfigPath = path.join(os.homedir(), ".config", "fish", "config.fish");
+  if (!fs.existsSync(fishConfigPath)) {
+    bindings.push(Shell.Fish);
+  } else {
+    const fishConfigContent = fsAsync.readFile(fishConfigPath, { encoding: "utf-8" });
+    if (!(await fishConfigContent).includes(fishScriptCommand())) {
+      bindings.push(Shell.Fish);
+    }
+  }
+
   const powershellConfigPath = path.join(os.homedir(), "Documents", "WindowsPowershell", "Microsoft.PowerShell_profile.ps1");
   if (!fs.existsSync(powershellConfigPath)) {
     bindings.push(Shell.Powershell);
@@ -116,6 +131,14 @@ export const bind = async (shell: Shell): Promise<void> => {
       const zshConfigPath = path.join(os.homedir(), ".zshrc");
       await fsAsync.appendFile(zshConfigPath, `\n${zshScriptCommand()}`);
       await fsAsync.copyFile(path.join(__dirname, "..", "..", "shell", "key-bindings.zsh"), path.join(os.homedir(), cacheFolder, "key-bindings.zsh"));
+      break;
+    }
+    case Shell.Fish: {
+      const fishConfigDirectory = path.join(os.homedir(), ".config", "fish");
+      const fishConfigPath = path.join(fishConfigDirectory, "config.fish");
+      await fsAsync.mkdir(fishConfigDirectory, { recursive: true });
+      await fsAsync.appendFile(fishConfigPath, `\n${fishScriptCommand()}`);
+      await fsAsync.copyFile(path.join(__dirname, "..", "..", "shell", "key-bindings.fish"), path.join(os.homedir(), cacheFolder, "key-bindings.fish"));
       break;
     }
     case Shell.Powershell: {
