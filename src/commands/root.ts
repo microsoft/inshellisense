@@ -30,8 +30,9 @@ export const action = async (options: RootCommandOptions) => {
   let executed = false;
   const commands = [];
   let result: ExecuteShellCommandTTYResult = { code: 0 };
+  let startingCommand = options.command;
   while (options.duration === "session" || !executed) {
-    const commandToExecute = await render(options.command);
+    const commandToExecute = await render(startingCommand);
 
     if (commandToExecute == null) {
       result = { code: 0 };
@@ -41,6 +42,7 @@ export const action = async (options: RootCommandOptions) => {
     commands.push(commandToExecute);
     result = await executeShellCommandTTY(shell, commandToExecute);
     executed = true;
+    startingCommand = undefined;
   }
   await saveCommand(commands);
 
