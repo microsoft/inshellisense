@@ -1,6 +1,6 @@
 # inshellisense
 
-`inshellisense` provides IDE style autocomplete for shells. It's a terminal native runtime of for [autocomplete](https://github.com/withfig/autocomplete) which has support for 600+ command line tools. `inshellisense` supports Windows, Linux, & MacOS.
+`inshellisense` provides IDE style autocomplete for shells. It's a terminal native runtime for [autocomplete](https://github.com/withfig/autocomplete) which has support for 600+ command line tools. `inshellisense` supports Windows, Linux, & MacOS.
 
 <p align="center"><img alt="demo of inshellisense working" src="/docs/demo.gif" height="450px"/></p>
 
