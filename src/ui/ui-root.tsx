@@ -30,7 +30,11 @@ function UI({ startingCommand }: { startingCommand: string }) {
     }
   }, []);
 
-  useInput((_, key) => {
+  useInput((input, key) => {
+    if (key.ctrl && input.toLowerCase() == "d") {
+      uiResult = undefined;
+      exit();
+    }
     if (key.return) {
       setIsExiting(true);
     }

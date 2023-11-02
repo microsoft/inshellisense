@@ -34,7 +34,7 @@ export const action = async (options: RootCommandOptions) => {
   while (options.duration === "session" || !executed) {
     const commandToExecute = await render(startingCommand);
 
-    if (commandToExecute == null) {
+    if (commandToExecute == null || commandToExecute.trim().toLowerCase() == "exit" || commandToExecute.trim().toLowerCase() == "logout") {
       result = { code: 0 };
       break;
     }
