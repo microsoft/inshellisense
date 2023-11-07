@@ -20,7 +20,9 @@ export enum Shell {
   Fish = "fish",
 }
 
-export const supportedShells = [Shell.Bash, Shell.Powershell, Shell.Pwsh, Shell.Zsh, Shell.Fish];
+export const supportedShells = [Shell.Bash, process.platform == "win32" ? Shell.Powershell : null, Shell.Pwsh, Shell.Zsh, Shell.Fish].filter(
+  (shell) => shell != null,
+) as Shell[];
 
 const bashScriptCommand = (): string => {
   return `[ -f ~/${cacheFolder}/key-bindings.bash ] && source ~/${cacheFolder}/key-bindings.bash`;
@@ -93,13 +95,15 @@ export const availableBindings = async (): Promise<Shell[]> => {
     }
   }
 
-  const powershellConfigPath = path.join(os.homedir(), "Documents", "WindowsPowershell", "Microsoft.PowerShell_profile.ps1");
-  if (!fs.existsSync(powershellConfigPath)) {
-    bindings.push(Shell.Powershell);
-  } else {
-    const powershellConfigContent = fsAsync.readFile(powershellConfigPath, { encoding: "utf-8" });
-    if (!(await powershellConfigContent).includes(powershellScriptCommand())) {
+  if (process.platform == "win32") {
+    const powershellConfigPath = path.join(os.homedir(), "Documents", "WindowsPowershell", "Microsoft.PowerShell_profile.ps1");
+    if (!fs.existsSync(powershellConfigPath)) {
       bindings.push(Shell.Powershell);
+    } else {
+      const powershellConfigContent = fsAsync.readFile(powershellConfigPath, { encoding: "utf-8" });
+      if (!(await powershellConfigContent).includes(powershellScriptCommand())) {
+        bindings.push(Shell.Powershell);
+      }
     }
   }
 
