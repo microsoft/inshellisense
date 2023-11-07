@@ -6,6 +6,9 @@
 
 ## Getting Started
 
+### Requirements
+- `node >= 16.x`
+
 ### Installation
 
 ```shell
