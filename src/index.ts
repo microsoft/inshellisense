@@ -8,6 +8,7 @@
 import { Command } from "commander";
 
 import bind from "./commands/bind.js";
+import uninstall from "./commands/uninstall.js";
 import { action, supportedShells } from "./commands/root.js";
 import { getVersion } from "./utils/version.js";
 
@@ -24,5 +25,6 @@ program
   .action(action);
 
 program.addCommand(bind);
+program.addCommand(uninstall);
 
 program.parse();

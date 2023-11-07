@@ -115,6 +115,69 @@ export const availableBindings = async (): Promise<Shell[]> => {
   return bindings;
 };
 
+export const unbindAll = async (): Promise<void> => {
+  try {
+    const bashConfigPath = path.join(os.homedir(), ".bashrc");
+    const bashConfig = (await fsAsync.readFile(bashConfigPath)).toString();
+    if (bashConfig.includes(bashScriptCommand())) {
+      const unboundBashConfig = bashConfig.toString().replace(bashScriptCommand(), "");
+      await fsAsync.writeFile(bashConfigPath, unboundBashConfig);
+    }
+  } catch {
+    /* empty */
+  }
+
+  try {
+    const zshConfigPath = path.join(os.homedir(), ".zshrc");
+    const zshConfig = (await fsAsync.readFile(zshConfigPath)).toString();
+    if (zshConfig.includes(zshScriptCommand())) {
+      const unboundZshConfig = zshConfig.toString().replace(zshScriptCommand(), "");
+      await fsAsync.writeFile(zshConfigPath, unboundZshConfig);
+    }
+  } catch {
+    /* empty */
+  }
+
+  try {
+    const fishConfigPath = path.join(os.homedir(), ".config", "fish", "config.fish");
+    const fishConfig = (await fsAsync.readFile(fishConfigPath)).toString();
+    if (fishConfig.includes(fishScriptCommand())) {
+      const unboundFishConfig = fishConfig.toString().replace(fishScriptCommand(), "");
+      await fsAsync.writeFile(fishConfigPath, unboundFishConfig);
+    }
+  } catch {
+    /* empty */
+  }
+
+  try {
+    const powershellConfigPath = path.join(os.homedir(), "Documents", "WindowsPowershell", "Microsoft.PowerShell_profile.ps1");
+    const powershellConfig = (await fsAsync.readFile(powershellConfigPath)).toString();
+    if (powershellConfig.includes(fishScriptCommand())) {
+      const unboundPowershellConfig = powershellConfig.toString().replace(powershellScriptCommand(), "");
+      await fsAsync.writeFile(powershellConfigPath, unboundPowershellConfig);
+    }
+  } catch {
+    /* empty */
+  }
+
+  try {
+    const pwshConfig = (await fsAsync.readFile(pwshConfigPath())).toString();
+    if (pwshConfig.includes(fishScriptCommand())) {
+      const unboundPwshConfig = pwshConfig.toString().replace(pwshScriptCommand(), "");
+      await fsAsync.writeFile(pwshConfigPath(), unboundPwshConfig);
+    }
+  } catch {
+    /* empty */
+  }
+};
+
+export const deleteConfigFolder = async (): Promise<void> => {
+  const cliConfigPath = path.join(os.homedir(), cacheFolder);
+  if (fs.existsSync(cliConfigPath)) {
+    fs.rmSync(cliConfigPath, { recursive: true });
+  }
+};
+
 export const bind = async (shell: Shell): Promise<void> => {
   const cliConfigPath = path.join(os.homedir(), cacheFolder);
   if (!fs.existsSync(cliConfigPath)) {
