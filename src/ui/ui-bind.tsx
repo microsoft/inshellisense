@@ -12,6 +12,7 @@ let uiResult = "";
 function UI() {
   const { exit } = useApp();
   const [selectionIdx, setSelectionIdx] = useState(0);
+  const [loaded, setLoaded] = useState(false);
   const [availableShells, setAvailableShells] = useState<Shell[]>([]);
 
   useEffect(() => {
@@ -20,6 +21,7 @@ function UI() {
         exit();
       }
       setAvailableShells(bindings);
+      setLoaded(true);
     });
   }, []);
 
@@ -56,14 +58,17 @@ function UI() {
             </Text>
           );
         })}
-        {supportedShells
-          .filter((s) => !availableShells.includes(s))
-          .map((shell, idx) => (
-            <Text color="gray" key={idx}>
-              {"  "}
-              {shell} (already bound)
-            </Text>
-          ))}
+        {loaded
+          ? supportedShells
+              .filter((s) => !availableShells.includes(s))
+              .map((shell, idx) => (
+                <Text color="gray" key={idx}>
+                  {"  "}
+                  {shell} (already bound)
+                </Text>
+              ))
+          : null}
+        {!loaded ? <Text>Loading...</Text> : null}
       </Box>
     </Box>
   );

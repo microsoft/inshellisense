@@ -7,6 +7,9 @@ import fsAsync from "node:fs/promises";
 import fs from "node:fs";
 import process from "node:process";
 import url from "node:url";
+import { exec } from "node:child_process";
+import util from "node:util";
+const execAsync = util.promisify(exec);
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,16 +49,14 @@ const pwshScriptCommand = (): string => {
   return `if(Test-Path '${bindingsPath}' -PathType Leaf){. ${bindingsPath}}`;
 };
 
-const pwshConfigPath = (): string => {
-  switch (process.platform) {
-    case "win32":
-      return path.join(os.homedir(), "Documents", "Powershell", "Microsoft.PowerShell_profile.ps1");
-    case "linux":
-    case "darwin":
-      return path.join(os.homedir(), ".config", "powershell", "Microsoft.PowerShell_profile.ps1");
-    default:
-      throw new Error("Unsupported platform");
-  }
+const pwshConfigPath = async (): Promise<string> => {
+  const { stdout } = await execAsync("echo $profile", { shell: "pwsh" });
+  return stdout.trim();
+};
+
+const powershellConfigPath = async (): Promise<string> => {
+  const { stdout } = await execAsync("echo $profile", { shell: "powershell" });
+  return stdout.trim();
 };
 
 export const availableBindings = async (): Promise<Shell[]> => {
@@ -95,22 +96,23 @@ export const availableBindings = async (): Promise<Shell[]> => {
     }
   }
 
+  const powershellResolvedConfigPath = await powershellConfigPath();
   if (process.platform == "win32") {
-    const powershellConfigPath = path.join(os.homedir(), "Documents", "WindowsPowershell", "Microsoft.PowerShell_profile.ps1");
-    if (!fs.existsSync(powershellConfigPath)) {
+    if (!fs.existsSync(powershellResolvedConfigPath)) {
       bindings.push(Shell.Powershell);
     } else {
-      const powershellConfigContent = fsAsync.readFile(powershellConfigPath, { encoding: "utf-8" });
+      const powershellConfigContent = fsAsync.readFile(powershellResolvedConfigPath, { encoding: "utf-8" });
       if (!(await powershellConfigContent).includes(powershellScriptCommand())) {
         bindings.push(Shell.Powershell);
       }
     }
   }
 
-  if (!fs.existsSync(pwshConfigPath())) {
+  const pwshResolvedConfigPath = await pwshConfigPath();
+  if (!fs.existsSync(pwshResolvedConfigPath)) {
     bindings.push(Shell.Pwsh);
   } else {
-    const pwshConfigContent = fsAsync.readFile(pwshConfigPath(), { encoding: "utf-8" });
+    const pwshConfigContent = fsAsync.readFile(pwshResolvedConfigPath, { encoding: "utf-8" });
     if (!(await pwshConfigContent).includes(pwshScriptCommand())) {
       bindings.push(Shell.Pwsh);
     }
@@ -154,21 +156,22 @@ export const unbindAll = async (): Promise<void> => {
   }
 
   try {
-    const powershellConfigPath = path.join(os.homedir(), "Documents", "WindowsPowershell", "Microsoft.PowerShell_profile.ps1");
-    const powershellConfig = (await fsAsync.readFile(powershellConfigPath)).toString();
-    if (powershellConfig.includes(fishScriptCommand())) {
+    const powershellResolvedConfigPath = await powershellConfigPath();
+    const powershellConfig = (await fsAsync.readFile(powershellResolvedConfigPath)).toString();
+    if (powershellConfig.includes(powershellScriptCommand())) {
       const unboundPowershellConfig = powershellConfig.toString().replace(powershellScriptCommand(), "");
-      await fsAsync.writeFile(powershellConfigPath, unboundPowershellConfig);
+      await fsAsync.writeFile(powershellResolvedConfigPath, unboundPowershellConfig);
     }
   } catch {
     /* empty */
   }
 
   try {
-    const pwshConfig = (await fsAsync.readFile(pwshConfigPath())).toString();
-    if (pwshConfig.includes(fishScriptCommand())) {
+    const pwshResolvedConfigPath = await pwshConfigPath();
+    const pwshConfig = (await fsAsync.readFile(pwshResolvedConfigPath)).toString();
+    if (pwshConfig.includes(pwshScriptCommand())) {
       const unboundPwshConfig = pwshConfig.toString().replace(pwshScriptCommand(), "");
-      await fsAsync.writeFile(pwshConfigPath(), unboundPwshConfig);
+      await fsAsync.writeFile(pwshResolvedConfigPath, unboundPwshConfig);
     }
   } catch {
     /* empty */
@@ -182,6 +185,15 @@ export const deleteConfigFolder = async (): Promise<void> => {
   }
 };
 
+const safeAppendFile = async (filepath: string, data: string) => {
+  if (!fs.existsSync(filepath)) {
+    await fsAsync.mkdir(path.dirname(filepath), { recursive: true });
+    await fsAsync.writeFile(filepath, data);
+  } else {
+    await fsAsync.appendFile(filepath, data);
+  }
+};
+
 export const bind = async (shell: Shell): Promise<void> => {
   const cliConfigPath = path.join(os.homedir(), cacheFolder);
   if (!fs.existsSync(cliConfigPath)) {
@@ -190,27 +202,24 @@ export const bind = async (shell: Shell): Promise<void> => {
   switch (shell) {
     case Shell.Bash: {
       const bashConfigPath = path.join(os.homedir(), ".bashrc");
-      await fsAsync.appendFile(bashConfigPath, `\n${bashScriptCommand()}`);
+      await safeAppendFile(bashConfigPath, `\n${bashScriptCommand()}`);
       await fsAsync.copyFile(path.join(__dirname, "..", "..", "shell", "key-bindings.bash"), path.join(os.homedir(), cacheFolder, "key-bindings.bash"));
       break;
     }
     case Shell.Zsh: {
       const zshConfigPath = path.join(os.homedir(), ".zshrc");
-      await fsAsync.appendFile(zshConfigPath, `\n${zshScriptCommand()}`);
+      await safeAppendFile(zshConfigPath, `\n${zshScriptCommand()}`);
       await fsAsync.copyFile(path.join(__dirname, "..", "..", "shell", "key-bindings.zsh"), path.join(os.homedir(), cacheFolder, "key-bindings.zsh"));
       break;
     }
     case Shell.Fish: {
-      const fishConfigDirectory = path.join(os.homedir(), ".config", "fish");
-      const fishConfigPath = path.join(fishConfigDirectory, "config.fish");
-      await fsAsync.mkdir(fishConfigDirectory, { recursive: true });
-      await fsAsync.appendFile(fishConfigPath, `\n${fishScriptCommand()}`);
+      const fishConfigPath = path.join(os.homedir(), ".config", "fish", "config.fish");
+      await safeAppendFile(fishConfigPath, `\n${fishScriptCommand()}`);
       await fsAsync.copyFile(path.join(__dirname, "..", "..", "shell", "key-bindings.fish"), path.join(os.homedir(), cacheFolder, "key-bindings.fish"));
       break;
     }
     case Shell.Powershell: {
-      const powershellConfigPath = path.join(os.homedir(), "Documents", "WindowsPowershell", "Microsoft.PowerShell_profile.ps1");
-      await fsAsync.appendFile(powershellConfigPath, `\n${powershellScriptCommand()}`);
+      await safeAppendFile(await powershellConfigPath(), `\n${powershellScriptCommand()}`);
       await fsAsync.copyFile(
         path.join(__dirname, "..", "..", "shell", "key-bindings-powershell.ps1"),
         path.join(os.homedir(), cacheFolder, "key-bindings-powershell.ps1"),
@@ -218,7 +227,7 @@ export const bind = async (shell: Shell): Promise<void> => {
       break;
     }
     case Shell.Pwsh: {
-      await fsAsync.appendFile(pwshConfigPath(), `\n${pwshScriptCommand()}`);
+      await safeAppendFile(await pwshConfigPath(), `\n${pwshScriptCommand()}`);
       await fsAsync.copyFile(path.join(__dirname, "..", "..", "shell", "key-bindings-pwsh.ps1"), path.join(os.homedir(), cacheFolder, "key-bindings-pwsh.ps1"));
       break;
     }
