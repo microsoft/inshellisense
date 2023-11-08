@@ -114,8 +114,8 @@ export const availableBindings = async (): Promise<Shell[]> => {
     }
   }
 
-  const powershellResolvedConfigPath = await powershellConfigPath();
   if (process.platform == "win32") {
+    const powershellResolvedConfigPath = await powershellConfigPath();
     if (!fs.existsSync(powershellResolvedConfigPath)) {
       bindings.push(Shell.Powershell);
     } else {
