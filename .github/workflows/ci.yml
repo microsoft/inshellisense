@@ -11,6 +11,7 @@ jobs:
     strategy:
       matrix:
         node-version: ["16.x", "18.x", "20.x"]
+        command: [lint, test]
     steps:
       - uses: actions/checkout@v4
 
@@ -20,9 +21,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - run: npm ci
-
-      - run: npm run lint
-
-      - run: npm test
+      
+      - run: npm run ${{ matrix.command }}
 
       - run: npm run build
