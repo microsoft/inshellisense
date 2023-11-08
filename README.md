@@ -35,6 +35,22 @@ inshellisense supports the following shells:
 - [pwsh](https://github.com/PowerShell/PowerShell)
 - [powershell](https://learn.microsoft.com/en-us/powershell/scripting/windows-powershell/starting-windows-powershell) (Windows Powershell)
 
+### FAQ and Troubleshooting
+
+#### Common Issues
+
+##### Error: spawn powershell ENOENT or Error: spawn powershell EACCES when running `inshellisense bind`
+
+These errors typically occur when `inshellisense` is trying to bind to PowerShell which might not be available or accessible on your system, especially if you're using a non-Windows operating system or if PowerShell has been uninstalled.
+
+To resolve these issues, try the following steps:
+
+1. Ensure PowerShell is installed and correctly configured on your system. If you're on Windows, `powershell` should be accessible from your command prompt or PowerShell. If you're on Linux or macOS, you might need to install PowerShell Core (`pwsh`).
+
+2. If you do not intend to use PowerShell, specify your current shell using the `--shell` flag with `inshellisense` command:
+   ```shell
+   inshellisense --shell zsh # Replace 'zsh' with 'bash', 'fish', etc.
+
 ## Contributing
 
 This project welcomes contributions and suggestions. Most contributions require you to agree to a
