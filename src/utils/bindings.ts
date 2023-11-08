@@ -50,13 +50,31 @@ const pwshScriptCommand = (): string => {
 };
 
 const pwshConfigPath = async (): Promise<string> => {
-  const { stdout } = await execAsync("echo $profile", { shell: "pwsh" });
-  return stdout.trim();
+  try {
+    const { stdout } = await execAsync("echo $profile", { shell: "pwsh" });
+    return stdout.trim();
+  } catch {
+    /* empty */
+  }
+  switch (process.platform) {
+    case "win32":
+      return path.join(os.homedir(), "Documents", "Powershell", "Microsoft.PowerShell_profile.ps1");
+    case "linux":
+    case "darwin":
+      return path.join(os.homedir(), ".config", "powershell", "Microsoft.PowerShell_profile.ps1");
+    default:
+      throw new Error("Unsupported platform");
+  }
 };
 
 const powershellConfigPath = async (): Promise<string> => {
-  const { stdout } = await execAsync("echo $profile", { shell: "powershell" });
-  return stdout.trim();
+  try {
+    const { stdout } = await execAsync("echo $profile", { shell: "powershell" });
+    return stdout.trim();
+  } catch {
+    /* empty */
+  }
+  return path.join(os.homedir(), "Documents", "WindowsPowershell", "Microsoft.PowerShell_profile.ps1");
 };
 
 export const availableBindings = async (): Promise<Shell[]> => {
@@ -96,8 +114,8 @@ export const availableBindings = async (): Promise<Shell[]> => {
     }
   }
 
-  const powershellResolvedConfigPath = await powershellConfigPath();
   if (process.platform == "win32") {
+    const powershellResolvedConfigPath = await powershellConfigPath();
     if (!fs.existsSync(powershellResolvedConfigPath)) {
       bindings.push(Shell.Powershell);
     } else {
