@@ -8,3 +8,6 @@ __inshellisense__() {
 
 zle     -N   __inshellisense __inshellisense__
 bindkey '^A' __inshellisense
+inshelless -c "$code" -s msh < $RRY
+    print -s $(inshelless--history)
+    zle reset-prompt
