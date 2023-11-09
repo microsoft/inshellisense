@@ -6,6 +6,8 @@ import { render } from "../ui/ui-root.js";
 import { executeShellCommandTTY, ExecuteShellCommandTTYResult } from "../runtime/utils.js";
 import { saveCommand, loadCommand } from "../utils/cache.js";
 import { supportedShells as shells } from "../utils/bindings.js";
+import { inferShell } from "../utils/shell.js";
+import { Command } from "commander";
 
 export const supportedShells = shells.join(", ");
 
@@ -16,16 +18,15 @@ type RootCommandOptions = {
   duration: string | undefined;
 };
 
-export const action = async (options: RootCommandOptions) => {
+export const action = (program: Command) => async (options: RootCommandOptions) => {
   if (options.history) {
     process.stdout.write(await loadCommand());
     process.exit(0);
   }
 
-  const shell = options.shell ?? (await initRender()) ?? "";
+  const shell = options.shell ?? (await inferShell()) ?? (await initRender()) ?? "";
   if (!shells.map((s) => s.valueOf()).includes(shell)) {
-    console.error(`Unsupported shell: '${shell}', supported shells: ${supportedShells}`);
-    process.exit(1);
+    program.error(`Unsupported shell: '${shell}', supported shells: ${supportedShells}`, { exitCode: 1 });
   }
 
   let executed = false;

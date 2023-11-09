@@ -22,7 +22,8 @@ program
   .option("-c, --command <commmand>", "command to use as initial input")
   .option("--history", "get the last command execute")
   .option("-d, --duration <duration>", "duration of the autocomplete session, supported durations: single, session", "session")
-  .action(action);
+  .action(action(program))
+  .showHelpAfterError("(add --help for additional information)");
 
 program.addCommand(bind);
 program.addCommand(uninstall);
