@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { initRender } from "../ui/ui-init.js";
 import { render } from "../ui/ui-root.js";
 import { executeShellCommandTTY, ExecuteShellCommandTTYResult } from "../runtime/utils.js";
 import { saveCommand, loadCommand } from "../utils/cache.js";
@@ -21,7 +22,7 @@ export const action = async (options: RootCommandOptions) => {
     process.exit(0);
   }
 
-  const shell = options.shell ?? "";
+  const shell = options.shell ?? (await initRender()) ?? "";
   if (!shells.map((s) => s.valueOf()).includes(shell)) {
     console.error(`Unsupported shell: '${shell}', supported shells: ${supportedShells}`);
     process.exit(1);
