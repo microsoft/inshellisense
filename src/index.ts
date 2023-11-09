@@ -19,7 +19,7 @@ program
   .description("IDE style command line auto complete")
   .version(await getVersion(), "-v, --version", "output the current version")
   .option("-s, --shell <shell>", `shell to use for command execution, supported shells: ${supportedShells}`)
-  .option("-c, --command <commmand>", "command to use as initial input")
+  .option("-c, --command <command>", "command to use as initial input")
   .option("--history", "get the last command execute")
   .option("-d, --duration <duration>", "duration of the autocomplete session, supported durations: single, session", "session")
   .action(action(program))

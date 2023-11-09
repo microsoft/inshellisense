@@ -49,7 +49,7 @@ export default function Input({
       setCursorLocation(Math.min(cursorLocation + 1, value.length));
     } else if (key.tab) {
       if (activeSuggestion) {
-        // TOOD: support insertValue
+        // TODO: support insertValue
         const newValue = [...value].slice(0, cursorLocation - tabCompletionDropSize).join("") + activeSuggestion.name + " ";
         setValue(newValue);
         setCursorLocation(newValue.length);
