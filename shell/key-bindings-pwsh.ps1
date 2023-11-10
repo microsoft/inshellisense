@@ -40,10 +40,10 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+a' -ScriptBlock {
     $nodeModulesPath = Get-Content -Path "$env:USERPROFILE\.inshellisense\modules-path"
     $inshellisense = "$nodeModulesPath\@microsoft\inshellisense\build\index.js"
     if ($command) {
-        Start-Process -NoNewWindow -Wait "node" "$inshellisense -c $command -s pwsh"
+        Start-Process -NoNewWindow -Wait "node" """$inshellisense"" -c $command -s pwsh"
     }
     else {
-        Start-Process -NoNewWindow -Wait "node" "$inshellisense -s pwsh"
+        Start-Process -NoNewWindow -Wait "node" """$inshellisense"" -s pwsh"
     }
 
     $executedCommand = node $inshellisense --history
