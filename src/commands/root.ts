@@ -34,7 +34,7 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
   let result: ExecuteShellCommandTTYResult = { code: 0 };
   let startingCommand = options.command;
   while (options.duration === "session" || !executed) {
-    const commandToExecute = await render(startingCommand);
+    const commandToExecute = await render(startingCommand, commands);
 
     if (commandToExecute == null || commandToExecute.trim().toLowerCase() == "exit" || commandToExecute.trim().toLowerCase() == "logout") {
       result = { code: 0 };

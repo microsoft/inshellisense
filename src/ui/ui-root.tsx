@@ -13,15 +13,23 @@ import Input from "./input.js";
 const Prompt = "> ";
 let uiResult = undefined;
 
-function UI({ startingCommand }: { startingCommand: string }) {
+function UI({ startingCommand, commands: historyCommands }: { startingCommand: string; commands: string[] }) {
   const { exit } = useApp();
   const [isExiting, setIsExiting] = useState(false);
-  const [command, setCommand] = useState(startingCommand);
+  // const [command, setCommand] = useState(startingCommand);
   const [activeSuggestion, setActiveSuggestion] = useState<Suggestion>();
   const [tabCompletionDropSize, setTabCompletionDropSize] = useState(0);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [windowWidth, setWindowWidth] = useState(500);
-  const leftPadding = getLeftPadding(windowWidth, command);
+  const [commands, setCommands] = useState([...historyCommands, ""]);
+  const [commandIndex, setCommandIndex] = useState(commands.length - 1);
+  const [isResetCursor, setIsResetCursor] = useState(false);
+  const [hasSuggestions, setHasSuggestions] = useState(false);
+  const leftPadding = getLeftPadding(windowWidth, commands[commandIndex]);
+
+  const setForwardCommand = useCallback(() => setCommandIndex((index) => Math.max(index - 1, 0)), []);
+
+  const setBackwardCommand = useCallback(() => setCommandIndex((index) => Math.min(index + 1, commands.length - 1)), [commands]);
 
   const measureRef = useCallback((node: DOMElement) => {
     if (node !== null) {
@@ -30,35 +38,62 @@ function UI({ startingCommand }: { startingCommand: string }) {
     }
   }, []);
 
+  const setCommand = useCallback(
+    (value: string) =>
+      setCommands((commands) => {
+        commands[commandIndex] = value;
+        return [...commands];
+      }),
+    [commandIndex],
+  );
+
   useInput((input, key) => {
     if (key.ctrl && input.toLowerCase() == "d") {
       uiResult = undefined;
       exit();
-    }
-    if (key.return) {
+    } else if (key.return) {
       setIsExiting(true);
+    } else if (key.upArrow) {
+      if (!hasSuggestions) {
+        setForwardCommand();
+        setIsResetCursor(true);
+      }
+    } else if (key.downArrow) {
+      if (!hasSuggestions) {
+        setBackwardCommand();
+        setIsResetCursor(true);
+      }
+    } else {
+      setIsResetCursor(false);
     }
   });
 
   useEffect(() => {
+    if (startingCommand) {
+      setCommand(startingCommand);
+    }
+  }, []);
+
+  useEffect(() => {
     if (isExiting) {
-      uiResult = command;
+      uiResult = commands[commandIndex];
       exit();
     }
   }, [isExiting]);
 
   useEffect(() => {
-    getSuggestions(command).then((suggestions) => {
+    getSuggestions(commands[commandIndex]).then((suggestions) => {
+      suggestions?.suggestions?.length ? setHasSuggestions(true) : setHasSuggestions(false);
       setSuggestions(suggestions?.suggestions ?? []);
       setTabCompletionDropSize(suggestions?.charactersToDrop ?? 0);
     });
-  }, [command]);
+  }, [commands, commandIndex]);
 
   if (isExiting) {
     return (
       <Text>
         {Prompt}
-        {command}
+        {commands[commandIndex]}
       </Text>
     );
   }
@@ -67,7 +102,14 @@ function UI({ startingCommand }: { startingCommand: string }) {
     <Box flexDirection="column" ref={measureRef}>
       <Box>
         <Text>
-          <Input value={command} setValue={setCommand} prompt={Prompt} activeSuggestion={activeSuggestion} tabCompletionDropSize={tabCompletionDropSize} />
+          <Input
+            value={commands[commandIndex]}
+            setValue={setCommand}
+            prompt={Prompt}
+            activeSuggestion={activeSuggestion}
+            tabCompletionDropSize={tabCompletionDropSize}
+            isResetCursor={isResetCursor}
+          />
         </Text>
       </Box>
       <Suggestions leftPadding={leftPadding} setActiveSuggestion={setActiveSuggestion} suggestions={suggestions} />
@@ -75,9 +117,9 @@ function UI({ startingCommand }: { startingCommand: string }) {
   );
 }
 
-export const render = async (command: string | undefined): Promise<string | undefined> => {
+export const render = async (command: string | undefined, commands: string[]): Promise<string | undefined> => {
   uiResult = undefined;
-  const { waitUntilExit } = inkRender(<UI startingCommand={command ?? ""} />);
+  const { waitUntilExit } = inkRender(<UI startingCommand={command ?? ""} commands={commands} />);
   await waitUntilExit();
 
   return uiResult;

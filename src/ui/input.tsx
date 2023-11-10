@@ -15,15 +15,23 @@ export default function Input({
   prompt,
   activeSuggestion,
   tabCompletionDropSize,
+  isResetCursor,
 }: {
   value: string;
   setValue: (_: string) => void;
   prompt: string;
   activeSuggestion: Suggestion | undefined;
   tabCompletionDropSize: number;
+  isResetCursor: boolean;
 }) {
   const [cursorLocation, setCursorLocation] = useState(value.length);
   const [cursorBlink, setCursorBlink] = useState(true);
+
+  useEffect(() => {
+    if (isResetCursor) {
+      setCursorLocation(value.length);
+    }
+  }, [value, isResetCursor]);
 
   useEffect(() => {
     setTimeout(() => {
