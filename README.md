@@ -12,7 +12,12 @@
 ### Installation
 
 ```shell
+# npm
 npm install -g @microsoft/inshellisense
+# pnpm
+pnpm add -g @microsoft/inshellisense
+# yarn
+yarn global add @microsoft/inshellisense
 ```
 
 ### Quickstart
