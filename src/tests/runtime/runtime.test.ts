@@ -24,8 +24,8 @@ describe(`parseCommand`, () => {
   testData.forEach(({ command, name, skip }) => {
     if (skip) return;
     test(name, async () => {
-      const suggetions = await getSuggestions(command);
-      expect(suggetions).toMatchSnapshot();
+      const suggestions = await getSuggestions(command);
+      expect(suggestions).toMatchSnapshot();
     });
   });
 });
