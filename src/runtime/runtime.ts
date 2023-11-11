@@ -236,6 +236,8 @@ const runSubcommand = async (
 ): Promise<SuggestionBlob | undefined> => {
   if (tokens.length === 0) {
     return getSubcommandDrivenRecommendation(subcommand, persistentOptions, undefined, argsDepleted, argsUsed, acceptedTokens);
+  } else if (!tokens.at(-1)?.complete) {
+    return getSubcommandDrivenRecommendation(subcommand, persistentOptions, tokens[tokens.length - 1].token, argsDepleted, argsUsed, acceptedTokens);
   } else if (!tokens.at(0)?.complete) {
     return getSubcommandDrivenRecommendation(subcommand, persistentOptions, tokens[0].token, argsDepleted, argsUsed, acceptedTokens);
   }
@@ -251,7 +253,6 @@ const runSubcommand = async (
     }
     return;
   }
-
   const nextSubcommand = await genSubcommand(activeToken.token, subcommand);
   if (nextSubcommand != null) {
     return runSubcommand(
@@ -265,6 +266,5 @@ const runSubcommand = async (
   if (activeArgsLength <= 0) {
     return; // not subcommand or option & no args exist
   }
-
   return runArg(tokens, getArgs(subcommand.args), subcommand, allOptions, acceptedTokens, false, false);
 };
