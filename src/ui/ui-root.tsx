@@ -21,6 +21,7 @@ function UI({ startingCommand }: { startingCommand: string }) {
   const [tabCompletionDropSize, setTabCompletionDropSize] = useState(0);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [windowWidth, setWindowWidth] = useState(500);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const leftPadding = getLeftPadding(windowWidth, command);
 
   const measureRef = useCallback((node: DOMElement) => {
@@ -35,7 +36,7 @@ function UI({ startingCommand }: { startingCommand: string }) {
       uiResult = undefined;
       exit();
     }
-    if (key.return) {
+    if (key.return && !showSuggestions) {
       setIsExiting(true);
     }
   });
@@ -70,7 +71,13 @@ function UI({ startingCommand }: { startingCommand: string }) {
           <Input value={command} setValue={setCommand} prompt={Prompt} activeSuggestion={activeSuggestion} tabCompletionDropSize={tabCompletionDropSize} />
         </Text>
       </Box>
-      <Suggestions leftPadding={leftPadding} setActiveSuggestion={setActiveSuggestion} suggestions={suggestions} />
+      <Suggestions
+        leftPadding={leftPadding}
+        setActiveSuggestion={setActiveSuggestion}
+        suggestions={suggestions}
+        showSuggestions={showSuggestions}
+        setShowSuggestions={setShowSuggestions}
+      />
     </Box>
   );
 }

@@ -65,10 +65,14 @@ export default function Suggestions({
   leftPadding,
   setActiveSuggestion,
   suggestions,
+  showSuggestions,
+  setShowSuggestions,
 }: {
   leftPadding: number;
   setActiveSuggestion: (_: Suggestion) => void;
   suggestions: Suggestion[];
+  showSuggestions: boolean;
+  setShowSuggestions: (_: boolean) => void;
 }) {
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   const [windowWidth, setWindowWidth] = useState(500);
@@ -94,6 +98,10 @@ export default function Suggestions({
     }
   }, [suggestions]);
 
+  useEffect(() => {
+    setShowSuggestions(suggestions.length !== 0);
+  }, [suggestions, setShowSuggestions]);
+
   useInput((_, key) => {
     if (key.upArrow) {
       setActiveSuggestionIndex(Math.max(0, activeSuggestionIndex - 1));
@@ -110,23 +118,25 @@ export default function Suggestions({
     }
   }, []);
 
-  if (suggestions.length === 0) return <></>;
-
-  return (
-    <Box ref={measureRef}>
-      <Box paddingLeft={clampedLeftPadding}>
-        {swapDescription ? (
-          <>
-            <Description description={activeDescription} />
-            <SuggestionList suggestions={pagedSuggestions} activeSuggestionIdx={activePagedSuggestionIndex} />
-          </>
-        ) : (
-          <>
-            <SuggestionList suggestions={pagedSuggestions} activeSuggestionIdx={activePagedSuggestionIndex} />
-            <Description description={activeDescription} />
-          </>
-        )}
+  if (!showSuggestions) {
+    return <></>;
+  } else {
+    return (
+      <Box ref={measureRef}>
+        <Box paddingLeft={clampedLeftPadding}>
+          {swapDescription ? (
+            <>
+              <Description description={activeDescription} />
+              <SuggestionList suggestions={pagedSuggestions} activeSuggestionIdx={activePagedSuggestionIndex} />
+            </>
+          ) : (
+            <>
+              <SuggestionList suggestions={pagedSuggestions} activeSuggestionIdx={activePagedSuggestionIndex} />
+              <Description description={activeDescription} />
+            </>
+          )}
+        </Box>
       </Box>
-    </Box>
-  );
+    );
+  }
 }
