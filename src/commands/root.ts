@@ -5,9 +5,10 @@ import { initRender } from "../ui/ui-init.js";
 import { render } from "../ui/ui-root.js";
 import { executeShellCommandTTY, ExecuteShellCommandTTYResult } from "../runtime/utils.js";
 import { saveCommand, loadCommand } from "../utils/cache.js";
-import { supportedShells as shells } from "../utils/bindings.js";
+import { Shell, supportedShells as shells } from "../utils/bindings.js";
 import { inferShell } from "../utils/shell.js";
 import { Command } from "commander";
+import { aliaReplace } from "../utils/alias.js";
 
 export const supportedShells = shells.join(", ");
 
@@ -40,9 +41,10 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
       result = { code: 0 };
       break;
     }
+    let aliasCommandToExecute = await aliaReplace(shell as Shell, commandToExecute)
 
-    commands.push(commandToExecute);
-    result = await executeShellCommandTTY(shell, commandToExecute);
+    commands.push(aliasCommandToExecute);
+    result = await executeShellCommandTTY(shell, aliasCommandToExecute);
     executed = true;
     startingCommand = undefined;
   }
