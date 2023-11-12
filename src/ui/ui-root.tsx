@@ -68,7 +68,14 @@ function UI({ startingCommand }: { startingCommand: string }) {
     <Box flexDirection="column" ref={measureRef}>
       <Box>
         <Text>
-          <Input value={command} setValue={setCommand} prompt={Prompt} activeSuggestion={activeSuggestion} tabCompletionDropSize={tabCompletionDropSize} />
+          <Input
+            value={command}
+            setValue={setCommand}
+            prompt={Prompt}
+            activeSuggestion={activeSuggestion}
+            tabCompletionDropSize={tabCompletionDropSize}
+            setShowSuggestions={setShowSuggestions}
+          />
         </Text>
       </Box>
       <Suggestions

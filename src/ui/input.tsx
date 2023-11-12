@@ -15,12 +15,14 @@ export default function Input({
   prompt,
   activeSuggestion,
   tabCompletionDropSize,
+  setShowSuggestions,
 }: {
   value: string;
   setValue: (_: string) => void;
   prompt: string;
   activeSuggestion: Suggestion | undefined;
   tabCompletionDropSize: number;
+  setShowSuggestions: (_: boolean) => void;
 }) {
   const [cursorLocation, setCursorLocation] = useState(value.length);
   const [cursorBlink, setCursorBlink] = useState(true);
@@ -45,15 +47,18 @@ export default function Input({
       setValue([...value].slice(0, cursorLocation).join("") + [...value].slice(Math.min(value.length, cursorLocation + 1)).join(""));
     } else if (key.leftArrow) {
       setCursorLocation(Math.max(cursorLocation - 1, 0));
+      setShowSuggestions(false);
     } else if (key.rightArrow) {
       setCursorLocation(Math.min(cursorLocation + 1, value.length));
-    } else if (key.tab) {
+    } else if (key.tab || key.return) {
       if (activeSuggestion) {
         // TOOD: support insertValue
         const newValue = [...value].slice(0, cursorLocation - tabCompletionDropSize).join("") + activeSuggestion.name + " ";
         setValue(newValue);
         setCursorLocation(newValue.length);
       }
+    } else if (key.escape) {
+      setShowSuggestions(false);
     } else if (input) {
       setValue([...value].slice(0, cursorLocation).join("") + input + [...value].slice(cursorLocation).join(""));
       setCursorLocation(cursorLocation + input.length);
