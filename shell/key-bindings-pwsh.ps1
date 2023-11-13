@@ -11,7 +11,9 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+a' -ScriptBlock {
     [Microsoft.PowerShell.PSConsoleReadLine]::BeginningOfLine()
     [Microsoft.PowerShell.PSConsoleReadLine]::KillLine()
 
-    $inshellisense = "$env:USERPROFILE\AppData\Roaming\npm\node_modules\@microsoft\inshellisense\build\index.js"
+    $npmPrefix = npm config get prefix
+    $inshellisense = Join-Path $npmPrefix "\node_modules\@microsoft\inshellisense\build\index.js"
+    
     if ($command) {
         Start-Process -NoNewWindow -Wait "node" "$inshellisense -c $command -s pwsh"
     }
