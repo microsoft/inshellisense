@@ -41,7 +41,7 @@ export class CommandManager {
     }
   }
 
-  private _clearCommands() {
+  handleClear() {
     this._activeCommand = {};
     this._previousCommandLines = new Set();
   }
@@ -115,7 +115,7 @@ export class CommandManager {
     const withinPollDistance = globalCursorPosition < this._activeCommand.promptEndMarker.line + 5;
 
     if (globalCursorPosition < promptStartMarker.line) {
-      this._clearCommands();
+      this.handleClear();
     }
 
     // if we haven't fond the prompt yet, poll over the next 5 lines searching for it

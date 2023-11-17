@@ -11,6 +11,7 @@ import { Shell } from "../utils/bindings.js";
 import { IsTermOscPs, IstermOscPt } from "../utils/ansi.js";
 import xterm from "xterm-headless";
 import { CommandManager } from "./commandManager.js";
+import { inputModifier } from "./input.js";
 
 const ISTermOnDataEvent = "data";
 
@@ -31,7 +32,7 @@ class ISTerm implements IPty {
 
   constructor(shell: Shell, rows: number, cols: number) {
     this.#pty = pty.spawn(convertToPtyTarget(shell), [], {
-      name: "isterm",
+      name: "xterm-256color",
       cols,
       rows,
       cwd: process.cwd(),
@@ -44,6 +45,12 @@ class ISTerm implements IPty {
 
     this.#term = new xterm.Terminal({ allowProposedApi: true });
     this.#term.parser.registerOscHandler(IsTermOscPs, (data) => this._handleIsSequence(data));
+    this.#term.parser.registerCsiHandler({ final: "J" }, (params) => {
+      if (params.at(0) == 3 || params.at(0) == 2) {
+        this.#commandManager.handleClear();
+      }
+      return false;
+    });
     this.#commandManager = new CommandManager(this.#term, shell);
 
     this.#ptyEmitter = new EventEmitter();
@@ -117,13 +124,13 @@ const convertToPtyTarget = (shell: Shell): string => {
   return os.platform() == "win32" ? `${shell}.exe` : shell;
 };
 
-const ptyProcess = spawn(Shell.Pwsh, 30, 300);
+const ptyProcess = spawn(Shell.Pwsh, 30, 80);
 process.stdin.setRawMode(true);
 ptyProcess.onData((data) => {
   process.stdout.write(data);
 });
 process.stdin.on("data", (d: Buffer) => {
-  ptyProcess.write(d.toString());
+  ptyProcess.write(inputModifier(d));
 });
 
 ptyProcess.onExit(({ exitCode }) => {
