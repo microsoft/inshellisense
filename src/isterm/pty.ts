@@ -31,7 +31,7 @@ class ISTerm implements IPty {
 
   constructor(shell: Shell, rows: number, cols: number) {
     this.#pty = pty.spawn(convertToPtyTarget(shell), [], {
-      name: "inshelliterm",
+      name: "isterm",
       cols,
       rows,
       cwd: process.cwd(),
@@ -44,25 +44,14 @@ class ISTerm implements IPty {
 
     this.#term = new xterm.Terminal({ allowProposedApi: true });
     this.#term.parser.registerOscHandler(IsTermOscPs, (data) => this._handleIsSequence(data));
-    this.#term.parser.registerCsiHandler({ final: "J" }, (param) => {
-      fs.appendFileSync("log.txt", JSON.stringify({ role: "CSI Ps J", param }) + "\n");
-      if (param.at(0) == 3) {
-        this.#term.clear();
-        return true;
-      }
-      return false;
-    });
     this.#commandManager = new CommandManager(this.#term, shell);
 
     this.#ptyEmitter = new EventEmitter();
     this.#pty.onData((data) => {
       this.#term.write(data, () => {
         this.#commandManager.termSync();
+        this.#ptyEmitter.emit(ISTermOnDataEvent, data);
       });
-    });
-
-    this.#term.onData((data) => {
-      this.#ptyEmitter.emit(ISTermOnDataEvent, data);
     });
 
     this.onData = (listener) => {
