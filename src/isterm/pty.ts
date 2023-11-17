@@ -4,35 +4,15 @@
 import { EventEmitter } from "node:events";
 import process from "node:process";
 import fs from "node:fs";
+import os from "node:os";
 
 import pty, { IPty, IEvent } from "node-pty";
 import { Shell } from "../utils/bindings.js";
-import escape from "../utils/escape.js";
+import { IsTermOscPs, IstermOscPt } from "../utils/ansi.js";
 import xterm from "xterm-headless";
+import { CommandManager } from "./commandManager.js";
 
 const ISTermOnDataEvent = "data";
-
-//ESC ]
-//  Operating System Command (OSC  is 0x9d).
-//OSC Ps ; Pt BEL
-
-/*
-  On unix, the OSC symbols will be in the correct place, so we can just parse them where they lay (start prompt, end prompt)
-  On windows, the OSC symbols will come during the parsing phase so we know that the incoming line will contain the prompt, once it's found,
-    extract the data from the cells using the heurisitcs
-*/
-
-// these combined with a way of providing a custom match for a specific host
-
-// git bash default prompt
-// .*MINGW64.*\n$
-
-// const pwshPrompt = lineText.match(/(?<prompt>(\(.+\)\s)?(?:PS.+>\s?))/)?.groups?.prompt;
-
-// Custom prompts like starship end in the common \u276f character
-// const customPrompt = lineText.match(/.*\u276f(?=[^\u276f]*$)/g)?.[0];
-
-// const cmdMatch = lineText.match(/^(?<prompt>(\(.+\)\s)?(?:[A-Z]:\\.*>))/)?.groups?.prompt;
 
 class ISTerm implements IPty {
   readonly pid: number;
@@ -47,9 +27,10 @@ class ISTerm implements IPty {
   readonly #pty: IPty;
   readonly #ptyEmitter: EventEmitter;
   readonly #term: xterm.Terminal;
+  readonly #commandManager: CommandManager;
 
-  constructor(shell: string, rows: number, cols: number) {
-    this.#pty = pty.spawn(shell, [], {
+  constructor(shell: Shell, rows: number, cols: number) {
+    this.#pty = pty.spawn(convertToPtyTarget(shell), [], {
       name: "inshelliterm",
       cols,
       rows,
@@ -61,55 +42,27 @@ class ISTerm implements IPty {
     this.rows = this.#pty.rows;
     this.process = this.#pty.process;
 
-    // let currentLine = 0;
-    // let promptLine = -1;
-    // let prompt: string | undefined = undefined;
-
     this.#term = new xterm.Terminal({ allowProposedApi: true });
-
-    // this.#term.onLineFeed(() => {
-    //   currentLine += 1;
-    // });
+    this.#term.parser.registerOscHandler(IsTermOscPs, (data) => this._handleIsSequence(data));
+    this.#term.parser.registerCsiHandler({ final: "J" }, (param) => {
+      fs.appendFileSync("log.txt", JSON.stringify({ role: "CSI Ps J", param }) + "\n");
+      if (param.at(0) == 3) {
+        this.#term.clear();
+        return true;
+      }
+      return false;
+    });
+    this.#commandManager = new CommandManager(this.#term, shell);
 
     this.#ptyEmitter = new EventEmitter();
     this.#pty.onData((data) => {
-      // if (data.includes("__is-prompt-start__")) {
-      //   promptLine = currentLine + data.slice(data.indexOf("__is-prompt-start__"), data.indexOf("__is-prompt-end__")).split("\n").length - 1;
-      //   prompt = data
-      //     .slice(data.indexOf("__is-prompt-start__") + "__is-prompt-start__".length, data.indexOf("__is-prompt-end__"))
-      //     .split("\n")
-      //     .at(-1);
-      // }
-      // if (promptLine != null && !promptLine.prompt) {
-      //   promptLine.prompt = this.#term.buffer.active.getLine(promptLine.lineNumber)?.translateToString(true) ?? "";
-      // }
-      // if (promptLine != -1) {
-      //   const line = this.#term.buffer.active.getLine(promptLine);
-      //   let activeBuff = "";
-      //   let suggestionBuff = "";
-      //   for (let i = 0; i < this.#term.cols; i++) {
-      //     const cell = line?.getCell(i);
-      //     if (cell == null) continue;
-      //     if (cell.getFgColor() != 238) {
-      //       activeBuff += cell.getChars();
-      //     } else {
-      //       suggestionBuff += cell.getChars();
-      //     }
-      //   }
-      //   const cleanedActiveBuff = activeBuff.slice(prompt?.length ?? 0);
-      //   fs.appendFileSync("log.txt", JSON.stringify({ activeBuff: cleanedActiveBuff, suggestionBuff, prompt }) + "\n");
-      // }
+      this.#term.write(data, () => {
+        this.#commandManager.termSync();
+      });
+    });
 
-      // fs.appendFileSync("log.txt", data);
-      // const cleanedData = data.replaceAll("__is-prompt-start__", "").replaceAll("__is-prompt-end__", "");
-
-      // LOGGING
-      // if (promptLine != null) {
-      //   fs.appendFileSync("log.txt", JSON.stringify({ prompt: promptLine }) + "\n");
-      // }
-      // END LOGGING
-
-      this.#term.write(data, () => this.#ptyEmitter.emit(ISTermOnDataEvent, data));
+    this.#term.onData((data) => {
+      this.#ptyEmitter.emit(ISTermOnDataEvent, data);
     });
 
     this.onData = (listener) => {
@@ -122,6 +75,22 @@ class ISTerm implements IPty {
       };
     };
     this.onExit = this.#pty.onExit;
+  }
+
+  _handleIsSequence(data: string): boolean {
+    const argsIndex = data.indexOf(";");
+    const sequence = argsIndex === -1 ? data : data.substring(0, argsIndex);
+    switch (sequence) {
+      case IstermOscPt.PromptStarted:
+        this.#commandManager.handlePromptStart();
+        break;
+      case IstermOscPt.PromptEnded:
+        this.#commandManager.handlePromptEnd();
+        break;
+      default:
+        return false;
+    }
+    return true;
   }
 
   resize(columns: number, rows: number) {
@@ -152,8 +121,11 @@ class ISTerm implements IPty {
 }
 
 export const spawn = (shell: Shell, rows: number, cols: number): IPty => {
-  const resolvedShell = shell == Shell.Pwsh ? "pwsh.exe" : "bash";
-  return new ISTerm(resolvedShell, rows, cols);
+  return new ISTerm(shell, rows, cols);
+};
+
+const convertToPtyTarget = (shell: Shell): string => {
+  return os.platform() == "win32" ? `${shell}.exe` : shell;
 };
 
 const ptyProcess = spawn(Shell.Pwsh, 30, 300);
@@ -168,30 +140,3 @@ process.stdin.on("data", (d: Buffer) => {
 ptyProcess.onExit(({ exitCode }) => {
   process.exit(exitCode);
 });
-
-setTimeout(() => {
-  process.stdout.write(escape.cursorShow);
-  ptyProcess.kill();
-}, 30_000);
-
-// ptyProcess.onData((data) => {
-//   fs.appendFileSync("log.txt", "$$data: " + data + "\n");
-//   let output = "";
-//   if (showingAssist) {
-//     output += ansiEscapes.eraseLine;
-//   }
-//   output += data;
-//   if (userInputBuff.startsWith("git")) {
-//     showingAssist = true;
-//     output += "\ntomato";
-//   } else {
-//     showingAssist = false;
-//   }
-//   output += ansiEscapes.cursorHide;
-//   fs.appendFileSync("log.txt", "$$output: " + output + "\n");
-//   if (data == "\x1b[m") {
-//     process.stdout.write(data);
-//   } else {
-//     process.stdout.write(output);
-//   }
-// });
