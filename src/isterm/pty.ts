@@ -93,9 +93,11 @@ class ISTerm implements IPty {
     this.cols = columns;
     this.rows = rows;
     this.#pty.resize(columns, rows);
+    this.#term.resize(columns, rows);
   }
 
   clear() {
+    this.#term.reset();
     this.#pty.clear();
   }
 
@@ -124,7 +126,7 @@ const convertToPtyTarget = (shell: Shell): string => {
   return os.platform() == "win32" ? `${shell}.exe` : shell;
 };
 
-const ptyProcess = spawn(Shell.Pwsh, 30, 80);
+const ptyProcess = spawn(Shell.Pwsh, process.stdout.rows, process.stdout.columns);
 process.stdin.setRawMode(true);
 ptyProcess.onData((data) => {
   process.stdout.write(data);
