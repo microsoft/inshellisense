@@ -13,6 +13,7 @@ type TerminalCommand = {
   promptText?: string;
   commandText?: string;
   suggestionsText?: string;
+  hasOutput?: boolean;
 };
 
 export class CommandManager {
@@ -27,7 +28,7 @@ export class CommandManager {
     this._activeCommand = {};
   }
   handlePromptStart() {
-    this._activeCommand = { promptStartMarker: this._terminal.registerMarker(0) };
+    this._activeCommand = { promptStartMarker: this._terminal.registerMarker(0), hasOutput: false };
   }
 
   handlePromptEnd() {
@@ -63,6 +64,14 @@ export class CommandManager {
       const gitBashPrompt = lineText.match(/^(?<prompt>\$\s?)/)?.groups?.prompt;
       if (gitBashPrompt) {
         const adjustedPrompt = this._adjustPrompt(gitBashPrompt, lineText, "$");
+        if (adjustedPrompt) {
+          return adjustedPrompt;
+        }
+      }
+
+      const gitPrompt = lineText.match(/^(?<prompt>.*\$\s?)/)?.groups?.prompt;
+      if (gitPrompt) {
+        const adjustedPrompt = this._adjustPrompt(gitPrompt, lineText, "$");
         if (adjustedPrompt) {
           return adjustedPrompt;
         }
@@ -134,11 +143,12 @@ export class CommandManager {
 
     // if the prompt is set, now parse out the values from the terminal
     if (this._activeCommand.promptText != null) {
+      let lineY = promptEndMarker.line;
       let line = this._terminal.buffer.active.getLine(promptEndMarker.line);
       let command = "";
       let suggestions = "";
-      while (line != null) {
-        for (let i = this._activeCommand.promptText.length; i < this._terminal.cols; i++) {
+      for (;;) {
+        for (let i = lineY == promptEndMarker.line ? this._activeCommand.promptText.length : 0; i < this._terminal.cols; i++) {
           const cell = line?.getCell(i);
           if (cell == null) continue;
           if (cell.getFgColor() != 238 && suggestions.length == 0) {
@@ -147,11 +157,27 @@ export class CommandManager {
             suggestions += cell.getChars();
           }
         }
-        line = this._terminal.buffer.active.getLine(promptEndMarker.line + 1);
-        line = line?.isWrapped ? line : undefined;
+        lineY += 1;
+        line = this._terminal.buffer.active.getLine(lineY);
+        if (!line?.isWrapped) {
+          break;
+        }
       }
-      this._activeCommand.suggestionsText = suggestions.trimStart();
-      this._activeCommand.commandText = command.trimEnd();
+
+      let hasOutput = false;
+
+      for (let i = 0; i < this._terminal.cols; i++) {
+        const cell = line?.getCell(i);
+        if (cell == null) continue;
+        hasOutput = cell.getChars() != "";
+        if (hasOutput) {
+          break;
+        }
+      }
+
+      this._activeCommand.hasOutput = hasOutput;
+      this._activeCommand.suggestionsText = suggestions.trim();
+      this._activeCommand.commandText = command.trim();
     }
 
     fs.appendFileSync(
