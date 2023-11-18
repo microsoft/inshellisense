@@ -138,3 +138,6 @@ process.stdin.on("data", (d: Buffer) => {
 ptyProcess.onExit(({ exitCode }) => {
   process.exit(exitCode);
 });
+process.stdout.on("resize", () => {
+  ptyProcess.resize(process.stdout.columns, process.stdout.rows);
+});
