@@ -45,12 +45,6 @@ class ISTerm implements IPty {
 
     this.#term = new xterm.Terminal({ allowProposedApi: true });
     this.#term.parser.registerOscHandler(IsTermOscPs, (data) => this._handleIsSequence(data));
-    this.#term.parser.registerCsiHandler({ final: "J" }, (params) => {
-      if (params.at(0) == 3 || params.at(0) == 2) {
-        this.#commandManager.handleClear();
-      }
-      return false;
-    });
     this.#commandManager = new CommandManager(this.#term, shell);
 
     this.#ptyEmitter = new EventEmitter();
@@ -63,9 +57,6 @@ class ISTerm implements IPty {
 
     this.onData = (listener) => {
       this.#ptyEmitter.on(ISTermOnDataEvent, listener);
-      this.#ptyEmitter.on(ISTermOnDataEvent, (data) => {
-        fs.appendFileSync("log.txt", JSON.stringify({ data }) + "\n");
-      });
       return {
         dispose: () => this.#ptyEmitter.removeListener(ISTermOnDataEvent, listener),
       };

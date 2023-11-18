@@ -28,6 +28,14 @@ export class CommandManager {
   ) {
     this._activeCommand = {};
     this._previousCommandLines = new Set();
+    if (this._supportsProperOscPlacements) {
+      this._terminal.parser.registerCsiHandler({ final: "J" }, (params) => {
+        if (params.at(0) == 3 || params.at(0) == 2) {
+          this.handleClear();
+        }
+        return false;
+      });
+    }
   }
   handlePromptStart() {
     this._activeCommand = { promptStartMarker: this._terminal.registerMarker(0), hasOutput: false, cursorTerminated: false };
@@ -45,7 +53,7 @@ export class CommandManager {
   }
 
   handleClear() {
-    this._activeCommand = {};
+    this.handlePromptStart();
     this._previousCommandLines = new Set();
   }
 
