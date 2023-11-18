@@ -3,7 +3,6 @@
 
 import { EventEmitter } from "node:events";
 import process from "node:process";
-import fs from "node:fs";
 import os from "node:os";
 
 import pty, { IPty, IEvent } from "node-pty";
@@ -12,6 +11,7 @@ import { IsTermOscPs, IstermOscPt } from "../utils/ansi.js";
 import xterm from "xterm-headless";
 import { CommandManager } from "./commandManager.js";
 import { inputModifier } from "./input.js";
+import log from "../utils/log.js";
 
 const ISTermOnDataEvent = "data";
 
@@ -50,6 +50,7 @@ class ISTerm implements IPty {
     this.#ptyEmitter = new EventEmitter();
     this.#pty.onData((data) => {
       this.#term.write(data, () => {
+        log.debug(JSON.stringify({ msg: "parsing data", data, bytes: Uint8Array.from([...data].map((c) => c.charCodeAt(0))) }));
         this.#commandManager.termSync();
         this.#ptyEmitter.emit(ISTermOnDataEvent, data);
       });
@@ -105,6 +106,7 @@ class ISTerm implements IPty {
   }
 
   write(data: string): void {
+    log.debug(JSON.stringify({ msg: "reading data", data, bytes: Uint8Array.from([...data].map((c) => c.charCodeAt(0))) }));
     this.#pty.write(data);
   }
 }
@@ -117,6 +119,7 @@ const convertToPtyTarget = (shell: Shell): string => {
   return os.platform() == "win32" ? `${shell}.exe` : shell;
 };
 
+await log.reset();
 const ptyProcess = spawn(Shell.Pwsh, process.stdout.rows, process.stdout.columns);
 process.stdin.setRawMode(true);
 ptyProcess.onData((data) => {

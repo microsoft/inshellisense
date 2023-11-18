@@ -3,8 +3,8 @@
 
 import { IMarker, Terminal } from "xterm-headless";
 import os from "node:os";
-import fs from "node:fs";
 import { Shell } from "../utils/bindings.js";
+import log from "../utils/log.js";
 
 type TerminalCommand = {
   promptStartMarker?: IMarker;
@@ -192,13 +192,13 @@ export class CommandManager {
       this._activeCommand.cursorTerminated = cursorAtEndOfInput;
     }
 
-    fs.appendFileSync(
-      "log.txt",
+    log.debug(
       JSON.stringify({
+        msg: "cmd manager state",
         ...this._activeCommand,
         promptEndMarker: this._activeCommand.promptEndMarker?.line,
         promptStartMarker: this._activeCommand.promptStartMarker?.line,
-      }) + "\n",
+      }),
     );
   }
 }
