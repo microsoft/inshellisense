@@ -14,11 +14,12 @@ type TerminalCommand = {
   commandText?: string;
   suggestionsText?: string;
   hasOutput?: boolean;
+  cursorTerminated?: boolean;
 };
 
 export class CommandManager {
   private _activeCommand: TerminalCommand;
-  private _previousCommandLines: Set<number> = new Set();
+  private _previousCommandLines: Set<number>;
   private readonly _supportsProperOscPlacements = os.platform() !== "win32";
 
   constructor(
@@ -26,9 +27,10 @@ export class CommandManager {
     private readonly _shell: Shell,
   ) {
     this._activeCommand = {};
+    this._previousCommandLines = new Set();
   }
   handlePromptStart() {
-    this._activeCommand = { promptStartMarker: this._terminal.registerMarker(0), hasOutput: false };
+    this._activeCommand = { promptStartMarker: this._terminal.registerMarker(0), hasOutput: false, cursorTerminated: false };
   }
 
   handlePromptEnd() {
@@ -164,6 +166,7 @@ export class CommandManager {
         }
       }
 
+      const cursorAtEndOfInput = (this._activeCommand.promptText.length + command.trim().length) % this._terminal.cols <= this._terminal.buffer.active.cursorX;
       let hasOutput = false;
 
       for (let i = 0; i < this._terminal.cols; i++) {
@@ -178,6 +181,7 @@ export class CommandManager {
       this._activeCommand.hasOutput = hasOutput;
       this._activeCommand.suggestionsText = suggestions.trim();
       this._activeCommand.commandText = command.trim();
+      this._activeCommand.cursorTerminated = cursorAtEndOfInput;
     }
 
     fs.appendFileSync(
