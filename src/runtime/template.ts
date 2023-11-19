@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import fsAsync from "fs/promises";
+import fsAsync from "node:fs/promises";
 import process from "node:process";
 
 const filepathsTemplate = async (): Promise<Fig.Suggestion[]> => {
