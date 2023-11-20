@@ -57,7 +57,7 @@ class ISTerm implements IPty {
     this.#ptyEmitter = new EventEmitter();
     this.#pty.onData((data) => {
       this.#term.write(data, () => {
-        log.debug(JSON.stringify({ msg: "parsing data", data, bytes: Uint8Array.from([...data].map((c) => c.charCodeAt(0))) }));
+        log.debug({ msg: "parsing data", data, bytes: Uint8Array.from([...data].map((c) => c.charCodeAt(0))) });
         this.#commandManager.termSync();
         this.#ptyEmitter.emit(ISTermOnDataEvent, data);
       });
@@ -113,7 +113,7 @@ class ISTerm implements IPty {
   }
 
   write(data: string): void {
-    log.debug(JSON.stringify({ msg: "reading data", data, bytes: Uint8Array.from([...data].map((c) => c.charCodeAt(0))) }));
+    log.debug({ msg: "reading data", data, bytes: Uint8Array.from([...data].map((c) => c.charCodeAt(0))) });
     this.#pty.write(data);
   }
 
@@ -142,7 +142,7 @@ const convertToPtyEnv = (shell: Shell) => {
 
 // TODO bring up to higher level outside isterm
 // await log.reset();
-// const ptyProcess = spawn(Shell.Pwsh, process.stdout.rows, process.stdout.columns);
+// const ptyProcess = spawn({ shell: Shell.Fish, rows: process.stdout.rows, cols: process.stdout.columns });
 // process.stdin.setRawMode(true);
 // ptyProcess.onData((data) => {
 //   process.stdout.write(data);

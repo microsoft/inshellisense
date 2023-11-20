@@ -13,11 +13,11 @@ const reset = async () => {
   await fsAsync.writeFile(logTarget, "");
 };
 
-const debug = (content: string) => {
+const debug = (content: object) => {
   if (!logEnabled) {
     return;
   }
-  fs.appendFile(logTarget, content + "\n", (err) => {
+  fs.appendFile(logTarget, JSON.stringify(content) + "\n", (err) => {
     if (err != null) {
       throw err;
     }

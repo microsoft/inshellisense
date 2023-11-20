@@ -1,5 +1,15 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`test bash on initial simple command input 1`] = `
+{
+  "commandText": "zsh",
+  "cursorTerminated": true,
+  "hasOutput": false,
+  "hasPromptText": true,
+  "suggestionsText": "",
+}
+`;
+
 exports[`test cmd on initial simple command input 1`] = `
 {
   "commandText": "dir",
@@ -30,7 +40,27 @@ exports[`test cmd on multi line command input 1`] = `
 }
 `;
 
-exports[`test powershell on command detection after failure 1`] = `
+exports[`test fish on suggestion detection 1`] = `
+{
+  "commandText": "l",
+  "cursorTerminated": true,
+  "hasOutput": false,
+  "hasPromptText": true,
+  "suggestionsText": "s -la",
+}
+`;
+
+exports[`test powershell on multi line command input 1`] = `
+{
+  "commandText": "cmd",
+  "cursorTerminated": true,
+  "hasOutput": false,
+  "hasPromptText": true,
+  "suggestionsText": "",
+}
+`;
+
+exports[`test pwsh on command detection after failure 1`] = `
 {
   "commandText": "zsh",
   "cursorTerminated": true,
@@ -40,12 +70,32 @@ exports[`test powershell on command detection after failure 1`] = `
 }
 `;
 
-exports[`test powershell on suggestion detection 1`] = `
+exports[`test pwsh on suggestion detection 1`] = `
 {
   "commandText": "ls",
   "cursorTerminated": true,
   "hasOutput": false,
   "hasPromptText": true,
   "suggestionsText": "-Force",
+}
+`;
+
+exports[`test zsh on initial simple command input 1`] = `
+{
+  "commandText": "zsh",
+  "cursorTerminated": true,
+  "hasOutput": false,
+  "hasPromptText": true,
+  "suggestionsText": "",
+}
+`;
+
+exports[`test zsh on suggestion detection 1`] = `
+{
+  "commandText": "l",
+  "cursorTerminated": true,
+  "hasOutput": false,
+  "hasPromptText": true,
+  "suggestionsText": "s -la",
 }
 `;

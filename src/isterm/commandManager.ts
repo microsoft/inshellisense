@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { IMarker, Terminal } from "xterm-headless";
+import { IBufferCell, IMarker, Terminal } from "xterm-headless";
 import os from "node:os";
 import { Shell } from "../utils/bindings.js";
 import log from "../utils/log.js";
@@ -119,6 +119,12 @@ export class CommandManager {
     return prompt;
   }
 
+  private _isSuggestion(cell: IBufferCell | undefined): boolean {
+    log.debug({ msg: "suggestion detection", fgColor: cell?.getFgColor(), content: cell?.getChars() });
+    const color = cell?.getFgColor();
+    return color == 8 || (color ?? 0) > 235;
+  }
+
   getState(): CommandState {
     return {
       promptText: this.#activeCommand.promptText,
@@ -167,7 +173,7 @@ export class CommandManager {
         for (let i = lineY == promptEndMarker.line ? this.#activeCommand.promptText.length : 0; i < this.#terminal.cols; i++) {
           const cell = line?.getCell(i);
           if (cell == null) continue;
-          if (cell.getFgColor() != 238 && suggestions.length == 0) {
+          if (!this._isSuggestion(cell) && suggestions.length == 0) {
             command += cell.getChars();
           } else {
             suggestions += cell.getChars();
@@ -198,13 +204,11 @@ export class CommandManager {
       this.#activeCommand.cursorTerminated = cursorAtEndOfInput;
     }
 
-    log.debug(
-      JSON.stringify({
-        msg: "cmd manager state",
-        ...this.#activeCommand,
-        promptEndMarker: this.#activeCommand.promptEndMarker?.line,
-        promptStartMarker: this.#activeCommand.promptStartMarker?.line,
-      }),
-    );
+    log.debug({
+      msg: "cmd manager state",
+      ...this.#activeCommand,
+      promptEndMarker: this.#activeCommand.promptEndMarker?.line,
+      promptStartMarker: this.#activeCommand.promptStartMarker?.line,
+    });
   }
 }
