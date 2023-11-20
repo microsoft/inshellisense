@@ -7,7 +7,10 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        os: ["windows-latest", "ubuntu-latest", "macos-latest"]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -23,10 +26,11 @@ jobs:
       - name: setup pwsh prompt
         shell: pwsh
         run: |
-          echo 'function prompt {
-            $prompt = "PS: $(get-date)> "
-            return "`e]6973;PS`a$prompt`e]6973;PE`a"
-          }' > $profile
+          New-Item -Path $profile -ItemType File -Force
+          Set-Content $profile 'function prompt {'
+          Add-Content $profile '  $prompt = "PS: $(get-date)> "'
+          Add-Content $profile '  return "`e]6973;PS`a$prompt`e]6973;PE`a"'
+          Add-Content $profile '}'
 
       - run: npm test
 
