@@ -33,6 +33,7 @@ jobs:
           Add-Content $profile '}'
 
       - name: setup powershell prompt
+        if: matrix.os == 'windows-latest'
         shell: powershell
         run: |
           New-Item -Path $profile -ItemType File -Force
@@ -44,6 +45,7 @@ jobs:
           Add-Content $profile '}'
 
       - name: setup fish prompt
+        if: matrix.os != 'windows-latest'
         shell: bash
         run: |
           mkdir -p ~/.config/fish/functions && touch ~/.config/fish/functions/fish_prompt.fish
@@ -52,6 +54,7 @@ jobs:
           echo "end" >> ~/.config/fish/functions/fish_prompt.fish
 
       - name: setup zsh-autosuggestions
+        if: matrix.os != 'windows-latest'
         shell: bash
         run: |
           git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
