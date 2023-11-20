@@ -20,6 +20,14 @@ jobs:
 
       - run: npm run lint
 
+      - name: setup pwsh prompt
+        shell: pwsh
+        run: |
+          echo 'function prompt {
+            $prompt = "PS: $(get-date)> "
+            return "`e]6973;PS`a$prompt`e]6973;PE`a"
+          }' > $profile
+
       - run: npm test
 
       - run: npm run build
