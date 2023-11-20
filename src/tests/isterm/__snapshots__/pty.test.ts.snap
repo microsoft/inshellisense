@@ -1,0 +1,51 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`test cmd on initial simple command input 1`] = `
+{
+  "commandText": "dir",
+  "cursorTerminated": true,
+  "hasOutput": false,
+  "hasPromptText": true,
+  "suggestionsText": "",
+}
+`;
+
+exports[`test cmd on initial simple command input with cursor movement backward 1`] = `
+{
+  "commandText": "dir",
+  "cursorTerminated": false,
+  "hasOutput": false,
+  "hasPromptText": true,
+  "suggestionsText": "",
+}
+`;
+
+exports[`test cmd on multi line command input 1`] = `
+{
+  "commandText": "cmd",
+  "cursorTerminated": true,
+  "hasOutput": false,
+  "hasPromptText": true,
+  "suggestionsText": "",
+}
+`;
+
+exports[`test powershell on command detection after failure 1`] = `
+{
+  "commandText": "zsh",
+  "cursorTerminated": true,
+  "hasOutput": false,
+  "hasPromptText": true,
+  "suggestionsText": "",
+}
+`;
+
+exports[`test powershell on suggestion detection 1`] = `
+{
+  "commandText": "ls",
+  "cursorTerminated": true,
+  "hasOutput": false,
+  "hasPromptText": true,
+  "suggestionsText": "-Force",
+}
+`;

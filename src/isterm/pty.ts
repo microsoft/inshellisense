@@ -7,13 +7,20 @@ import os from "node:os";
 
 import pty, { IPty, IEvent } from "node-pty";
 import { Shell } from "../utils/bindings.js";
-import { IsTermOscPs, IstermOscPt } from "../utils/ansi.js";
+import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
 import xterm from "xterm-headless";
-import { CommandManager } from "./commandManager.js";
-import { inputModifier } from "./input.js";
+import { CommandManager, CommandState } from "./commandManager.js";
 import log from "../utils/log.js";
+// import { inputModifier } from "./input.js";
 
 const ISTermOnDataEvent = "data";
+
+type ISTermOptions = {
+  env?: { [key: string]: string | undefined };
+  rows: number;
+  cols: number;
+  shell: Shell;
+};
 
 class ISTerm implements IPty {
   readonly pid: number;
@@ -30,13 +37,13 @@ class ISTerm implements IPty {
   readonly #term: xterm.Terminal;
   readonly #commandManager: CommandManager;
 
-  constructor(shell: Shell, rows: number, cols: number) {
+  constructor({ shell, cols, rows, env }: ISTermOptions) {
     this.#pty = pty.spawn(convertToPtyTarget(shell), [], {
       name: "xterm-256color",
       cols,
       rows,
       cwd: process.cwd(),
-      env: process.env,
+      env: { ...convertToPtyEnv(shell), ...env },
     });
     this.pid = this.#pty.pid;
     this.cols = this.#pty.cols;
@@ -65,7 +72,7 @@ class ISTerm implements IPty {
     this.onExit = this.#pty.onExit;
   }
 
-  _handleIsSequence(data: string): boolean {
+  private _handleIsSequence(data: string): boolean {
     const argsIndex = data.indexOf(";");
     const sequence = argsIndex === -1 ? data : data.substring(0, argsIndex);
     switch (sequence) {
@@ -109,29 +116,44 @@ class ISTerm implements IPty {
     log.debug(JSON.stringify({ msg: "reading data", data, bytes: Uint8Array.from([...data].map((c) => c.charCodeAt(0))) }));
     this.#pty.write(data);
   }
+
+  getCommandState(): CommandState {
+    return this.#commandManager.getState();
+  }
 }
 
-export const spawn = (shell: Shell, rows: number, cols: number): IPty => {
-  return new ISTerm(shell, rows, cols);
+export const spawn = (options: ISTermOptions): ISTerm => {
+  return new ISTerm(options);
 };
 
 const convertToPtyTarget = (shell: Shell): string => {
   return os.platform() == "win32" ? `${shell}.exe` : shell;
 };
 
-await log.reset();
-const ptyProcess = spawn(Shell.Pwsh, process.stdout.rows, process.stdout.columns);
-process.stdin.setRawMode(true);
-ptyProcess.onData((data) => {
-  process.stdout.write(data);
-});
-process.stdin.on("data", (d: Buffer) => {
-  ptyProcess.write(inputModifier(d));
-});
+const convertToPtyEnv = (shell: Shell) => {
+  switch (shell) {
+    case Shell.Cmd: {
+      const prompt = process.env.PROMPT ? process.env.PROMPT : "$P$G";
+      return { ...process.env, PROMPT: `${IstermPromptStart}${prompt}${IstermPromptEnd}` };
+    }
+  }
+  return process.env;
+};
 
-ptyProcess.onExit(({ exitCode }) => {
-  process.exit(exitCode);
-});
-process.stdout.on("resize", () => {
-  ptyProcess.resize(process.stdout.columns, process.stdout.rows);
-});
+// TODO bring up to higher level outside isterm
+// await log.reset();
+// const ptyProcess = spawn(Shell.Pwsh, process.stdout.rows, process.stdout.columns);
+// process.stdin.setRawMode(true);
+// ptyProcess.onData((data) => {
+//   process.stdout.write(data);
+// });
+// process.stdin.on("data", (d: Buffer) => {
+//   ptyProcess.write(inputModifier(d));
+// });
+
+// ptyProcess.onExit(({ exitCode }) => {
+//   process.exit(exitCode);
+// });
+// process.stdout.on("resize", () => {
+//   ptyProcess.resize(process.stdout.columns, process.stdout.rows);
+// });

@@ -10,6 +10,9 @@ type TerminalCommand = {
   promptStartMarker?: IMarker;
   promptEndMarker?: IMarker;
   promptEndX?: number;
+} & CommandState;
+
+export type CommandState = {
   promptText?: string;
   commandText?: string;
   suggestionsText?: string;
@@ -72,17 +75,9 @@ export class CommandManager {
     // TOOD: allow users to define their own prompt patterns per shell
 
     if (this.#shell == Shell.Bash) {
-      const gitBashPrompt = lineText.match(/^(?<prompt>\$\s?)/)?.groups?.prompt;
-      if (gitBashPrompt) {
-        const adjustedPrompt = this._adjustPrompt(gitBashPrompt, lineText, "$");
-        if (adjustedPrompt) {
-          return adjustedPrompt;
-        }
-      }
-
-      const gitPrompt = lineText.match(/^(?<prompt>.*\$\s?)/)?.groups?.prompt;
-      if (gitPrompt) {
-        const adjustedPrompt = this._adjustPrompt(gitPrompt, lineText, "$");
+      const bashPrompt = lineText.match(/^(?<prompt>.*\$\s?)/)?.groups?.prompt;
+      if (bashPrompt) {
+        const adjustedPrompt = this._adjustPrompt(bashPrompt, lineText, "$");
         if (adjustedPrompt) {
           return adjustedPrompt;
         }
@@ -122,6 +117,16 @@ export class CommandManager {
       prompt += " ";
     }
     return prompt;
+  }
+
+  getState(): CommandState {
+    return {
+      promptText: this.#activeCommand.promptText,
+      commandText: this.#activeCommand.commandText,
+      suggestionsText: this.#activeCommand.suggestionsText,
+      hasOutput: this.#activeCommand.hasOutput,
+      cursorTerminated: this.#activeCommand.cursorTerminated,
+    };
   }
 
   termSync() {
