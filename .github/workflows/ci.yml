@@ -7,22 +7,59 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ["16.x", "18.x", "20.x"]
+        os: ["windows-latest", "ubuntu-latest"]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js 18.x
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 18.x
 
       - run: npm ci
 
       - run: npm run lint
 
-      - run: npm test
+      - name: setup pwsh prompt
+        shell: pwsh
+        if: matrix.os == 'windows-latest'
+        run: |
+          New-Item -Path $profile -ItemType File -Force
+          Set-Content $profile 'function prompt {'
+          Add-Content $profile '  $prompt = "PS: $(get-date)> "'
+          Add-Content $profile '  return "`e]6973;PS`a$prompt`e]6973;PE`a"'
+          Add-Content $profile '}'
 
+      - name: setup powershell prompt
+        if: matrix.os == 'windows-latest'
+        shell: powershell
+        run: |
+          New-Item -Path $profile -ItemType File -Force
+          Set-Content $profile 'function prompt {'
+          Add-Content $profile '  $ESC = [char]27'
+          Add-Content $profile '  $BEL = [char]7'
+          Add-Content $profile '  $prompt = "PS: $(Get-Location)> "'
+          Add-Content $profile '  return "$ESC]6973;PS$BEL$prompt$ESC]6973;PE$BEL"'
+          Add-Content $profile '}'
+
+      - name: setup fish prompt
+        if: matrix.os != 'windows-latest'
+        shell: bash
+        run: |
+          mkdir -p ~/.config/fish/functions && touch ~/.config/fish/functions/fish_prompt.fish
+          echo "function fish_prompt -d \"Write out the prompt\"" >> ~/.config/fish/functions/fish_prompt.fish
+          echo "  printf '\033]6973;PS\007%s@%s %s%s%s > \033]6973;PE\007' $USER $hostname (set_color $fish_color_cwd) (prompt_pwd) (set_color normal)" >> ~/.config/fish/functions/fish_prompt.fish
+          echo "end" >> ~/.config/fish/functions/fish_prompt.fish
+
+      - name: setup zsh-autosuggestions
+        if: matrix.os != 'windows-latest'
+        shell: bash
+        run: |
+          git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
+          echo "source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" > ~/.zshrc
+
+      - run: npm test
       - run: npm run build
