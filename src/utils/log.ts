@@ -7,7 +7,7 @@ import fs from "node:fs";
 import fsAsync from "node:fs/promises";
 
 const logTarget = path.join(os.homedir(), ".inshellisense", "inshellisense.log");
-const logEnabled = true;
+const logEnabled = false;
 
 const reset = async () => {
   await fsAsync.writeFile(logTarget, "");
