@@ -25,6 +25,7 @@ jobs:
 
       - name: setup pwsh prompt
         shell: pwsh
+        if: matrix.os == 'windows-latest'
         run: |
           New-Item -Path $profile -ItemType File -Force
           Set-Content $profile 'function prompt {'
