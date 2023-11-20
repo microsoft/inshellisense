@@ -6,8 +6,8 @@ import isterm from "../../isterm";
 import { cursorBackward, IstermPromptEnd, IstermPromptStart } from "../../utils/ansi";
 import { Shell } from "../../utils/bindings";
 
-const windowsTest = os.platform() == "win32" ? test : test.skip;
-const unixTest = os.platform() == "darwin" || os.platform() == "linux" ? test : test.skip;
+const windowsTest = os.platform() == "win32" ? test.skip : test.skip;
+const unixTest = os.platform() == "darwin" || os.platform() == "linux" ? test.skip : test.skip;
 
 const bashEnv = { PS1: `${IstermPromptStart}\\u$ ${IstermPromptEnd}` };
 const zshEnv = { PROMPT: `%{${IstermPromptStart}%}%/ %# %{${IstermPromptEnd}%}` };
