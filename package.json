@@ -49,7 +49,7 @@
     "@types/react": "^18.2.24",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
-    "@withfig/autocomplete-types": "^1.29.0",
+    "@withfig/autocomplete-types": "^1.28.0",
     "eslint": "^8.51.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-header": "^3.1.1",
