@@ -49,7 +49,7 @@ class ISTerm implements IPty {
     this.rows = this.#pty.rows;
     this.process = this.#pty.process;
 
-    this.#term = new xterm.Terminal({ allowProposedApi: true });
+    this.#term = new xterm.Terminal({ allowProposedApi: true, rows, cols });
     this.#term.parser.registerOscHandler(IsTermOscPs, (data) => this._handleIsSequence(data));
     this.#commandManager = new CommandManager(this.#term, shell);
 

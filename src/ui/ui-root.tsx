@@ -35,7 +35,7 @@ export const render = async () => {
           // eslint-disable-next-line no-control-regex
           for (const match of data.matchAll(/\x1b\[([0-9]+);([0-9]+)H/g)) {
             const [cupSequence, _, cursorX] = match;
-            data = data.replaceAll(cupSequence, ansi.cursorTo(parseInt(cursorX) - 1, 21));
+            data = data.replaceAll(cupSequence, ansi.cursorTo(parseInt(cursorX) - 1, term.rows - 2));
           }
         }
         log.debug({
@@ -49,14 +49,14 @@ export const render = async () => {
         );
       } else {
         if (term.getCursorState().onLastLine) {
-          process.stdout.write(ansi.cursorHide + ansi.cursorSavePosition + "\n" + ansi.cursorRestorePosition + ansi.cursorUp(1));
+          process.stdout.write(ansi.cursorHide + ansi.cursorSavePosition + "\n" + "tomato" + ansi.cursorRestorePosition + ansi.cursorUp(1));
           log.debug({
             msg: "no suggestions, end of line",
             res: data + ansi.cursorShow,
           });
           process.stdout.write(data + ansi.cursorShow);
         } else {
-          process.stdout.write(ansi.cursorHide + ansi.cursorSavePosition + "\n" + ansi.cursorRestorePosition);
+          process.stdout.write(ansi.cursorHide + ansi.cursorSavePosition + "\n" + "tomato" + ansi.cursorRestorePosition);
           log.debug({
             msg: "no suggestions",
             res: ansi.cursorHide + ansi.cursorSavePosition + "\n" + "tomato" + ansi.cursorRestorePosition + data + ansi.cursorShow,
