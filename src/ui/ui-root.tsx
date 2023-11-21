@@ -1,93 +1,96 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import React, { useCallback, useEffect, useState } from "react";
-import { Text, Box, render as inkRender, measureElement, DOMElement, useInput, useApp } from "ink";
-import wrapAnsi from "wrap-ansi";
+import { inputModifier } from "./input.js";
+import log from "../utils/log.js";
+import { Shell } from "../utils/bindings.js";
+import isterm from "../isterm/index.js";
+import { cursorTo } from "../utils/ansi.js";
+import ansi from "ansi-escapes";
 
-import { getSuggestions } from "../runtime/runtime.js";
-import { Suggestion } from "../runtime/model.js";
-import Suggestions from "./suggestions.js";
-import Input from "./input.js";
+export const render = async () => {
+  await log.reset();
+  const term = isterm.spawn({ shell: Shell.Powershell, rows: process.stdout.rows, cols: process.stdout.columns });
+  let hasActiveSuggestions = false;
+  process.stdin.setRawMode(true);
 
-const Prompt = "> ";
-let uiResult = undefined;
+  // TODO:
+  /*
+  flow:
+    if on the end of a line in the terminal, request from the stdout the cursor position
+    if the cursor position is at the bottom of the rows, add the scrolUp, cursorUp, else do nothing
+    write the rest of the data from that callback
 
-function UI({ startingCommand }: { startingCommand: string }) {
-  const { exit } = useApp();
-  const [isExiting, setIsExiting] = useState(false);
-  const [command, setCommand] = useState(startingCommand);
-  const [activeSuggestion, setActiveSuggestion] = useState<Suggestion>();
-  const [tabCompletionDropSize, setTabCompletionDropSize] = useState(0);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [windowWidth, setWindowWidth] = useState(500);
-  const leftPadding = getLeftPadding(windowWidth, command);
 
-  const measureRef = useCallback((node: DOMElement) => {
-    if (node !== null) {
-      const { width } = measureElement(node);
-      setWindowWidth(width);
-    }
-  }, []);
+    each on data gets put into a resolve queue to be called in order, if an item gets marked as info requesting
+  */
 
-  useInput((input, key) => {
-    if (key.ctrl && input.toLowerCase() == "d") {
-      uiResult = undefined;
-      exit();
-    }
-    if (key.return) {
-      setIsExiting(true);
+  term.onData((data) => {
+    const commandState = term.getCommandState();
+    log.debug({ msg: "ui state", term: commandState.cursorTerminated, text: commandState.commandText, hasActive: hasActiveSuggestions });
+    if (commandState.cursorTerminated && commandState.commandText) {
+      if (hasActiveSuggestions) {
+        log.debug({ msg: "origin", data });
+        if (term.getCursorState().onLastLine) {
+          // eslint-disable-next-line no-control-regex
+          for (const match of data.matchAll(/\x1b\[([0-9]+);([0-9]+)H/g)) {
+            const [cupSequence, _, cursorX] = match;
+            data = data.replaceAll(cupSequence, ansi.cursorTo(parseInt(cursorX) - 1, 21));
+          }
+        }
+        log.debug({
+          msg: "has suggestions",
+          last: term.getCursorState().onLastLine,
+          res:
+            ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorNextLine + ansi.eraseLine + "tomato" + ansi.cursorRestorePosition + data + ansi.cursorShow,
+        });
+        process.stdout.write(
+          ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorNextLine + ansi.eraseLine + "tomato" + ansi.cursorRestorePosition + data + ansi.cursorShow,
+        );
+      } else {
+        if (term.getCursorState().onLastLine) {
+          process.stdout.write(ansi.cursorHide + ansi.cursorSavePosition + "\n" + ansi.cursorRestorePosition + ansi.cursorUp(1));
+          log.debug({
+            msg: "no suggestions, end of line",
+            res: data + ansi.cursorShow,
+          });
+          process.stdout.write(data + ansi.cursorShow);
+        } else {
+          process.stdout.write(ansi.cursorHide + ansi.cursorSavePosition + "\n" + ansi.cursorRestorePosition);
+          log.debug({
+            msg: "no suggestions",
+            res: ansi.cursorHide + ansi.cursorSavePosition + "\n" + "tomato" + ansi.cursorRestorePosition + data + ansi.cursorShow,
+          });
+          process.stdout.write(data + ansi.cursorShow);
+        }
+      }
+      hasActiveSuggestions = true;
+    } else {
+      if (hasActiveSuggestions) {
+        if (term.getCursorState().onLastLine) {
+          process.stdout.write("\u001B[1T" + ansi.cursorDown() + data);
+        } else {
+          const resp = ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorNextLine + ansi.eraseLine + ansi.cursorRestorePosition + data + ansi.cursorShow;
+          log.debug({ msg: "ui return had active suggestion", resp });
+          process.stdout.write(resp);
+        }
+      } else {
+        log.debug({ msg: "ui return no active suggestion", resp: data });
+        process.stdout.write(data);
+      }
+      hasActiveSuggestions = false;
     }
   });
+  process.stdin.on("data", (d: Buffer) => {
+    term.write(inputModifier(d));
+  });
 
-  useEffect(() => {
-    if (isExiting) {
-      uiResult = command;
-      exit();
-    }
-  }, [isExiting]);
-
-  useEffect(() => {
-    getSuggestions(command).then((suggestions) => {
-      setSuggestions(suggestions?.suggestions ?? []);
-      setTabCompletionDropSize(suggestions?.charactersToDrop ?? 0);
-    });
-  }, [command]);
-
-  if (isExiting) {
-    return (
-      <Text>
-        {Prompt}
-        {command}
-      </Text>
-    );
-  }
-
-  return (
-    <Box flexDirection="column" ref={measureRef}>
-      <Box>
-        <Text>
-          <Input value={command} setValue={setCommand} prompt={Prompt} activeSuggestion={activeSuggestion} tabCompletionDropSize={tabCompletionDropSize} />
-        </Text>
-      </Box>
-      <Suggestions leftPadding={leftPadding} setActiveSuggestion={setActiveSuggestion} suggestions={suggestions} />
-    </Box>
-  );
-}
-
-export const render = async (command: string | undefined): Promise<string | undefined> => {
-  uiResult = undefined;
-  const { waitUntilExit } = inkRender(<UI startingCommand={command ?? ""} />);
-  await waitUntilExit();
-
-  return uiResult;
+  term.onExit(({ exitCode }) => {
+    process.exit(exitCode);
+  });
+  process.stdout.on("resize", () => {
+    term.resize(process.stdout.columns, process.stdout.rows);
+  });
 };
 
-function getLeftPadding(windowWidth: number, command: string) {
-  const wrappedText = wrapAnsi(command + "", windowWidth, {
-    trim: false,
-    hard: true,
-  });
-  const lines = wrappedText.split("\n");
-  return (lines.length - 1) * windowWidth + lines[lines.length - 1].length + Prompt.length;
-}
+await render();

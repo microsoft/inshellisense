@@ -11,7 +11,6 @@ import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "..
 import xterm from "xterm-headless";
 import { CommandManager, CommandState } from "./commandManager.js";
 import log from "../utils/log.js";
-// import { inputModifier } from "./input.js";
 
 const ISTermOnDataEvent = "data";
 
@@ -118,7 +117,12 @@ class ISTerm implements IPty {
   }
 
   getCommandState(): CommandState {
+    log.debug({ x: this.#term.buffer.active.cursorX, y: this.#term.buffer.active.baseY, lines: this.#term.buffer.active.length });
     return this.#commandManager.getState();
+  }
+
+  getCursorState() {
+    return { onLastLine: this.#term.buffer.active.cursorY >= this.#term.rows - 2 };
   }
 }
 
@@ -139,21 +143,3 @@ const convertToPtyEnv = (shell: Shell) => {
   }
   return process.env;
 };
-
-// TODO bring up to higher level outside isterm
-// await log.reset();
-// const ptyProcess = spawn({ shell: Shell.Fish, rows: process.stdout.rows, cols: process.stdout.columns });
-// process.stdin.setRawMode(true);
-// ptyProcess.onData((data) => {
-//   process.stdout.write(data);
-// });
-// process.stdin.on("data", (d: Buffer) => {
-//   ptyProcess.write(inputModifier(d));
-// });
-
-// ptyProcess.onExit(({ exitCode }) => {
-//   process.exit(exitCode);
-// });
-// process.stdout.on("resize", () => {
-//   ptyProcess.resize(process.stdout.columns, process.stdout.rows);
-// });

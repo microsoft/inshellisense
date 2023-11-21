@@ -120,7 +120,7 @@ export class CommandManager {
   }
 
   private _isSuggestion(cell: IBufferCell | undefined): boolean {
-    log.debug({ msg: "suggestion detection", fgColor: cell?.getFgColor(), content: cell?.getChars() });
+    // log.debug({ msg: "suggestion detection", fgColor: cell?.getFgColor(), content: cell?.getChars() });
     const color = cell?.getFgColor();
     return color == 8 || (color ?? 0) > 235;
   }

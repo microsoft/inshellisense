@@ -29,28 +29,27 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
     program.error(`Unsupported shell: '${shell}', supported shells: ${supportedShells}`, { exitCode: 1 });
   }
 
-  let executed = false;
-  const commands = [];
-  let result: ExecuteShellCommandTTYResult = { code: 0 };
-  let startingCommand = options.command;
-  while (options.duration === "session" || !executed) {
-    const commandToExecute = await render(startingCommand);
+  // let executed = false;
+  // // const commands = [];
+  // let result: ExecuteShellCommandTTYResult = { code: 0 };
+  // let startingCommand = options.command;
+  // while (options.duration === "session" || !executed) {
+  await render();
 
-    if (commandToExecute == null || commandToExecute.trim().toLowerCase() == "exit" || commandToExecute.trim().toLowerCase() == "logout") {
-      result = { code: 0 };
-      break;
-    }
+  // if (commandToExecute == null || commandToExecute.trim().toLowerCase() == "exit" || commandToExecute.trim().toLowerCase() == "logout") {
+  //   result = { code: 0 };
+  //   break;
+  // }
 
-    commands.push(commandToExecute);
-    result = await executeShellCommandTTY(shell, commandToExecute);
-    executed = true;
-    startingCommand = undefined;
-  }
-  await saveCommand(commands);
-
-  if (result.code) {
-    process.exit(result.code);
-  } else {
-    process.exit(0);
-  }
+  // commands.push(commandToExecute);
+  // result = await executeShellCommandTTY(shell, commandToExecute);
+  // executed = true;
+  // startingCommand = undefined;
 };
+// await saveCommand(commands);
+
+// if (result.code) {
+//   process.exit(result.code);
+// } else {
+//   process.exit(0);
+// }

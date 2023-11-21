@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-const ESC = "\u001B[";
+const CSI = "\u001B[";
 const OSC = "\u001B]";
 const BEL = "\u0007";
 
@@ -15,6 +15,9 @@ export enum IstermOscPt {
 
 export const IstermPromptStart = IS_OSC + IstermOscPt.PromptStarted + BEL;
 export const IstermPromptEnd = IS_OSC + IstermOscPt.PromptEnded + BEL;
-export const cursorHide = ESC + "?25l";
-export const cursorShow = ESC + "?25h";
-export const cursorBackward = (count = 1) => ESC + count + "D";
+export const cursorHide = CSI + "?25l";
+export const cursorShow = CSI + "?25h";
+export const cursorBackward = (count = 1) => CSI + count + "D";
+export const cursorTo = ({ x, y }: { x?: number; y?: number }) => {
+  return CSI + (y ?? "") + ";" + (x ?? "") + "H";
+};
