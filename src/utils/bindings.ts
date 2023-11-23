@@ -21,6 +21,7 @@ export enum Shell {
   Pwsh = "pwsh",
   Zsh = "zsh",
   Fish = "fish",
+  Cmd = "cmd",
 }
 
 export const supportedShells = [Shell.Bash, process.platform == "win32" ? Shell.Powershell : null, Shell.Pwsh, Shell.Zsh, Shell.Fish].filter(

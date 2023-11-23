@@ -1,6 +1,6 @@
 # inshellisense
 
-`inshellisense` provides IDE style autocomplete for shells. It's a terminal native runtime for [autocomplete](https://github.com/withfig/autocomplete) which has support for 600+ command line tools. `inshellisense` supports Windows, Linux, & MacOS.
+`inshellisense` provides IDE style autocomplete for shells. It's a terminal native runtime for [autocomplete](https://github.com/withfig/autocomplete) which has support for 600+ command line tools. `inshellisense` supports Windows, Linux, & macOS.
 
 <p align="center"><img alt="demo of inshellisense working" src="/docs/demo.gif" height="450px"/></p>
 
@@ -23,7 +23,7 @@ After completing the installation, you can already run `inshellisense --shell <s
 inshellisense bind
 ```
 
-Additionally, inshellisense is also aliased under `is` after install for convenience.
+Additionally, inshellisense is also aliased under `is` after installation for convenience.
 
 ## Integrations
 
@@ -36,6 +36,10 @@ inshellisense supports the following shells:
 - [powershell](https://learn.microsoft.com/en-us/powershell/scripting/windows-powershell/starting-windows-powershell) (Windows Powershell)
 
 ## Contributing
+
+> [!IMPORTANT]
+> inshellisense is currently undergoing a major redesign, see [#79](https://github.com/microsoft/inshellisense/issues/79), so note that some
+> contributions will not be merged if they are modifying functionality targeted by the redesign.
 
 This project welcomes contributions and suggestions. Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
