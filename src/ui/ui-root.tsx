@@ -83,8 +83,12 @@ export const render = async () => {
     previousSuggestionsColumns = suggestion.columns;
   });
   process.stdin.on("data", (d: Buffer) => {
-    suggestionManager.update(d);
-    term.write(inputModifier(d));
+    const handled = suggestionManager.update(d);
+    if (previousSuggestionsColumns > 0 && handled) {
+      term.write("\u001B[m");
+    } else {
+      term.write(inputModifier(d));
+    }
   });
 
   term.onExit(({ exitCode }) => {

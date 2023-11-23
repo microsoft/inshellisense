@@ -27,3 +27,21 @@ export const scrollDown = (count = 1) => CSI + count + "T";
 export const eraseLinesBelow = (count = 1) => {
   return [...Array(count).keys()].map(() => cursorNextLine + eraseLine).join("");
 };
+
+export const parseKeystroke = (b: Buffer): "up" | "down" | "tab" | undefined => {
+  let s: string;
+  if (b[0] > 127 && b[1] === undefined) {
+    b[0] -= 128;
+    s = "\x1b" + String(b);
+  } else {
+    s = String(b);
+  }
+
+  if (s == CSI + "A") {
+    return "up";
+  } else if (s == CSI + "B") {
+    return "down";
+  } else if (s == "\t") {
+    return "tab";
+  }
+};

@@ -7,6 +7,7 @@ import { ISTerm } from "../isterm/pty.js";
 import { renderBox, truncateText } from "./utils.js";
 import ansi from "ansi-escapes";
 import chalk from "chalk";
+import { parseKeystroke } from "../utils/ansi.js";
 
 const maxSuggestions = 5;
 const suggestionWidth = 40;
@@ -113,5 +114,15 @@ export class SuggestionManager {
     };
   }
 
-  update(input: Buffer) {}
+  update(input: Buffer): boolean {
+    const keyStroke = parseKeystroke(input);
+    if (keyStroke == null) return false;
+    if (keyStroke == "up") {
+      this.#activeSuggestionIdx = Math.max(0, this.#activeSuggestionIdx - 1);
+    } else if (keyStroke == "down") {
+      this.#activeSuggestionIdx = Math.min(this.#activeSuggestionIdx + 1, (this.#suggestBlob?.suggestions.length ?? 1) - 1);
+    }
+
+    return true;
+  }
 }
