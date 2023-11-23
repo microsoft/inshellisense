@@ -21,7 +21,7 @@ type ISTermOptions = {
   shell: Shell;
 };
 
-class ISTerm implements IPty {
+export class ISTerm implements IPty {
   readonly pid: number;
   cols: number;
   rows: number;
@@ -122,7 +122,11 @@ class ISTerm implements IPty {
   }
 
   getCursorState() {
-    return { onLastLine: this.#term.buffer.active.cursorY >= this.#term.rows - 2 };
+    return {
+      onLastLine: this.#term.buffer.active.cursorY >= this.#term.rows - 2,
+      cursorX: this.#term.buffer.active.cursorX,
+      cursorY: this.#term.buffer.active.cursorY,
+    };
   }
 }
 

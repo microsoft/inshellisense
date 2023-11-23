@@ -198,9 +198,10 @@ export class CommandManager {
         }
       }
 
+      const commandPostfix = this.#activeCommand.promptText.length + command.trim().length < this.#terminal.buffer.active.cursorX ? " " : "";
       this.#activeCommand.hasOutput = hasOutput;
       this.#activeCommand.suggestionsText = suggestions.trim();
-      this.#activeCommand.commandText = command.trim();
+      this.#activeCommand.commandText = command.trim() + commandPostfix;
       this.#activeCommand.cursorTerminated = cursorAtEndOfInput;
     }
 
