@@ -66,14 +66,15 @@ export class SuggestionManager {
   // 	MiddleBottom: "┴",
   // }
 
-  private _renderSuggestions(suggestions: Suggestion[], activeSuggestionIdx: number) {
+  private _renderSuggestions(suggestions: Suggestion[], activeSuggestionIdx: number, x: number) {
     return renderBox(
       suggestions.map((suggestion, idx) => {
         const suggestionText = `${suggestion.icon} ${suggestion.name}`.padEnd(suggestionWidth - borderWidth, " ");
         const truncatedSuggestion = truncateText(suggestionText, suggestionWidth - 2);
-        return idx == activeSuggestionIdx ? chalk.bgHex(activeSuggestionBackgroundColor).inverse(truncatedSuggestion) : truncatedSuggestion;
+        return idx == activeSuggestionIdx ? chalk.bgHex(activeSuggestionBackgroundColor)(truncatedSuggestion) : truncatedSuggestion;
       }),
       suggestionWidth,
+      x,
     );
   }
 
@@ -88,8 +89,8 @@ export class SuggestionManager {
     // const activeDescription = pagedSuggestions.at(activePagedSuggestionIndex)?.description || "";
     const activeDescription = "";
 
-    const wrappedPadding = this.#term.getCursorState().cursorX % this.#term.rows;
-    const maxPadding = activeDescription.length !== 0 ? this.#term.rows - suggestionWidth - descriptionWidth : this.#term.rows - suggestionWidth;
+    const wrappedPadding = this.#term.getCursorState().cursorX % this.#term.cols;
+    const maxPadding = activeDescription.length !== 0 ? this.#term.cols - suggestionWidth - descriptionWidth : this.#term.cols - suggestionWidth;
     const swapDescription = wrappedPadding > maxPadding;
     const swappedPadding = swapDescription ? Math.max(wrappedPadding - descriptionWidth, 0) : wrappedPadding;
     const clampedLeftPadding = Math.min(Math.min(wrappedPadding, swappedPadding), maxPadding);
@@ -108,7 +109,7 @@ export class SuggestionManager {
         ansi.cursorHide +
         ansi.cursorUp(columnsUsed - 1) +
         ansi.cursorForward(clampedLeftPadding) +
-        this._renderSuggestions(pagedSuggestions, activePagedSuggestionIndex) +
+        this._renderSuggestions(pagedSuggestions, activePagedSuggestionIndex, clampedLeftPadding) +
         ansi.cursorShow,
       columns: columnsUsed,
     };
