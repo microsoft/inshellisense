@@ -16,6 +16,7 @@ export type CommandState = {
   promptText?: string;
   commandText?: string;
   suggestionsText?: string;
+  persistentOutput?: boolean;
   hasOutput?: boolean;
   cursorTerminated?: boolean;
 };
@@ -120,9 +121,14 @@ export class CommandManager {
   }
 
   private _isSuggestion(cell: IBufferCell | undefined): boolean {
-    log.debug({ msg: "suggestion detection", fgColor: cell?.getFgColor(), content: cell?.getChars() });
     const color = cell?.getFgColor();
-    return color == 8 || (color ?? 0) > 235;
+    const dullColor = color == 8 || (color ?? 0) > 235;
+    if (this.#shell == Shell.Powershell) {
+      return false;
+    } else if (this.#shell == Shell.Pwsh) {
+      return (color ?? 0) > 235;
+    }
+    return dullColor;
   }
 
   getState(): CommandState {
@@ -198,9 +204,11 @@ export class CommandManager {
         }
       }
 
+      const commandPostfix = this.#activeCommand.promptText.length + command.trim().length < this.#terminal.buffer.active.cursorX ? " " : "";
+      this.#activeCommand.persistentOutput = this.#activeCommand.hasOutput && hasOutput;
       this.#activeCommand.hasOutput = hasOutput;
       this.#activeCommand.suggestionsText = suggestions.trim();
-      this.#activeCommand.commandText = command.trim();
+      this.#activeCommand.commandText = command.trim() + commandPostfix;
       this.#activeCommand.cursorTerminated = cursorAtEndOfInput;
     }
 
