@@ -5,6 +5,7 @@ import { IBufferCell, IMarker, Terminal } from "xterm-headless";
 import os from "node:os";
 import { Shell } from "../utils/bindings.js";
 import log from "../utils/log.js";
+import { getConfig } from "../utils/config.js";
 
 type TerminalCommand = {
   promptStartMarker?: IMarker;
@@ -73,9 +74,19 @@ export class CommandManager {
     }
 
     // User defined prompt
-    // TOOD: allow users to define their own prompt patterns per shell
+    const inshellisenseConfig = getConfig();
+    log.debug({ inshellisenseConfig, t: "tomato" });
 
     if (this.#shell == Shell.Bash) {
+      if (inshellisenseConfig.promptRegex?.bash != null) {
+        const customBashPrompt = lineText.match(new RegExp(inshellisenseConfig.promptRegex?.bash.regex))?.groups?.prompt;
+        log.debug({ customBashPrompt });
+        const adjustedPrompt = this._adjustPrompt(customBashPrompt, lineText, inshellisenseConfig.promptRegex?.bash.postfix);
+        if (adjustedPrompt) {
+          return adjustedPrompt;
+        }
+      }
+
       const bashPrompt = lineText.match(/^(?<prompt>.*\$\s?)/)?.groups?.prompt;
       if (bashPrompt) {
         const adjustedPrompt = this._adjustPrompt(bashPrompt, lineText, "$");
@@ -86,6 +97,22 @@ export class CommandManager {
     }
 
     if (this.#shell == Shell.Powershell || this.#shell == Shell.Pwsh) {
+      if (inshellisenseConfig.promptRegex?.pwsh != null && this.#shell == Shell.Pwsh) {
+        const customPwshPrompt = lineText.match(new RegExp(inshellisenseConfig.promptRegex?.pwsh.regex))?.groups?.prompt;
+        const adjustedPrompt = this._adjustPrompt(customPwshPrompt, lineText, inshellisenseConfig.promptRegex?.pwsh.postfix);
+        if (adjustedPrompt) {
+          return adjustedPrompt;
+        }
+      }
+
+      if (inshellisenseConfig.promptRegex?.powershell != null && this.#shell == Shell.Powershell) {
+        const customPowershellPrompt = lineText.match(new RegExp(inshellisenseConfig.promptRegex?.powershell.regex))?.groups?.prompt;
+        const adjustedPrompt = this._adjustPrompt(customPowershellPrompt, lineText, inshellisenseConfig.promptRegex?.powershell.postfix);
+        if (adjustedPrompt) {
+          return adjustedPrompt;
+        }
+      }
+
       const pwshPrompt = lineText.match(/(?<prompt>(\(.+\)\s)?(?:PS.+>\s?))/)?.groups?.prompt;
       if (pwshPrompt) {
         const adjustedPrompt = this._adjustPrompt(pwshPrompt, lineText, ">");
