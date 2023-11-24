@@ -28,7 +28,7 @@ export const render = async (shell: Shell) => {
     if (term.getCursorState().onLastLine) {
       // eslint-disable-next-line no-control-regex
       for (const match of data.matchAll(/\x1b\[([0-9]+);([0-9]+)H/g)) {
-        const [cupSequence, _, cursorX] = match;
+        const [cupSequence, , cursorX] = match;
         data = data.replaceAll(cupSequence, ansi.cursorTo(parseInt(cursorX) - 1, term.rows - 1 - addedLines));
       }
     }

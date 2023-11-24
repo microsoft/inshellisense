@@ -12,7 +12,6 @@ import { parseKeystroke } from "../utils/ansi.js";
 const maxSuggestions = 5;
 const suggestionWidth = 40;
 const descriptionWidth = 30;
-const DescriptionMaxHeight = 6;
 const borderWidth = 2;
 const activeSuggestionBackgroundColor = "#7D56F4";
 export const MAX_LINES = borderWidth + maxSuggestions;

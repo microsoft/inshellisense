@@ -10,8 +10,7 @@ import { Command } from "commander";
 export const supportedShells = shells.join(", ");
 
 export const action = (program: Command) => async () => {
-  //@ts-ignore
-  const shell: Shell = (await inferShell()) ?? (await initRender()) ?? "";
+  const shell = ((await inferShell()) ?? (await initRender()) ?? "") as unknown as Shell;
   if (!shells.map((s) => s.valueOf()).includes(shell)) {
     program.error(`Unsupported shell: '${shell}', supported shells: ${supportedShells}`, { exitCode: 1 });
   }
