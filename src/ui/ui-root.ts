@@ -9,9 +9,8 @@ import { eraseLinesBelow, scrollDown } from "../utils/ansi.js";
 import ansi from "ansi-escapes";
 import { SuggestionManager, MAX_LINES } from "./suggestionManager.js";
 
-export const render = async () => {
-  await log.reset();
-  const term = isterm.spawn({ shell: Shell.Bash, rows: process.stdout.rows, cols: process.stdout.columns });
+export const render = async (shell: Shell) => {
+  const term = isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns });
   const suggestionManager = new SuggestionManager(term);
   let hasActiveSuggestions = false;
   let previousSuggestionsColumns = 0;
@@ -35,7 +34,7 @@ export const render = async () => {
     }
 
     const commandState = term.getCommandState();
-    if (commandState.hasOutput && !commandState.persistentOutput) {
+    if ((commandState.hasOutput || hasActiveSuggestions) && !commandState.persistentOutput) {
       writeOutput(ansi.cursorHide + ansi.cursorSavePosition + eraseLinesBelow(MAX_LINES) + ansi.cursorRestorePosition + ansi.cursorShow + data);
     } else {
       writeOutput(data);
@@ -46,7 +45,6 @@ export const render = async () => {
       addedLines = suggestion.columns;
       const commandState = term.getCommandState();
 
-      log.debug({ msg: "debug d", columns: suggestion.columns, commandState });
       if (suggestion.data != "" && commandState.cursorTerminated && !commandState.hasOutput) {
         if (hasActiveSuggestions) {
           const offset = MAX_LINES - suggestion.columns;
@@ -106,5 +104,3 @@ export const render = async () => {
     term.resize(process.stdout.columns, process.stdout.rows);
   });
 };
-
-await render();
