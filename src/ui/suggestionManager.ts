@@ -123,7 +123,7 @@ export class SuggestionManager {
     } else if (keyStroke == "down") {
       this.#activeSuggestionIdx = Math.min(this.#activeSuggestionIdx + 1, (this.#suggestBlob?.suggestions.length ?? 1) - 1);
     } else if (keyStroke == "tab") {
-      const removals = "\b".repeat(this.#suggestBlob?.charactersToDrop ?? 0);
+      const removals = "\u007F".repeat(this.#suggestBlob?.charactersToDrop ?? 0);
       const chars = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx)?.name + " ";
       if (this.#suggestBlob == null || !chars.trim()) {
         return false;
