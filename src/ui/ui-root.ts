@@ -10,7 +10,7 @@ import ansi from "ansi-escapes";
 import { SuggestionManager, MAX_LINES } from "./suggestionManager.js";
 
 export const render = async (shell: Shell) => {
-  const term = isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns });
+  const term = await isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns });
   const suggestionManager = new SuggestionManager(term);
   let hasActiveSuggestions = false;
   let previousSuggestionsColumns = 0;
