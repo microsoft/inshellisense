@@ -16,6 +16,7 @@ export type CommandState = {
   promptText?: string;
   commandText?: string;
   suggestionsText?: string;
+  persistentOutput?: boolean;
   hasOutput?: boolean;
   cursorTerminated?: boolean;
 };
@@ -199,6 +200,7 @@ export class CommandManager {
       }
 
       const commandPostfix = this.#activeCommand.promptText.length + command.trim().length < this.#terminal.buffer.active.cursorX ? " " : "";
+      this.#activeCommand.persistentOutput = this.#activeCommand.hasOutput && hasOutput;
       this.#activeCommand.hasOutput = hasOutput;
       this.#activeCommand.suggestionsText = suggestions.trim();
       this.#activeCommand.commandText = command.trim() + commandPostfix;

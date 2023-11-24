@@ -83,7 +83,7 @@ export class SuggestionManager {
     if (!this.#suggestBlob) return { data: "", columns: 0 };
     const { suggestions } = this.#suggestBlob;
 
-    const page = Math.floor(this.#activeSuggestionIdx / maxSuggestions) + 1;
+    const page = Math.min(Math.floor(this.#activeSuggestionIdx / maxSuggestions) + 1, Math.floor(suggestions.length / maxSuggestions) + 1);
     const pagedSuggestions = suggestions.filter((_, idx) => idx < page * maxSuggestions && idx >= (page - 1) * maxSuggestions);
     const activePagedSuggestionIndex = this.#activeSuggestionIdx % maxSuggestions;
     // const activeDescription = pagedSuggestions.at(activePagedSuggestionIndex)?.description || "";
@@ -115,15 +115,24 @@ export class SuggestionManager {
     };
   }
 
-  update(input: Buffer): boolean {
+  update(input: Buffer): "handled" | "fully-handled" | false {
     const keyStroke = parseKeystroke(input);
     if (keyStroke == null) return false;
     if (keyStroke == "up") {
       this.#activeSuggestionIdx = Math.max(0, this.#activeSuggestionIdx - 1);
     } else if (keyStroke == "down") {
       this.#activeSuggestionIdx = Math.min(this.#activeSuggestionIdx + 1, (this.#suggestBlob?.suggestions.length ?? 1) - 1);
+    } else if (keyStroke == "tab") {
+      const removals = "\b".repeat(this.#suggestBlob?.charactersToDrop ?? 0);
+      const chars = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx)?.name + " ";
+      if (this.#suggestBlob == null || !chars.trim()) {
+        return false;
+      }
+      this.#term.write(removals + chars);
+    } else if (keyStroke == "ctrl-space") {
+      this.#term.write("\t");
+      return "fully-handled";
     }
-
-    return true;
+    return "handled";
   }
 }

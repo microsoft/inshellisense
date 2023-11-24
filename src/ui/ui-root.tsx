@@ -33,15 +33,21 @@ export const render = async () => {
         data = data.replaceAll(cupSequence, ansi.cursorTo(parseInt(cursorX) - 1, term.rows - 1 - addedLines));
       }
     }
-    writeOutput(data);
+
+    const commandState = term.getCommandState();
+    if (commandState.hasOutput && !commandState.persistentOutput) {
+      writeOutput(ansi.cursorHide + ansi.cursorSavePosition + eraseLinesBelow(MAX_LINES) + ansi.cursorRestorePosition + ansi.cursorShow + data);
+    } else {
+      writeOutput(data);
+    }
 
     setImmediate(async () => {
       const suggestion = await suggestionManager.render();
       addedLines = suggestion.columns;
       const commandState = term.getCommandState();
 
-      log.debug({ msg: "debug d", columns: suggestion.columns });
-      if (suggestion.data != "" && commandState.cursorTerminated) {
+      log.debug({ msg: "debug d", columns: suggestion.columns, commandState });
+      if (suggestion.data != "" && commandState.cursorTerminated && !commandState.hasOutput) {
         if (hasActiveSuggestions) {
           const offset = MAX_LINES - suggestion.columns;
           writeOutput(
@@ -85,10 +91,10 @@ export const render = async () => {
     });
   });
   process.stdin.on("data", (d: Buffer) => {
-    const handled = suggestionManager.update(d);
-    if (previousSuggestionsColumns > 0 && handled) {
+    const suggestionResult = suggestionManager.update(d);
+    if (previousSuggestionsColumns > 0 && suggestionResult == "handled") {
       term.write("\u001B[m");
-    } else {
+    } else if (!suggestionResult) {
       term.write(inputModifier(d));
     }
   });
