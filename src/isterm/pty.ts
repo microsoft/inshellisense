@@ -11,6 +11,7 @@ import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "..
 import xterm from "xterm-headless";
 import { CommandManager, CommandState } from "./commandManager.js";
 import log from "../utils/log.js";
+import { gitBashPath } from "../utils/shell.js";
 
 const ISTermOnDataEvent = "data";
 
@@ -36,8 +37,8 @@ export class ISTerm implements IPty {
   readonly #term: xterm.Terminal;
   readonly #commandManager: CommandManager;
 
-  constructor({ shell, cols, rows, env }: ISTermOptions) {
-    this.#pty = pty.spawn(convertToPtyTarget(shell), [], {
+  constructor({ shell, cols, rows, env, shellTarget }: ISTermOptions & { shellTarget: string }) {
+    this.#pty = pty.spawn(shellTarget, [], {
       name: "xterm-256color",
       cols,
       rows,
@@ -130,12 +131,17 @@ export class ISTerm implements IPty {
   }
 }
 
-export const spawn = (options: ISTermOptions): ISTerm => {
-  return new ISTerm(options);
+export const spawn = async (options: ISTermOptions): Promise<ISTerm> => {
+  const shellTarget = await convertToPtyTarget(options.shell);
+  return new ISTerm({ ...options, shellTarget });
 };
 
-const convertToPtyTarget = (shell: Shell): string => {
-  return os.platform() == "win32" ? `${shell}.exe` : shell;
+const convertToPtyTarget = async (shell: Shell): Promise<string> => {
+  const platform = os.platform();
+  if (shell == Shell.Bash && platform == "win32") {
+    return await gitBashPath();
+  }
+  return platform == "win32" ? `${shell}.exe` : shell;
 };
 
 const convertToPtyEnv = (shell: Shell) => {

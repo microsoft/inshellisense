@@ -13,7 +13,7 @@ const bashEnv = { PS1: `${IstermPromptStart}\\u$ ${IstermPromptEnd}` };
 const zshEnv = { PROMPT: `%{${IstermPromptStart}%}%/ %# %{${IstermPromptEnd}%}` };
 
 const runTerm = async (shell: Shell, input: string[], env?: { [key: string]: string | undefined }) => {
-  const ptyProcess = isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns, env });
+  const ptyProcess = await isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns, env });
   await new Promise((r) => setTimeout(r, 1_000));
   for (const data of input) {
     ptyProcess.write(data);
