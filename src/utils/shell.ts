@@ -10,7 +10,9 @@ import fs from "node:fs";
 
 export const inferShell = async () => {
   try {
-    return path.parse(process.env.SHELL ?? "").name;
+    const name = path.parse(process.env.SHELL ?? "").name;
+    const shellName = supportedShells.find((shell) => name.includes(shell));
+    if (shellName) return shellName;
   } catch {
     /* empty */
   }
