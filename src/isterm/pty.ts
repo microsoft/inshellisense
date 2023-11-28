@@ -88,6 +88,10 @@ export class ISTerm implements IPty {
     return true;
   }
 
+  noop() {
+    this.#ptyEmitter.emit(ISTermOnDataEvent, "");
+  }
+
   resize(columns: number, rows: number) {
     this.cols = columns;
     this.rows = rows;

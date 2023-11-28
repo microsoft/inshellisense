@@ -91,7 +91,7 @@ export const render = async (shell: Shell) => {
   process.stdin.on("data", (d: Buffer) => {
     const suggestionResult = suggestionManager.update(d);
     if (previousSuggestionsColumns > 0 && suggestionResult == "handled") {
-      term.write("\u001B[m");
+      term.noop();
     } else if (!suggestionResult) {
       term.write(inputModifier(d));
     }

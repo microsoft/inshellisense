@@ -4,14 +4,14 @@
 import { Suggestion, SuggestionBlob } from "../runtime/model.js";
 import { getSuggestions } from "../runtime/runtime.js";
 import { ISTerm } from "../isterm/pty.js";
-import { renderBox, truncateText } from "./utils.js";
+import { renderBox, truncateText, truncateMultilineText } from "./utils.js";
 import ansi from "ansi-escapes";
 import chalk from "chalk";
 import { parseKeystroke } from "../utils/ansi.js";
-
 const maxSuggestions = 5;
 const suggestionWidth = 40;
 const descriptionWidth = 30;
+const descriptionHeight = 6;
 const borderWidth = 2;
 const activeSuggestionBackgroundColor = "#7D56F4";
 export const MAX_LINES = borderWidth + maxSuggestions;
@@ -47,23 +47,15 @@ export class SuggestionManager {
     this.#suggestBlob = suggestionBlob;
   }
 
-  // if I want a 30 box, this means that
+  private _renderArgumentDescription(description: string | undefined, x: number) {
+    if (!description) return "";
+    return renderBox([truncateText(description, descriptionWidth - borderWidth)], descriptionWidth, x);
+  }
 
-  // normalBorder = Border{
-  // 	Top:          "─",
-  // 	Bottom:       "─",
-  // 	Left:         "│",
-  // 	Right:        "│",
-  // 	TopLeft:      "┌",
-  // 	TopRight:     "┐",
-  // 	BottomLeft:   "└",
-  // 	BottomRight:  "┘",
-  // 	MiddleLeft:   "├",
-  // 	MiddleRight:  "┤",
-  // 	Middle:       "┼",
-  // 	MiddleTop:    "┬",
-  // 	MiddleBottom: "┴",
-  // }
+  private _renderDescription(description: string | undefined, x: number) {
+    if (!description) return "";
+    return renderBox(truncateMultilineText(description, descriptionWidth - borderWidth, descriptionHeight), descriptionWidth, x);
+  }
 
   private _renderSuggestions(suggestions: Suggestion[], activeSuggestionIdx: number, x: number) {
     return renderBox(
@@ -80,13 +72,12 @@ export class SuggestionManager {
   async render(): Promise<SuggestionsSequence> {
     await this._loadSuggestions();
     if (!this.#suggestBlob) return { data: "", columns: 0 };
-    const { suggestions } = this.#suggestBlob;
+    const { suggestions, argumentDescription } = this.#suggestBlob;
 
     const page = Math.min(Math.floor(this.#activeSuggestionIdx / maxSuggestions) + 1, Math.floor(suggestions.length / maxSuggestions) + 1);
     const pagedSuggestions = suggestions.filter((_, idx) => idx < page * maxSuggestions && idx >= (page - 1) * maxSuggestions);
     const activePagedSuggestionIndex = this.#activeSuggestionIdx % maxSuggestions;
-    // const activeDescription = pagedSuggestions.at(activePagedSuggestionIndex)?.description || "";
-    const activeDescription = "";
+    const activeDescription = pagedSuggestions.at(activePagedSuggestionIndex)?.description || argumentDescription || "";
 
     const wrappedPadding = this.#term.getCursorState().cursorX % this.#term.cols;
     const maxPadding = activeDescription.length !== 0 ? this.#term.cols - suggestionWidth - descriptionWidth : this.#term.cols - suggestionWidth;
@@ -99,17 +90,27 @@ export class SuggestionManager {
     }
 
     if (pagedSuggestions.length == 0) {
+      if (argumentDescription != null) {
+        return {
+          data:
+            ansi.cursorHide +
+            ansi.cursorUp(2) +
+            ansi.cursorForward(clampedLeftPadding) +
+            this._renderArgumentDescription(argumentDescription, clampedLeftPadding),
+          columns: 3,
+        };
+      }
       return { data: "", columns: 0 };
     }
 
     const columnsUsed = pagedSuggestions.length + borderWidth;
+    const ui = swapDescription
+      ? this._renderDescription(activeDescription, clampedLeftPadding) +
+        this._renderSuggestions(pagedSuggestions, activePagedSuggestionIndex, clampedLeftPadding + descriptionWidth)
+      : this._renderSuggestions(pagedSuggestions, activePagedSuggestionIndex, clampedLeftPadding) +
+        this._renderDescription(activeDescription, clampedLeftPadding + suggestionWidth);
     return {
-      data:
-        ansi.cursorHide +
-        ansi.cursorUp(columnsUsed - 1) +
-        ansi.cursorForward(clampedLeftPadding) +
-        this._renderSuggestions(pagedSuggestions, activePagedSuggestionIndex, clampedLeftPadding) +
-        ansi.cursorShow,
+      data: ansi.cursorHide + ansi.cursorUp(columnsUsed - 1) + ansi.cursorForward(clampedLeftPadding) + ui + ansi.cursorShow,
       columns: columnsUsed,
     };
   }
@@ -124,11 +125,11 @@ export class SuggestionManager {
     } else if (keyStroke == "tab") {
       const removals = "\u007F".repeat(this.#suggestBlob?.charactersToDrop ?? 0);
       const chars = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx)?.name + " ";
-      if (this.#suggestBlob == null || !chars.trim()) {
+      if (this.#suggestBlob == null || !chars.trim() || this.#suggestBlob?.suggestions.length == 0) {
         return false;
       }
       this.#term.write(removals + chars);
-    } else if (keyStroke == "ctrl-space") {
+    } else if (keyStroke == "right-arrow") {
       this.#term.write("\t");
       return "fully-handled";
     }
