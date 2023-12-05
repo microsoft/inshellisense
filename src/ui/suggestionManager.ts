@@ -8,6 +8,7 @@ import { renderBox, truncateText, truncateMultilineText } from "./utils.js";
 import ansi from "ansi-escapes";
 import chalk from "chalk";
 import { parseKeystroke } from "../utils/ansi.js";
+
 const maxSuggestions = 5;
 const suggestionWidth = 40;
 const descriptionWidth = 30;
@@ -81,7 +82,7 @@ export class SuggestionManager {
 
     const wrappedPadding = this.#term.getCursorState().cursorX % this.#term.cols;
     const maxPadding = activeDescription.length !== 0 ? this.#term.cols - suggestionWidth - descriptionWidth : this.#term.cols - suggestionWidth;
-    const swapDescription = wrappedPadding > maxPadding;
+    const swapDescription = wrappedPadding > maxPadding && activeDescription.length !== 0;
     const swappedPadding = swapDescription ? Math.max(wrappedPadding - descriptionWidth, 0) : wrappedPadding;
     const clampedLeftPadding = Math.min(Math.min(wrappedPadding, swappedPadding), maxPadding);
 
