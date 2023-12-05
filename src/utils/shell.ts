@@ -4,9 +4,35 @@
 import process from "node:process";
 import find from "find-process";
 import path from "node:path";
-import { supportedShells } from "./bindings.js";
 import which from "which";
 import fs from "node:fs";
+import url from "node:url"
+import os from "node:os"
+import fsAsync from "node:fs/promises"
+
+export enum Shell {
+  Bash = "bash",
+  Powershell = "powershell",
+  Pwsh = "pwsh",
+  Zsh = "zsh",
+  Fish = "fish",
+  Cmd = "cmd",
+}
+
+export const supportedShells = [Shell.Bash, process.platform == "win32" ? Shell.Powershell : null, Shell.Pwsh, Shell.Zsh, Shell.Fish].filter(
+  (shell) => shell != null,
+) as Shell[];
+
+export const userZdotdir = process.env?.ZDOTDIR ?? os.homedir() ?? `~`;
+export const zdotdir = path.join(os.tmpdir(), `is-zsh`);
+
+export const setupZshDotfiles = async () => {
+  const shellFolderPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "..", "..", "shell");
+  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-rc.zsh"), path.join(zdotdir, ".zshrc"))
+  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-profile.zsh"), path.join(zdotdir, ".zprofile"))
+  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-env.zsh"), path.join(zdotdir, ".zshenv"))
+  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-login.zsh"), path.join(zdotdir, ".zlogin"))
+}
 
 export const inferShell = async () => {
   try {

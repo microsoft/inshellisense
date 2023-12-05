@@ -3,7 +3,7 @@
 
 import { IBufferCell, IMarker, Terminal } from "xterm-headless";
 import os from "node:os";
-import { Shell } from "../utils/bindings.js";
+import { Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
 import { getConfig } from "../utils/config.js";
 

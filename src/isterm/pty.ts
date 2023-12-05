@@ -4,9 +4,11 @@
 import { EventEmitter } from "node:events";
 import process from "node:process";
 import os from "node:os";
+import path from "node:path";
+import url from "node:url";
 
 import pty, { IPty, IEvent } from "node-pty";
-import { Shell } from "../utils/bindings.js";
+import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
 import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
 import xterm from "xterm-headless";
 import { CommandManager, CommandState } from "./commandManager.js";
@@ -22,6 +24,7 @@ type ISTermOptions = {
   rows: number;
   cols: number;
   shell: Shell;
+  shellArgs?: string[];
 };
 
 export class ISTerm implements IPty {
@@ -39,8 +42,8 @@ export class ISTerm implements IPty {
   readonly #term: xterm.Terminal;
   readonly #commandManager: CommandManager;
 
-  constructor({ shell, cols, rows, env, shellTarget }: ISTermOptions & { shellTarget: string }) {
-    this.#pty = pty.spawn(shellTarget, [], {
+  constructor({ shell, cols, rows, env, shellTarget, shellArgs }: ISTermOptions & { shellTarget: string }) {
+    this.#pty = pty.spawn(shellTarget, shellArgs ?? [], {
       name: "xterm-256color",
       cols,
       rows,
@@ -208,16 +211,29 @@ export class ISTerm implements IPty {
 }
 
 export const spawn = async (options: ISTermOptions): Promise<ISTerm> => {
-  const shellTarget = await convertToPtyTarget(options.shell);
-  return new ISTerm({ ...options, shellTarget });
+  const { shellTarget, shellArgs } = await convertToPtyTarget(options.shell);
+  return new ISTerm({ ...options, shellTarget, shellArgs });
 };
 
-const convertToPtyTarget = async (shell: Shell): Promise<string> => {
+const convertToPtyTarget = async (shell: Shell) => {
   const platform = os.platform();
-  if (shell == Shell.Bash && platform == "win32") {
-    return await gitBashPath();
+  const shellTarget = shell == Shell.Bash && platform == "win32" ? await gitBashPath() : platform == "win32" ? `${shell}.exe` : shell;
+  const shellFolderPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "..", "..", "shell");
+  let shellArgs: string[] = [];
+
+  switch (shell) {
+    case Shell.Bash:
+      shellArgs = ["--init-file", path.join(shellFolderPath, "shellIntegration.bash")];
+      break;
+    case (Shell.Powershell, Shell.Pwsh):
+      shellArgs = ["-noexit", "-command", `try { . "${path.join(shellFolderPath, "shellIntegration.ps1")}" } catch {}`];
+      break;
+    case Shell.Fish:
+      shellArgs = ["--init-command", `. ${path.join(shellFolderPath, "shellIntegration.fish").replace(/(\s+)/g, '\\$1')}`];
+      break;
   }
-  return platform == "win32" ? `${shell}.exe` : shell;
+
+  return { shellTarget, shellArgs };
 };
 
 const convertToPtyEnv = (shell: Shell) => {
@@ -225,6 +241,9 @@ const convertToPtyEnv = (shell: Shell) => {
     case Shell.Cmd: {
       const prompt = process.env.PROMPT ? process.env.PROMPT : "$P$G";
       return { ...process.env, PROMPT: `${IstermPromptStart}${prompt}${IstermPromptEnd}` };
+    }
+    case Shell.Zsh: {
+      return {...process.env, ZDOTDIR: zdotdir, USER_ZDOTDIR: userZdotdir}
     }
   }
   return process.env;

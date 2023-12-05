@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { render } from "../ui/ui-root.js";
-import { Shell, supportedShells as shells } from "../utils/bindings.js";
+import { Shell, supportedShells as shells, setupZshDotfiles } from "../utils/shell.js";
 import { inferShell } from "../utils/shell.js";
 import { loadConfig } from "../utils/config.js";
 import { Command } from "commander";
@@ -22,6 +22,9 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
   }
   if (!shells.map((s) => s.valueOf()).includes(shell)) {
     program.error(`Unsupported shell: '${shell}', supported shells: ${supportedShells}`, { exitCode: 1 });
+  }
+  if (shell == Shell.Zsh) {
+    await setupZshDotfiles()
   }
   await render(shell);
 };
