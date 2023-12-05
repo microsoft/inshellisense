@@ -13,6 +13,7 @@ import { CommandManager, CommandState } from "./commandManager.js";
 import log from "../utils/log.js";
 import { gitBashPath } from "../utils/shell.js";
 import ansi from "ansi-escapes";
+import styles from "ansi-styles";
 
 const ISTermOnDataEvent = "data";
 
@@ -135,6 +136,39 @@ export class ISTerm implements IPty {
     };
   }
 
+  private _sameColor(baseCell: xterm.IBufferCell | undefined, targetCell: xterm.IBufferCell | undefined) {
+    return (
+      baseCell?.getBgColorMode() == targetCell?.getBgColorMode() &&
+      baseCell?.getBgColor() == targetCell?.getBgColor() &&
+      baseCell?.getFgColorMode() == targetCell?.getFgColorMode() &&
+      baseCell?.getFgColor() == targetCell?.getFgColor()
+    );
+  }
+
+  private _getAnsiColors(cell: xterm.IBufferCell | undefined): string {
+    if (cell == null) return "";
+    let bgAnsi = "";
+    cell.getBgColor;
+    cell.getFgColor;
+    if (cell.isBgDefault()) {
+      bgAnsi = "\x1b[49m";
+    } else if (cell.isBgPalette()) {
+      bgAnsi = `\x1b[48;5;${cell.getBgColor()}m`;
+    } else {
+      bgAnsi = `\x1b[48;5;${styles.hexToAnsi256(cell.getBgColor().toString(16))}m`;
+    }
+
+    let fgAnsi = "";
+    if (cell.isFgDefault()) {
+      fgAnsi = "\x1b[39m";
+    } else if (cell.isFgPalette()) {
+      fgAnsi = `\x1b[38;5;${cell.getFgColor()}m`;
+    } else {
+      fgAnsi = `\x1b[38;5;${styles.hexToAnsi256(cell.getFgColor().toString(16))}m`;
+    }
+    return bgAnsi + fgAnsi;
+  }
+
   getCells(height: number, direction: "below" | "above") {
     const currentCursorPosition = this.#term.buffer.active.cursorY + this.#term.buffer.active.baseY;
     const writeLine = (y: number) => {
@@ -142,10 +176,15 @@ export class ISTerm implements IPty {
       const ansiLine = ["\x1b[0m"];
       if (line == null) return "";
       let cell = line.getCell(0);
+      let prevCell: xterm.IBufferCell | undefined;
       for (let x = 0; x < line.length; x++) {
         cell = line.getCell(x, cell);
         const chars = cell?.getChars() ?? "";
+        if (!this._sameColor(prevCell, cell)) {
+          ansiLine.push(this._getAnsiColors(cell));
+        }
         ansiLine.push(chars == "" ? " " : chars);
+        prevCell = cell;
       }
       return ansiLine.join("");
     };
