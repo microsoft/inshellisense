@@ -4,7 +4,7 @@
 import os from "node:os";
 import isterm from "../../isterm";
 import { cursorBackward, IstermPromptEnd, IstermPromptStart } from "../../utils/ansi";
-import { Shell } from "../../utils/bindings";
+import { Shell } from "../../utils/shell";
 
 const windowsTest = os.platform() == "win32" ? test.skip : test.skip;
 const unixTest = os.platform() == "darwin" || os.platform() == "linux" ? test.skip : test.skip;

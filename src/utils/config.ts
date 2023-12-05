@@ -78,3 +78,10 @@ export const loadConfig = async (program: Command) => {
     globalConfig = config;
   }
 };
+
+export const deleteConfigFolder = async (): Promise<void> => {
+  const cliConfigPath = path.join(os.homedir(), configFolder);
+  if (fs.existsSync(cliConfigPath)) {
+    fs.rmSync(cliConfigPath, { recursive: true });
+  }
+};

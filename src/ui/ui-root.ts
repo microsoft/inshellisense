@@ -3,7 +3,7 @@
 
 import { inputModifier } from "./input.js";
 import log from "../utils/log.js";
-import { Shell } from "../utils/bindings.js";
+import { Shell } from "../utils/shell.js";
 import isterm from "../isterm/index.js";
 import { eraseLinesBelow } from "../utils/ansi.js";
 import ansi from "ansi-escapes";
