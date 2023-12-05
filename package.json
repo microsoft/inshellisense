@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/inshellisense",
-  "version": "0.0.1-rc.4",
+  "version": "0.0.1-rc.5",
   "description": "IDE style command line auto complete",
   "type": "module",
   "bin": {
