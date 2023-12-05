@@ -7,7 +7,9 @@
 ## Getting Started
 
 ### Requirements
+
 - `node >= 16.x`
+- node-gyp dependencies installed for your platform (see [node-gyp](https://github.com/microsoft/node-gyp) for more details)
 
 ### Installation
 
@@ -17,13 +19,7 @@ npm install -g @microsoft/inshellisense
 
 ### Quickstart
 
-After completing the installation, you can already run `inshellisense --shell <shell>` to start the autocomplete session for your desired shell. Additionally, you can bind `inshellisense` to a keybinding of `CTRL+a` by running the below command. This brings the added advantages of automatically starting the autocomplete session with your current shell and injecting any accepted command into your shell's history.
-
-```shell
-inshellisense bind
-```
-
-Additionally, inshellisense is also aliased under `is` after installation for convenience.
+After completing the installation, you can run `is` to start the autocomplete session for your desired shell. Additionally, inshellisense is also aliased under `inshellisense` after installation.
 
 ## Integrations
 
@@ -36,10 +32,6 @@ inshellisense supports the following shells:
 - [powershell](https://learn.microsoft.com/en-us/powershell/scripting/windows-powershell/starting-windows-powershell) (Windows Powershell)
 
 ## Contributing
-
-> [!IMPORTANT]
-> inshellisense is currently undergoing a major redesign, see [#79](https://github.com/microsoft/inshellisense/issues/79), so note that some
-> contributions will not be merged if they are modifying functionality targeted by the redesign.
 
 This project welcomes contributions and suggestions. Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
