@@ -7,6 +7,8 @@ import { Shell } from "../utils/bindings.js";
 import log from "../utils/log.js";
 import { getConfig } from "../utils/config.js";
 
+const maxPromptPollDistance = 10;
+
 type TerminalCommand = {
   promptStartMarker?: IMarker;
   promptEndMarker?: IMarker;
@@ -75,12 +77,9 @@ export class CommandManager {
 
     // User defined prompt
     const inshellisenseConfig = getConfig();
-    log.debug({ inshellisenseConfig, t: "tomato" });
-
     if (this.#shell == Shell.Bash) {
       if (inshellisenseConfig.promptRegex?.bash != null) {
         const customBashPrompt = lineText.match(new RegExp(inshellisenseConfig.promptRegex?.bash.regex))?.groups?.prompt;
-        log.debug({ customBashPrompt });
         const adjustedPrompt = this._adjustPrompt(customBashPrompt, lineText, inshellisenseConfig.promptRegex?.bash.postfix);
         if (adjustedPrompt) {
           return adjustedPrompt;
@@ -184,7 +183,7 @@ export class CommandManager {
 
     // if we haven't fond the prompt yet, poll over the next 5 lines searching for it
     if (this.#activeCommand.promptText == null && withinPollDistance) {
-      for (let i = globalCursorPosition; i < promptEndMarker.line + 5; i++) {
+      for (let i = globalCursorPosition; i < promptEndMarker.line + maxPromptPollDistance; i++) {
         if (this.#previousCommandLines.has(i)) continue;
         const promptResult = this._getWindowsPrompt(i);
         if (promptResult != null) {
@@ -222,8 +221,9 @@ export class CommandManager {
       const cursorAtEndOfInput = (this.#activeCommand.promptText.length + command.trim().length) % this.#terminal.cols <= this.#terminal.buffer.active.cursorX;
       let hasOutput = false;
 
+      let cell = undefined;
       for (let i = 0; i < this.#terminal.cols; i++) {
-        const cell = line?.getCell(i);
+        cell = line?.getCell(i, cell);
         if (cell == null) continue;
         hasOutput = cell.getChars() != "";
         if (hasOutput) {

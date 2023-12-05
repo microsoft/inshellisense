@@ -11,10 +11,10 @@ import { parseKeystroke } from "../utils/ansi.js";
 const maxSuggestions = 5;
 const suggestionWidth = 40;
 const descriptionWidth = 30;
-const descriptionHeight = 6;
+const descriptionHeight = 5;
 const borderWidth = 2;
 const activeSuggestionBackgroundColor = "#7D56F4";
-export const MAX_LINES = borderWidth + maxSuggestions;
+export const MAX_LINES = borderWidth + Math.max(maxSuggestions, descriptionHeight);
 type SuggestionsSequence = {
   data: string;
   columns: number;
