@@ -178,10 +178,9 @@ export class ISTerm implements IPty {
       const line = this.#term.buffer.active.getLine(y);
       const ansiLine = ["\x1b[0m"];
       if (line == null) return "";
-      let cell = line.getCell(0);
       let prevCell: xterm.IBufferCell | undefined;
       for (let x = 0; x < line.length; x++) {
-        cell = line.getCell(x, cell);
+        const cell = line.getCell(x);
         const chars = cell?.getChars() ?? "";
         if (!this._sameColor(prevCell, cell)) {
           ansiLine.push(this._getAnsiColors(cell));
