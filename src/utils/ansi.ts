@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+const ESC = "\u001B";
 const CSI = "\u001B[";
 const OSC = "\u001B]";
 const BEL = "\u0007";
@@ -34,7 +35,7 @@ export const eraseLinesBelow = (count = 1) => {
   return [...Array(count).keys()].map(() => cursorNextLine + eraseLine).join("");
 };
 
-export const parseKeystroke = (b: Buffer): "up" | "down" | "tab" | "right-arrow" | undefined => {
+export const parseKeystroke = (b: Buffer): "up" | "down" | "tab" | "esc" | undefined => {
   let s: string;
   if (b[0] > 127 && b[1] === undefined) {
     b[0] -= 128;
@@ -43,13 +44,13 @@ export const parseKeystroke = (b: Buffer): "up" | "down" | "tab" | "right-arrow"
     s = String(b);
   }
 
-  if (s == CSI + "A" || s == SS3 + "A") {
+  if (s == ESC) {
+    return "esc";
+  } else if (s == CSI + "A" || s == SS3 + "A") {
     return "up";
   } else if (s == CSI + "B" || s == SS3 + "B") {
     return "down";
   } else if (s == "\t") {
     return "tab";
-  } else if (s == CSI + "D" || s == SS3 + "D" || s == CSI + "d" || s == SS3 + "d") {
-    return "right-arrow";
   }
 };

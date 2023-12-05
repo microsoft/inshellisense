@@ -113,7 +113,7 @@ export const render = async (shell: Shell) => {
     const suggestionResult = suggestionManager.update(d);
     if (previousSuggestionsColumns > 0 && suggestionResult == "handled") {
       term.noop();
-    } else if (!suggestionResult) {
+    } else if (suggestionResult != "fully-handled") {
       term.write(inputModifier(d));
     }
   });
