@@ -24,7 +24,7 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
     program.error(`Unsupported shell: '${shell}', supported shells: ${supportedShells}`, { exitCode: 1 });
   }
   if (shell == Shell.Zsh) {
-    await setupZshDotfiles()
+    await setupZshDotfiles();
   }
   await render(shell);
 };

@@ -229,7 +229,7 @@ const convertToPtyTarget = async (shell: Shell) => {
       shellArgs = ["-noexit", "-command", `try { . "${path.join(shellFolderPath, "shellIntegration.ps1")}" } catch {}`];
       break;
     case Shell.Fish:
-      shellArgs = ["--init-command", `. ${path.join(shellFolderPath, "shellIntegration.fish").replace(/(\s+)/g, '\\$1')}`];
+      shellArgs = ["--init-command", `. ${path.join(shellFolderPath, "shellIntegration.fish").replace(/(\s+)/g, "\\$1")}`];
       break;
   }
 
@@ -243,7 +243,7 @@ const convertToPtyEnv = (shell: Shell) => {
       return { ...process.env, PROMPT: `${IstermPromptStart}${prompt}${IstermPromptEnd}` };
     }
     case Shell.Zsh: {
-      return {...process.env, ZDOTDIR: zdotdir, USER_ZDOTDIR: userZdotdir}
+      return { ...process.env, ZDOTDIR: zdotdir, USER_ZDOTDIR: userZdotdir };
     }
   }
   return process.env;

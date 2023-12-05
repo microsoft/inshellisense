@@ -6,9 +6,9 @@ import find from "find-process";
 import path from "node:path";
 import which from "which";
 import fs from "node:fs";
-import url from "node:url"
-import os from "node:os"
-import fsAsync from "node:fs/promises"
+import url from "node:url";
+import os from "node:os";
+import fsAsync from "node:fs/promises";
 
 export enum Shell {
   Bash = "bash",
@@ -28,11 +28,11 @@ export const zdotdir = path.join(os.tmpdir(), `is-zsh`);
 
 export const setupZshDotfiles = async () => {
   const shellFolderPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "..", "..", "shell");
-  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-rc.zsh"), path.join(zdotdir, ".zshrc"))
-  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-profile.zsh"), path.join(zdotdir, ".zprofile"))
-  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-env.zsh"), path.join(zdotdir, ".zshenv"))
-  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-login.zsh"), path.join(zdotdir, ".zlogin"))
-}
+  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-rc.zsh"), path.join(zdotdir, ".zshrc"));
+  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-profile.zsh"), path.join(zdotdir, ".zprofile"));
+  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-env.zsh"), path.join(zdotdir, ".zshenv"));
+  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-login.zsh"), path.join(zdotdir, ".zlogin"));
+};
 
 export const inferShell = async () => {
   try {
