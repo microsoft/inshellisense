@@ -119,7 +119,9 @@ export class SuggestionManager {
   update(input: Buffer): "handled" | "fully-handled" | false {
     const keyStroke = parseKeystroke(input);
     if (keyStroke == null) return false;
-    if (keyStroke == "up") {
+    if (keyStroke == "esc") {
+      this.#suggestBlob = undefined;
+    } else if (keyStroke == "up") {
       this.#activeSuggestionIdx = Math.max(0, this.#activeSuggestionIdx - 1);
     } else if (keyStroke == "down") {
       this.#activeSuggestionIdx = Math.min(this.#activeSuggestionIdx + 1, (this.#suggestBlob?.suggestions.length ?? 1) - 1);
@@ -130,9 +132,6 @@ export class SuggestionManager {
         return false;
       }
       this.#term.write(removals + chars);
-    } else if (keyStroke == "right-arrow") {
-      this.#term.write("\t");
-      return "fully-handled";
     }
     return "handled";
   }
