@@ -266,5 +266,10 @@ const runSubcommand = async (
     return; // not subcommand or option & no args exist
   }
 
-  return runArg(tokens, getArgs(subcommand.args), subcommand, allOptions, acceptedTokens, false, false);
+  const args = getArgs(subcommand.args);
+  if (args.length != 0) {
+    return runArg(tokens, args, subcommand, allOptions, acceptedTokens, false, false);
+  }
+  // if the subcommand has no args specified, fallback to the subcommand and ignore this item
+  return runSubcommand(tokens.slice(1), subcommand, persistentOptions, acceptedTokens.concat(activeToken));
 };

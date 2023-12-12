@@ -18,13 +18,17 @@ const testData = [
   { name: "command", command: "sudo git sta" },
   { name: "nestedNonCommands", command: "az az ", skip: true }, // TODO: fix skipped test
   { name: "loadSpec", command: "aws acm add" },
+  { name: "noArgsArgumentGiven", command: "gcc lab ", maxSuggestions: 3 },
 ];
 
 describe(`parseCommand`, () => {
-  testData.forEach(({ command, name, skip }) => {
+  testData.forEach(({ command, name, skip, maxSuggestions }) => {
     if (skip) return;
     test(name, async () => {
       const suggestions = await getSuggestions(command);
+      if (suggestions != null && suggestions.suggestions != null) {
+        suggestions.suggestions = suggestions?.suggestions.slice(0, maxSuggestions);
+      }
       expect(suggestions).toMatchSnapshot();
     });
   });
