@@ -56,53 +56,23 @@ const lazyLoadSpecLocation = async (location: Fig.SpecLocation): Promise<Fig.Spe
 };
 
 export const getSuggestions = async (cmd: string): Promise<SuggestionBlob | undefined> => {
-  return getSuggestionsForTokens(parseCommand(cmd));
-};
-
-export const getSuggestionsForWords = async (words: string[]): Promise<SuggestionBlob | undefined> => {
-  const tokens: CommandToken[] = [];
-  [...words].forEach((word, index) => {
-    if (word.startsWith("-") && word.indexOf("=") > -1) {
-      const splitted = word.split("=", 2)
-      tokens.push({
-        token: splitted[0],
-        complete: true,
-        isOption: true,
-      });
-      tokens.push({
-        token: splitted[1],
-        complete: index != words.length - 1,
-        isOption: false,
-      });
-    } else {
-      tokens.push({
-        token: word,
-        complete: index != words.length - 1,
-        isOption: word.startsWith("-"),
-      });
-    }
-
-  })
-  return getSuggestionsForTokens(tokens);
-}
-
-const getSuggestionsForTokens = async (tokens: CommandToken[]): Promise<SuggestionBlob | undefined> => {
-  const rootToken = tokens.at(0);
-  if (tokens.length === 0 || !rootToken?.complete) {
+  const activeCmd = parseCommand(cmd);
+  const rootToken = activeCmd.at(0);
+  if (activeCmd.length === 0 || !rootToken?.complete) {
     return;
   }
 
-  const spec = await loadSpec(tokens);
+  const spec = await loadSpec(activeCmd);
   if (spec == null) return;
   const subcommand = getSubcommand(spec);
   if (subcommand == null) return;
 
-  const result = await runSubcommand(tokens.slice(1), subcommand);
+  const result = await runSubcommand(activeCmd.slice(1), subcommand);
   if (result == null) return;
-  const lastCommand = tokens.at(-1);
+  const lastCommand = activeCmd.at(-1);
   const charactersToDrop = lastCommand?.complete ? 0 : lastCommand?.token.length ?? 0;
   return { ...result, charactersToDrop };
-}
+};
 
 const getPersistentOptions = (persistentOptions: Fig.Option[], options?: Fig.Option[]) => {
   const persistentOptionNames = new Set(persistentOptions.map((o) => (typeof o.name === "string" ? [o.name] : o.name)).flat());

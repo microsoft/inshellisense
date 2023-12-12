@@ -2,22 +2,16 @@
 // Licensed under the MIT License.
 
 import { Command } from "commander";
-import { getSuggestionsForWords } from "../runtime/runtime.js";
+import { getSuggestions } from "../runtime/runtime.js";
 
-const action = async (words: string[]) => {
-  if (words.length < 2) {
-    process.stderr.write("needs at least two arguments\n");
-    process.exit(1);
-  }
-
-  getSuggestionsForWords(words).then((suggestions) => {
-    process.stdout.write(JSON.stringify(suggestions));
-  });
+const action = async (input: string) => {
+  const suggestions = await getSuggestions(input);
+  process.stdout.write(JSON.stringify(suggestions));
 };
 
 const cmd = new Command("complete");
-cmd.description(`completes given words`);
-cmd.argument('<words...>')
+cmd.description(`generates a completion for the provided input`);
+cmd.argument("<input>");
 cmd.action(action);
 
 export default cmd;
