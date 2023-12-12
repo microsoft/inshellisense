@@ -2,11 +2,9 @@
 // Licensed under the MIT License.
 
 import chalk from "chalk";
-import { unbindAll, deleteConfigFolder } from "../utils/bindings.js";
+import { deleteConfigFolder } from "../utils/config.js";
 
 export const render = async () => {
-  await unbindAll();
-  process.stdout.write(chalk.green("✓") + " successfully uninstalled all existing bindings \n");
   deleteConfigFolder();
   process.stdout.write(chalk.green("✓") + " successfully deleted the .inshellisense config folder \n");
   process.stdout.write(

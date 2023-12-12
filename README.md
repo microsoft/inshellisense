@@ -1,13 +1,15 @@
 # inshellisense
 
-`inshellisense` provides IDE style autocomplete for shells. It's a terminal native runtime for [autocomplete](https://github.com/withfig/autocomplete) which has support for 600+ command line tools. `inshellisense` supports Windows, Linux, & MacOS.
+`inshellisense` provides IDE style autocomplete for shells. It's a terminal native runtime for [autocomplete](https://github.com/withfig/autocomplete) which has support for 600+ command line tools. `inshellisense` supports Windows, Linux, & macOS.
 
 <p align="center"><img alt="demo of inshellisense working" src="/docs/demo.gif" height="450px"/></p>
 
 ## Getting Started
 
 ### Requirements
+
 - `node >= 16.x`
+- node-gyp dependencies installed for your platform (see [node-gyp](https://github.com/nodejs/node-gyp) for more details)
 
 ### Installation
 
@@ -17,13 +19,7 @@ npm install -g @microsoft/inshellisense
 
 ### Quickstart
 
-After completing the installation, you can already run `inshellisense --shell <shell>` to start the autocomplete session for your desired shell. Additionally, you can bind `inshellisense` to a keybinding of `CTRL+a` by running the below command. This brings the added advantages of automatically starting the autocomplete session with your current shell and injecting any accepted command into your shell's history.
-
-```shell
-inshellisense bind
-```
-
-Additionally, inshellisense is also aliased under `is` after install for convenience.
+After completing the installation, you can run `is` to start the autocomplete session for your desired shell. Additionally, inshellisense is also aliased under `inshellisense` after installation.
 
 ## Integrations
 

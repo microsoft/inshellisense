@@ -9,7 +9,7 @@ const action = async () => {
 };
 
 const cmd = new Command("uninstall");
-cmd.description(`removes all bindings and configuration for inshellisense`);
+cmd.description(`removes all configuration for inshellisense`);
 cmd.action(action);
 
 export default cmd;
