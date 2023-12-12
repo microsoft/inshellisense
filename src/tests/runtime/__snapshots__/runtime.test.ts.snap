@@ -432,6 +432,44 @@ exports[`parseCommand loadSpec 1`] = `
 }
 `;
 
+exports[`parseCommand noArgsArgumentGiven 1`] = `
+{
+  "charactersToDrop": 0,
+  "suggestions": [
+    {
+      "allNames": [
+        "--analyzer-output",
+      ],
+      "description": "Static analyzer report output format",
+      "icon": "🔗",
+      "insertValue": undefined,
+      "name": "--analyzer-output",
+      "priority": 50,
+    },
+    {
+      "allNames": [
+        "--analyze",
+      ],
+      "description": "Run the static analyzer",
+      "icon": "🔗",
+      "insertValue": undefined,
+      "name": "--analyze",
+      "priority": 50,
+    },
+    {
+      "allNames": [
+        "-arcmt-migrate-emit-errors",
+      ],
+      "description": "Emit ARC errors even if the migrator can fix them",
+      "icon": "🔗",
+      "insertValue": undefined,
+      "name": "-arcmt-migrate-emit-errors",
+      "priority": 50,
+    },
+  ],
+}
+`;
+
 exports[`parseCommand noOptionsSuggestedAfterVariadicArg 1`] = `
 {
   "argumentDescription": undefined,
