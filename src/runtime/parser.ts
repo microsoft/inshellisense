@@ -8,7 +8,7 @@ export type CommandToken = {
   isPersistent?: boolean;
 };
 
-const cmdDelim = /(\|\|)|(&&)|(;)/;
+const cmdDelim = /(\|\|)|(&&)|(;)|(\|)/;
 const spaceRegex = /\s/;
 
 export const parseCommand = (command: string): CommandToken[] => {
