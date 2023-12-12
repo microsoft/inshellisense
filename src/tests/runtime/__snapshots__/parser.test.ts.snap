@@ -319,3 +319,13 @@ exports[`parseCommand cmd value  1`] = `
   },
 ]
 `;
+
+exports[`parseCommand cmd1 | cmd2  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd2",
+  },
+]
+`;
