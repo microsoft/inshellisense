@@ -205,10 +205,12 @@ export class CommandManager {
         for (let i = lineY == promptEndMarker.line ? this.#activeCommand.promptText.length : 0; i < this.#terminal.cols; i++) {
           const cell = line?.getCell(i);
           if (cell == null) continue;
+          const chars = cell.getChars();
+          const cleanedChars = chars == "" ? " " : chars;
           if (!this._isSuggestion(cell) && suggestions.length == 0) {
-            command += cell.getChars();
+            command += cleanedChars;
           } else {
-            suggestions += cell.getChars();
+            suggestions += cleanedChars;
           }
         }
         lineY += 1;
