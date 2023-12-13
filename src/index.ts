@@ -20,6 +20,7 @@ program
   .version(await getVersion(), "-v, --version", "output the current version")
   .action(action(program))
   .option("-s, --shell <shell>", `shell to use for command execution, supported shells: ${supportedShells}`)
+  .option("-V, --verbose", `enable verbose logging`)
   .showHelpAfterError("(add --help for additional information)");
 
 program.addCommand(complete);

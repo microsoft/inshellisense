@@ -6,14 +6,18 @@ import { Shell, supportedShells as shells, setupZshDotfiles } from "../utils/she
 import { inferShell } from "../utils/shell.js";
 import { loadConfig } from "../utils/config.js";
 import { Command } from "commander";
+import log from "../utils/log.js";
 
 export const supportedShells = shells.join(", ");
 
 type RootCommandOptions = {
   shell: Shell | undefined;
+  verbose: boolean | undefined;
 };
 
 export const action = (program: Command) => async (options: RootCommandOptions) => {
+  if (options.verbose) await log.enable();
+
   await loadConfig(program);
 
   const shell = options.shell ?? ((await inferShell()) as unknown as Shell | undefined);

@@ -6,10 +6,14 @@ import path from "node:path";
 import fs from "node:fs";
 import fsAsync from "node:fs/promises";
 
-const logTarget = path.join(os.homedir(), ".inshellisense", "inshellisense.log");
-const logEnabled = false;
+const logFolder = path.join(os.homedir(), ".inshellisense");
+const logTarget = path.join(logFolder, "inshellisense.log");
+let logEnabled = false;
 
 const reset = async () => {
+  if (!fs.existsSync(logTarget)) {
+    await fsAsync.mkdir(logFolder, { recursive: true });
+  }
   await fsAsync.writeFile(logTarget, "");
 };
 
@@ -24,4 +28,9 @@ const debug = (content: object) => {
   });
 };
 
-export default { reset, debug };
+export const enable = async () => {
+  await reset();
+  logEnabled = true;
+};
+
+export default { reset, debug, enable };
