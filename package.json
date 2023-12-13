@@ -18,7 +18,8 @@
     "start": "node ./build/index.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "lint": "eslint src/ --ext .ts,.tsx && prettier src/ --check",
-    "lint:fix": "eslint src/ --ext .ts,.tsx --fix && prettier src/ --write"
+    "lint:fix": "eslint src/ --ext .ts,.tsx --fix && prettier src/ --write",
+    "debug": "node --inspect --loader ts-node/esm src/index.ts -V"
   },
   "repository": {
     "type": "git",
@@ -60,6 +61,7 @@
     "jest": "^29.7.0",
     "prettier": "3.0.3",
     "ts-jest": "^29.1.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.2.2"
   }
 }
