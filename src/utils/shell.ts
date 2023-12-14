@@ -25,6 +25,16 @@ export const supportedShells = [Shell.Bash, process.platform == "win32" ? Shell.
 
 export const userZdotdir = process.env?.ZDOTDIR ?? os.homedir() ?? `~`;
 export const zdotdir = path.join(os.tmpdir(), `is-zsh`);
+const configFolder = ".inshellisense";
+
+export const setupBashPreExec = async () => {
+  const shellFolderPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "..", "..", "shell");
+  const globalConfigPath = path.join(os.homedir(), configFolder);
+  if (!fs.existsSync(globalConfigPath)) {
+    await fsAsync.mkdir(globalConfigPath, { recursive: true });
+  }
+  await fsAsync.cp(path.join(shellFolderPath, "bash-preexec.sh"), path.join(globalConfigPath, "bash-preexec.sh"));
+};
 
 export const setupZshDotfiles = async () => {
   const shellFolderPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "..", "..", "shell");

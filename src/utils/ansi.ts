@@ -13,6 +13,7 @@ const IS_OSC = OSC + IsTermOscPs + ";";
 export enum IstermOscPt {
   PromptStarted = "PS",
   PromptEnded = "PE",
+  CurrentWorkingDirectory = "CWD",
 }
 
 export const IstermPromptStart = IS_OSC + IstermOscPt.PromptStarted + BEL;
