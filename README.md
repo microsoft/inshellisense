@@ -21,6 +21,25 @@ npm install -g @microsoft/inshellisense
 
 After completing the installation, you can run `is` to start the autocomplete session for your desired shell. Additionally, inshellisense is also aliased under `inshellisense` after installation.
 
+### Usage
+
+| Action                                | Command |
+| ------------------------------------- | ------- |
+| Start                                 | `is`    |
+| Stop                                  | `exit`  |
+| Check If Inside Inshellisense Session | `is -c` |
+
+#### Keybindings
+
+All other keys are passed through to the shell. The keybindings below are only captured when the inshellisense suggestions are visible, otherwise they are passed through to the shell as well.
+
+| Action                    | Keybinding     |
+| ------------------------- | -------------- |
+| Accept Current Suggestion | <kbd>tab</kbd> |
+| View Next Suggestion      | <kbd>↓</kbd>   |
+| View Previous Suggestion  | <kbd>↑</kbd>   |
+| Dismiss Suggestions       | <kbd>esc</kbd> |
+
 ## Integrations
 
 inshellisense supports the following shells:
