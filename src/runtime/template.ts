@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 import fsAsync from "node:fs/promises";
-import path from "node:path";
 
 const filepathsTemplate = async (cwd: string): Promise<Fig.Suggestion[]> => {
   const files = await fsAsync.readdir(cwd, { withFileTypes: true });
