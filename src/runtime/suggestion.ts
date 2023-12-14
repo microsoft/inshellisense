@@ -237,7 +237,7 @@ export const getArgDrivenRecommendation = async (
     ...(await templateSuggestions(args[0].template, activeArg?.filterStrategy, partialCmd)),
   ];
 
-  if ((activeArg.isOptional && !activeArg.isVariadic) || (activeArg.isVariadic && activeArg.isOptional && !variadicArgBound)) {
+  if (activeArg.isOptional || (activeArg.isVariadic && variadicArgBound)) {
     suggestions.push(...subcommandSuggestions(subcommand.subcommands, activeArg?.filterStrategy, partialCmd));
     suggestions.push(...optionSuggestions(allOptions, acceptedTokens, activeArg?.filterStrategy, partialCmd));
   }
