@@ -65,7 +65,7 @@ const lex = (command: string): CommandToken[] => {
     tokens.push({
       token: command.slice(readingIdx),
       complete: false,
-      isOption: false,
+      isOption: readingFlag,
     });
   }
 

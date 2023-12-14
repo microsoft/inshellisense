@@ -179,7 +179,7 @@ exports[`parseCommand cmd -f 1`] = `
   },
   {
     "complete": false,
-    "isOption": false,
+    "isOption": true,
     "token": "-f",
   },
 ]
@@ -194,7 +194,7 @@ exports[`parseCommand cmd -f 2`] = `
   },
   {
     "complete": false,
-    "isOption": false,
+    "isOption": true,
     "token": "-f",
   },
 ]
@@ -326,6 +326,21 @@ exports[`parseCommand cmd1 | cmd2  1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd2",
+  },
+]
+`;
+
+exports[`parseCommand cmd1 - 1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd1",
+  },
+  {
+    "complete": false,
+    "isOption": true,
+    "token": "-",
   },
 ]
 `;

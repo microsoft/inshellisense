@@ -470,11 +470,49 @@ exports[`parseCommand noArgsArgumentGiven 1`] = `
 }
 `;
 
-exports[`parseCommand noOptionsSuggestedAfterVariadicArg 1`] = `
+exports[`parseCommand noOptionsSuggestedDuringVariadicArg 1`] = `
+{
+  "charactersToDrop": 3,
+  "suggestions": [],
+}
+`;
+
+exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
 {
   "argumentDescription": undefined,
   "charactersToDrop": 1,
-  "suggestions": [],
+  "suggestions": [
+    {
+      "allNames": [
+        "-@",
+      ],
+      "description": "Display extended attribute keys and sizes in long (-l) output",
+      "icon": "🔗",
+      "insertValue": undefined,
+      "name": "-@",
+      "priority": 50,
+    },
+    {
+      "allNames": [
+        "-1",
+      ],
+      "description": "(The numeric digit \`\`one''.)  Force output to be one entry per line.  This is the default when output is not to a terminal",
+      "icon": "🔗",
+      "insertValue": undefined,
+      "name": "-1",
+      "priority": 50,
+    },
+    {
+      "allNames": [
+        "-A",
+      ],
+      "description": "List all entries except for . and ...  Always set for the super-user",
+      "icon": "🔗",
+      "insertValue": undefined,
+      "name": "-A",
+      "priority": 50,
+    },
+  ],
 }
 `;
 
