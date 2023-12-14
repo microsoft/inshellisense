@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import log from "../utils/log.js";
 import { runTemplates } from "./template.js";
 import { buildExecuteShellCommand } from "./utils.js";
 
@@ -23,7 +24,14 @@ export const runGenerator = async (generator: Fig.Generator, tokens: string[], c
   const suggestions = [];
   try {
     if (script) {
-      const scriptOutput = typeof script === "function" ? script(tokens) : script != null ? await executeShellCommand(script) : "";
+      const scriptOutput =
+        typeof script === "function"
+          ? script(tokens)
+          : typeof script === "string"
+          ? await executeShellCommand(script)
+          : script != null
+          ? await executeShellCommand((script as string[]).join(" "))
+          : "";
       if (postProcess) {
         suggestions.push(...postProcess(scriptOutput, tokens));
       } else if (splitOn) {
@@ -40,7 +48,7 @@ export const runGenerator = async (generator: Fig.Generator, tokens: string[], c
     }
     return suggestions;
   } catch (e) {
-    /* empty */
+    log.debug({ msg: "generator failed", e, script, splitOn, template });
   }
   return suggestions;
 };
