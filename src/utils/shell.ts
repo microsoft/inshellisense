@@ -19,9 +19,14 @@ export enum Shell {
   Cmd = "cmd",
 }
 
-export const supportedShells = [Shell.Bash, process.platform == "win32" ? Shell.Powershell : null, Shell.Pwsh, Shell.Zsh, Shell.Fish].filter(
-  (shell) => shell != null,
-) as Shell[];
+export const supportedShells = [
+  Shell.Bash,
+  process.platform == "win32" ? Shell.Powershell : null,
+  Shell.Pwsh,
+  Shell.Zsh,
+  Shell.Fish,
+  process.platform == "win32" ? Shell.Cmd : null,
+].filter((shell) => shell != null) as Shell[];
 
 export const userZdotdir = process.env?.ZDOTDIR ?? os.homedir() ?? `~`;
 export const zdotdir = path.join(os.tmpdir(), `is-zsh`);
