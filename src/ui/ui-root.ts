@@ -13,7 +13,7 @@ export const render = async (shell: Shell) => {
   const term = await isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns });
   const suggestionManager = new SuggestionManager(term);
   let hasActiveSuggestions = false;
-  let previousSuggestionsColumns = 0;
+  let previousSuggestionsRows = 0;
   process.stdin.setRawMode(true);
 
   const writeOutput = (data: string) => {
@@ -26,7 +26,7 @@ export const render = async (shell: Shell) => {
   term.onData((data) => {
     const commandState = term.getCommandState();
     if ((commandState.hasOutput || hasActiveSuggestions) && !commandState.persistentOutput) {
-      if (term.getCursorState().remainingLines < previousSuggestionsColumns) {
+      if (term.getCursorState().remainingLines < previousSuggestionsRows) {
         writeOutput(
           ansi.cursorHide +
             ansi.cursorSavePosition +
@@ -44,12 +44,12 @@ export const render = async (shell: Shell) => {
     }
 
     setImmediate(async () => {
-      const suggestion = await suggestionManager.render();
+      const suggestion = await suggestionManager.render(term.getCursorState().remainingLines);
       const commandState = term.getCommandState();
 
       if (suggestion.data != "" && commandState.cursorTerminated && !commandState.hasOutput) {
         if (hasActiveSuggestions) {
-          if (term.getCursorState().remainingLines < suggestion.columns) {
+          if (term.getCursorState().remainingLines < suggestion.rows) {
             writeOutput(
               ansi.cursorHide +
                 ansi.cursorSavePosition +
@@ -63,7 +63,7 @@ export const render = async (shell: Shell) => {
                 ansi.cursorShow,
             );
           } else {
-            const offset = MAX_LINES - suggestion.columns;
+            const offset = MAX_LINES - suggestion.rows;
             writeOutput(
               ansi.cursorHide +
                 ansi.cursorSavePosition +
@@ -75,13 +75,13 @@ export const render = async (shell: Shell) => {
             );
           }
         } else {
-          if (term.getCursorState().remainingLines < suggestion.columns) {
+          if (term.getCursorState().remainingLines < suggestion.rows) {
             writeOutput(ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorUp() + suggestion.data + ansi.cursorRestorePosition + ansi.cursorShow);
           } else {
             writeOutput(
               ansi.cursorHide +
                 ansi.cursorSavePosition +
-                ansi.cursorNextLine.repeat(suggestion.columns) +
+                ansi.cursorNextLine.repeat(suggestion.rows) +
                 suggestion.data +
                 ansi.cursorRestorePosition +
                 ansi.cursorShow,
@@ -91,7 +91,7 @@ export const render = async (shell: Shell) => {
         hasActiveSuggestions = true;
       } else {
         if (hasActiveSuggestions) {
-          if (term.getCursorState().remainingLines < previousSuggestionsColumns) {
+          if (term.getCursorState().remainingLines < previousSuggestionsRows) {
             writeOutput(
               ansi.cursorHide +
                 ansi.cursorSavePosition +
@@ -106,12 +106,12 @@ export const render = async (shell: Shell) => {
         }
         hasActiveSuggestions = false;
       }
-      previousSuggestionsColumns = suggestion.columns;
+      previousSuggestionsRows = suggestion.rows;
     });
   });
   process.stdin.on("data", (d: Buffer) => {
     const suggestionResult = suggestionManager.update(d);
-    if (previousSuggestionsColumns > 0 && suggestionResult == "handled") {
+    if (previousSuggestionsRows > 0 && suggestionResult == "handled") {
       term.noop();
     } else if (suggestionResult != "fully-handled") {
       term.write(inputModifier(d));

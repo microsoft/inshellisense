@@ -18,7 +18,7 @@ const activeSuggestionBackgroundColor = "#7D56F4";
 export const MAX_LINES = borderWidth + Math.max(maxSuggestions, descriptionHeight);
 type SuggestionsSequence = {
   data: string;
-  columns: number;
+  rows: number;
 };
 
 export class SuggestionManager {
@@ -58,6 +58,11 @@ export class SuggestionManager {
     return renderBox(truncateMultilineText(description, descriptionWidth - borderWidth, descriptionHeight), descriptionWidth, x);
   }
 
+  private _descriptionRows(description: string | undefined) {
+    if (!description) return 0;
+    return truncateMultilineText(description, descriptionWidth - borderWidth, descriptionHeight).length;
+  }
+
   private _renderSuggestions(suggestions: Suggestion[], activeSuggestionIdx: number, x: number) {
     return renderBox(
       suggestions.map((suggestion, idx) => {
@@ -70,9 +75,9 @@ export class SuggestionManager {
     );
   }
 
-  async render(): Promise<SuggestionsSequence> {
+  async render(remainingLines: number): Promise<SuggestionsSequence> {
     await this._loadSuggestions();
-    if (!this.#suggestBlob) return { data: "", columns: 0 };
+    if (!this.#suggestBlob) return { data: "", rows: 0 };
     const { suggestions, argumentDescription } = this.#suggestBlob;
 
     const page = Math.min(Math.floor(this.#activeSuggestionIdx / maxSuggestions) + 1, Math.floor(suggestions.length / maxSuggestions) + 1);
@@ -98,21 +103,37 @@ export class SuggestionManager {
             ansi.cursorUp(2) +
             ansi.cursorForward(clampedLeftPadding) +
             this._renderArgumentDescription(argumentDescription, clampedLeftPadding),
-          columns: 3,
+          rows: 3,
         };
       }
-      return { data: "", columns: 0 };
+      return { data: "", rows: 0 };
     }
 
-    const columnsUsed = pagedSuggestions.length + borderWidth;
-    const ui = swapDescription
-      ? this._renderDescription(activeDescription, clampedLeftPadding) +
-        this._renderSuggestions(pagedSuggestions, activePagedSuggestionIndex, clampedLeftPadding + descriptionWidth)
-      : this._renderSuggestions(pagedSuggestions, activePagedSuggestionIndex, clampedLeftPadding) +
-        this._renderDescription(activeDescription, clampedLeftPadding + suggestionWidth);
+    const suggestionRowsUsed = pagedSuggestions.length + borderWidth;
+    let descriptionRowsUsed = this._descriptionRows(activeDescription) + borderWidth;
+    let rows = Math.max(descriptionRowsUsed, suggestionRowsUsed);
+    if (rows <= remainingLines) {
+      descriptionRowsUsed = suggestionRowsUsed;
+      rows = suggestionRowsUsed;
+    }
+
+    const descriptionUI =
+      ansi.cursorUp(descriptionRowsUsed - 1) +
+      (swapDescription
+        ? this._renderDescription(activeDescription, clampedLeftPadding)
+        : this._renderDescription(activeDescription, clampedLeftPadding + suggestionWidth)) +
+      ansi.cursorDown(descriptionRowsUsed - 1);
+    const suggestionUI =
+      ansi.cursorUp(suggestionRowsUsed - 1) +
+      (swapDescription
+        ? this._renderSuggestions(pagedSuggestions, activePagedSuggestionIndex, clampedLeftPadding + descriptionWidth)
+        : this._renderSuggestions(pagedSuggestions, activePagedSuggestionIndex, clampedLeftPadding)) +
+      ansi.cursorDown(suggestionRowsUsed - 1);
+
+    const ui = swapDescription ? descriptionUI + suggestionUI : suggestionUI + descriptionUI;
     return {
-      data: ansi.cursorHide + ansi.cursorUp(columnsUsed - 1) + ansi.cursorForward(clampedLeftPadding) + ui + ansi.cursorShow,
-      columns: columnsUsed,
+      data: ansi.cursorHide + ansi.cursorForward(clampedLeftPadding) + ui + ansi.cursorShow,
+      rows,
     };
   }
 
