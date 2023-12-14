@@ -41,7 +41,7 @@ export const runTemplates = async (template: Fig.TemplateStrings[] | Fig.Templat
               return helpTemplate();
           }
         } catch (e) {
-          log.debug({ msg: "template failed", e, cwd });
+          log.debug({ msg: "template failed", e, template: t, cwd });
           return [];
         }
       }),
