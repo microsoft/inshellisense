@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { render } from "../ui/ui-root.js";
+import { render, renderConfirmation } from "../ui/ui-root.js";
 import { Shell, supportedShells as shells, setupZshDotfiles } from "../utils/shell.js";
 import { inferShell } from "../utils/shell.js";
 import { loadConfig } from "../utils/config.js";
@@ -13,9 +13,16 @@ export const supportedShells = shells.join(", ");
 type RootCommandOptions = {
   shell: Shell | undefined;
   verbose: boolean | undefined;
+  check: boolean | undefined;
 };
 
 export const action = (program: Command) => async (options: RootCommandOptions) => {
+  const inISTerm = process.env.ISTERM === "1";
+  if (options.check || inISTerm) {
+    process.stdout.write(renderConfirmation(inISTerm));
+    return;
+  }
+
   if (options.verbose) await log.enable();
 
   await loadConfig(program);
