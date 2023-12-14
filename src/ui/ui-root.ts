@@ -24,20 +24,22 @@ export const render = async (shell: Shell) => {
   writeOutput(ansi.clearTerminal);
 
   term.onData((data) => {
-    const commandState = term.getCommandState();
-    if ((commandState.hasOutput || hasActiveSuggestions) && !commandState.persistentOutput) {
-      if (term.getCursorState().remainingLines < previousSuggestionsRows) {
+    if (hasActiveSuggestions) {
+      // Considers when data includes newlines which have shifted the cursor position downwards
+      const newlines = Math.max((data.match(/\r/g) || []).length, (data.match(/\n/g) || []).length);
+      const linesOfInterest = MAX_LINES + newlines;
+      if (term.getCursorState().remainingLines <= previousSuggestionsRows) {
         writeOutput(
-          ansi.cursorHide +
+          data +
+            ansi.cursorHide +
             ansi.cursorSavePosition +
-            ansi.cursorPrevLine.repeat(MAX_LINES) +
-            term.getCells(MAX_LINES, "above") +
+            ansi.cursorPrevLine.repeat(linesOfInterest) +
+            term.getCells(linesOfInterest, "above") +
             ansi.cursorRestorePosition +
-            ansi.cursorShow +
-            data,
+            ansi.cursorShow,
         );
       } else {
-        writeOutput(ansi.cursorHide + ansi.cursorSavePosition + eraseLinesBelow(MAX_LINES + 1) + ansi.cursorRestorePosition + ansi.cursorShow + data);
+        writeOutput(ansi.cursorHide + ansi.cursorSavePosition + eraseLinesBelow(linesOfInterest + 1) + ansi.cursorRestorePosition + ansi.cursorShow + data);
       }
     } else {
       writeOutput(data);
@@ -91,7 +93,7 @@ export const render = async (shell: Shell) => {
         hasActiveSuggestions = true;
       } else {
         if (hasActiveSuggestions) {
-          if (term.getCursorState().remainingLines < previousSuggestionsRows) {
+          if (term.getCursorState().remainingLines <= previousSuggestionsRows) {
             writeOutput(
               ansi.cursorHide +
                 ansi.cursorSavePosition +
