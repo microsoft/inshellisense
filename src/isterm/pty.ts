@@ -36,11 +36,13 @@ export class ISTerm implements IPty {
   readonly onData: IEvent<string>;
   readonly onExit: IEvent<{ exitCode: number; signal?: number }>;
   shellBuffer?: string;
+  cwd: string = "";
 
   readonly #pty: IPty;
   readonly #ptyEmitter: EventEmitter;
   readonly #term: xterm.Terminal;
   readonly #commandManager: CommandManager;
+  readonly #shell: Shell;
 
   constructor({ shell, cols, rows, env, shellTarget, shellArgs }: ISTermOptions & { shellTarget: string }) {
     this.#pty = pty.spawn(shellTarget, shellArgs ?? [], {
@@ -58,6 +60,7 @@ export class ISTerm implements IPty {
     this.#term = new xterm.Terminal({ allowProposedApi: true, rows, cols });
     this.#term.parser.registerOscHandler(IsTermOscPs, (data) => this._handleIsSequence(data));
     this.#commandManager = new CommandManager(this.#term, shell);
+    this.#shell = shell;
 
     this.#ptyEmitter = new EventEmitter();
     this.#pty.onData((data) => {
@@ -77,6 +80,25 @@ export class ISTerm implements IPty {
     this.onExit = this.#pty.onExit;
   }
 
+  private _deserializeIsMessage(message: string): string {
+    return message.replaceAll(/\\(\\|x([0-9a-f]{2}))/gi, (_match: string, op: string, hex?: string) => (hex ? String.fromCharCode(parseInt(hex, 16)) : op));
+  }
+
+  private _sanitizedCwd(cwd: string): string {
+    if (cwd.match(/^['"].*['"]$/)) {
+      cwd = cwd.substring(1, cwd.length - 1);
+    }
+    // Convert a drive prefix to windows style when using Git Bash
+    if (os.platform() === "win32" && this.#shell == Shell.Bash && cwd && cwd.match(/^\/[A-z]{1}\//)) {
+      cwd = `${cwd[1]}:\\` + cwd.substring(3, cwd.length);
+    }
+    // Make the drive letter uppercase on Windows (see vscode #9448)
+    if (os.platform() === "win32" && cwd && cwd[1] === ":") {
+      return cwd[0].toUpperCase() + cwd.substring(1);
+    }
+    return cwd;
+  }
+
   private _handleIsSequence(data: string): boolean {
     const argsIndex = data.indexOf(";");
     const sequence = argsIndex === -1 ? data : data.substring(0, argsIndex);
@@ -87,6 +109,13 @@ export class ISTerm implements IPty {
       case IstermOscPt.PromptEnded:
         this.#commandManager.handlePromptEnd();
         break;
+      case IstermOscPt.CurrentWorkingDirectory: {
+        const cwd = data.split(";").at(1);
+        if (cwd != null) {
+          this.cwd = this._sanitizedCwd(this._deserializeIsMessage(cwd));
+        }
+        break;
+      }
       default:
         return false;
     }

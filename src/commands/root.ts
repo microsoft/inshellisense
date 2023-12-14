@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { render, renderConfirmation } from "../ui/ui-root.js";
-import { Shell, supportedShells as shells, setupZshDotfiles } from "../utils/shell.js";
+import { Shell, supportedShells as shells, setupZshDotfiles, setupBashPreExec } from "../utils/shell.js";
 import { inferShell } from "../utils/shell.js";
 import { loadConfig } from "../utils/config.js";
 import { Command } from "commander";
@@ -36,6 +36,8 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
   }
   if (shell == Shell.Zsh) {
     await setupZshDotfiles();
+  } else if (shell == Shell.Bash) {
+    await setupBashPreExec();
   }
   await render(shell);
 };

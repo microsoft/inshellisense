@@ -55,7 +55,7 @@ const lazyLoadSpecLocation = async (location: Fig.SpecLocation): Promise<Fig.Spe
   return; //TODO: implement spec location loading
 };
 
-export const getSuggestions = async (cmd: string): Promise<SuggestionBlob | undefined> => {
+export const getSuggestions = async (cmd: string, cwd: string): Promise<SuggestionBlob | undefined> => {
   const activeCmd = parseCommand(cmd);
   const rootToken = activeCmd.at(0);
   if (activeCmd.length === 0 || !rootToken?.complete) {
@@ -67,7 +67,7 @@ export const getSuggestions = async (cmd: string): Promise<SuggestionBlob | unde
   const subcommand = getSubcommand(spec);
   if (subcommand == null) return;
 
-  const result = await runSubcommand(activeCmd.slice(1), subcommand);
+  const result = await runSubcommand(activeCmd.slice(1), subcommand, cwd);
   if (result == null) return;
   const lastCommand = activeCmd.at(-1);
   const charactersToDrop = lastCommand?.complete ? 0 : lastCommand?.token.length ?? 0;
@@ -162,6 +162,7 @@ const runOption = async (
   tokens: CommandToken[],
   option: Fig.Option,
   subcommand: Fig.Subcommand,
+  cwd: string,
   persistentOptions: Fig.Option[],
   acceptedTokens: CommandToken[],
 ): Promise<SuggestionBlob | undefined> => {
@@ -172,26 +173,27 @@ const runOption = async (
   const isPersistent = persistentOptions.some((o) => (typeof o.name === "string" ? o.name === activeToken.token : o.name.includes(activeToken.token)));
   if ((option.args instanceof Array && option.args.length > 0) || option.args != null) {
     const args = option.args instanceof Array ? option.args : [option.args];
-    return runArg(tokens.slice(1), args, subcommand, persistentOptions, acceptedTokens.concat(activeToken), true, false);
+    return runArg(tokens.slice(1), args, subcommand, cwd, persistentOptions, acceptedTokens.concat(activeToken), true, false);
   }
-  return runSubcommand(tokens.slice(1), subcommand, persistentOptions, acceptedTokens.concat({ ...activeToken, isPersistent }));
+  return runSubcommand(tokens.slice(1), subcommand, cwd, persistentOptions, acceptedTokens.concat({ ...activeToken, isPersistent }));
 };
 
 const runArg = async (
   tokens: CommandToken[],
   args: Fig.Arg[],
   subcommand: Fig.Subcommand,
+  cwd: string,
   persistentOptions: Fig.Option[],
   acceptedTokens: CommandToken[],
   fromOption: boolean,
   fromVariadic: boolean,
 ): Promise<SuggestionBlob | undefined> => {
   if (args.length === 0) {
-    return runSubcommand(tokens, subcommand, persistentOptions, acceptedTokens, true, !fromOption);
+    return runSubcommand(tokens, subcommand, cwd, persistentOptions, acceptedTokens, true, !fromOption);
   } else if (tokens.length === 0) {
-    return await getArgDrivenRecommendation(args, subcommand, persistentOptions, undefined, acceptedTokens, fromVariadic);
+    return await getArgDrivenRecommendation(args, subcommand, persistentOptions, undefined, acceptedTokens, fromVariadic, cwd);
   } else if (!tokens.at(0)?.complete) {
-    return await getArgDrivenRecommendation(args, subcommand, persistentOptions, tokens[0].token, acceptedTokens, fromVariadic);
+    return await getArgDrivenRecommendation(args, subcommand, persistentOptions, tokens[0].token, acceptedTokens, fromVariadic, cwd);
   }
 
   const activeToken = tokens[0];
@@ -199,20 +201,20 @@ const runArg = async (
     if (activeToken.isOption) {
       const option = getOption(activeToken, persistentOptions.concat(subcommand.options ?? []));
       if (option != null) {
-        return runOption(tokens, option, subcommand, persistentOptions, acceptedTokens);
+        return runOption(tokens, option, subcommand, cwd, persistentOptions, acceptedTokens);
       }
       return;
     }
 
     const nextSubcommand = await genSubcommand(activeToken.token, subcommand);
     if (nextSubcommand != null) {
-      return runSubcommand(tokens.slice(1), nextSubcommand, persistentOptions, getPersistentTokens(acceptedTokens.concat(activeToken)));
+      return runSubcommand(tokens.slice(1), nextSubcommand, cwd, persistentOptions, getPersistentTokens(acceptedTokens.concat(activeToken)));
     }
   }
 
   const activeArg = args[0];
   if (activeArg.isVariadic) {
-    return runArg(tokens.slice(1), args, subcommand, persistentOptions, acceptedTokens.concat(activeToken), fromOption, true);
+    return runArg(tokens.slice(1), args, subcommand, cwd, persistentOptions, acceptedTokens.concat(activeToken), fromOption, true);
   } else if (activeArg.isCommand) {
     if (tokens.length <= 0) {
       return;
@@ -221,23 +223,24 @@ const runArg = async (
     if (spec == null) return;
     const subcommand = getSubcommand(spec);
     if (subcommand == null) return;
-    return runSubcommand(tokens.slice(1), subcommand);
+    return runSubcommand(tokens.slice(1), subcommand, cwd);
   }
-  return runArg(tokens.slice(1), args.slice(1), subcommand, persistentOptions, acceptedTokens.concat(activeToken), fromOption, false);
+  return runArg(tokens.slice(1), args.slice(1), subcommand, cwd, persistentOptions, acceptedTokens.concat(activeToken), fromOption, false);
 };
 
 const runSubcommand = async (
   tokens: CommandToken[],
   subcommand: Fig.Subcommand,
+  cwd: string,
   persistentOptions: Fig.Option[] = [],
   acceptedTokens: CommandToken[] = [],
   argsDepleted = false,
   argsUsed = false,
 ): Promise<SuggestionBlob | undefined> => {
   if (tokens.length === 0) {
-    return getSubcommandDrivenRecommendation(subcommand, persistentOptions, undefined, argsDepleted, argsUsed, acceptedTokens);
+    return getSubcommandDrivenRecommendation(subcommand, persistentOptions, undefined, argsDepleted, argsUsed, acceptedTokens, cwd);
   } else if (!tokens.at(0)?.complete) {
-    return getSubcommandDrivenRecommendation(subcommand, persistentOptions, tokens[0].token, argsDepleted, argsUsed, acceptedTokens);
+    return getSubcommandDrivenRecommendation(subcommand, persistentOptions, tokens[0].token, argsDepleted, argsUsed, acceptedTokens, cwd);
   }
 
   const activeToken = tokens[0];
@@ -247,7 +250,7 @@ const runSubcommand = async (
   if (activeToken.isOption) {
     const option = getOption(activeToken, allOptions);
     if (option != null) {
-      return runOption(tokens, option, subcommand, persistentOptions, acceptedTokens);
+      return runOption(tokens, option, subcommand, cwd, persistentOptions, acceptedTokens);
     }
     return;
   }
@@ -257,6 +260,7 @@ const runSubcommand = async (
     return runSubcommand(
       tokens.slice(1),
       nextSubcommand,
+      cwd,
       getPersistentOptions(persistentOptions, subcommand.options),
       getPersistentTokens(acceptedTokens.concat(activeToken)),
     );
@@ -268,8 +272,8 @@ const runSubcommand = async (
 
   const args = getArgs(subcommand.args);
   if (args.length != 0) {
-    return runArg(tokens, args, subcommand, allOptions, acceptedTokens, false, false);
+    return runArg(tokens, args, subcommand, cwd, allOptions, acceptedTokens, false, false);
   }
   // if the subcommand has no args specified, fallback to the subcommand and ignore this item
-  return runSubcommand(tokens.slice(1), subcommand, persistentOptions, acceptedTokens.concat(activeToken));
+  return runSubcommand(tokens.slice(1), subcommand, cwd, persistentOptions, acceptedTokens.concat(activeToken));
 };
