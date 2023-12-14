@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import fsAsync from "node:fs/promises";
+import log from "../utils/log.js";
 
 const filepathsTemplate = async (cwd: string): Promise<Fig.Suggestion[]> => {
   const files = await fsAsync.readdir(cwd, { withFileTypes: true });
@@ -28,15 +29,20 @@ export const runTemplates = async (template: Fig.TemplateStrings[] | Fig.Templat
   return (
     await Promise.all(
       templates.map(async (t) => {
-        switch (t) {
-          case "filepaths":
-            return await filepathsTemplate(cwd);
-          case "folders":
-            return await foldersTemplate(cwd);
-          case "history":
-            return historyTemplate();
-          case "help":
-            return helpTemplate();
+        try {
+          switch (t) {
+            case "filepaths":
+              return await filepathsTemplate(cwd);
+            case "folders":
+              return await foldersTemplate(cwd);
+            case "history":
+              return historyTemplate();
+            case "help":
+              return helpTemplate();
+          }
+        } catch (e) {
+          log.debug({ msg: "template failed", e, template: t, cwd });
+          return [];
         }
       }),
     )
