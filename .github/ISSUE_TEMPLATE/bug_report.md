@@ -22,8 +22,10 @@ A clear and concise description of what you expected to happen.
 
 **Environment**
  - OS: [e.g. iOS]
- - Output of `inshellisense --version`: 
+ - Output of `is --version`: 
  - Nodejs Version: [e.g. 20.9.0]
+ - Shell: [e.g. bash, zsh, fish]
+ - Shell Version: [e.g. 5.2.21]
 
 **Additional context**
 Add any other context about the problem here.
