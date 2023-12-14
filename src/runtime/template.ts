@@ -25,7 +25,6 @@ const helpTemplate = (): Fig.Suggestion[] => {
 };
 
 export const runTemplates = async (template: Fig.TemplateStrings[] | Fig.Template, cwd: string): Promise<Fig.Suggestion[]> => {
-  const t = path.resolve(cwd);
   const templates = template instanceof Array ? template : [template];
   return (
     await Promise.all(
