@@ -1,13 +1,20 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import ansi from "ansi-escapes";
+import chalk from "chalk";
+
 import { inputModifier } from "./input.js";
 import log from "../utils/log.js";
 import { Shell } from "../utils/shell.js";
 import isterm from "../isterm/index.js";
 import { eraseLinesBelow } from "../utils/ansi.js";
-import ansi from "ansi-escapes";
 import { SuggestionManager, MAX_LINES } from "./suggestionManager.js";
+
+export const renderConfirmation = (live: boolean): string => {
+  const statusMessage = live ? chalk.green("live") : chalk.red("not found");
+  return `inshellisense session [${statusMessage}]\n`;
+};
 
 export const render = async (shell: Shell) => {
   const term = await isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns });

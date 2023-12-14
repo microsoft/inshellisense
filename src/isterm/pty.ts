@@ -236,14 +236,18 @@ const convertToPtyTarget = async (shell: Shell) => {
 };
 
 const convertToPtyEnv = (shell: Shell) => {
+  const env = {
+    ...process.env,
+    ISTERM: "1",
+  };
   switch (shell) {
     case Shell.Cmd: {
       const prompt = process.env.PROMPT ? process.env.PROMPT : "$P$G";
-      return { ...process.env, PROMPT: `${IstermPromptStart}${prompt}${IstermPromptEnd}` };
+      return { ...env, PROMPT: `${IstermPromptStart}${prompt}${IstermPromptEnd}` };
     }
     case Shell.Zsh: {
-      return { ...process.env, ZDOTDIR: zdotdir, USER_ZDOTDIR: userZdotdir };
+      return { ...env, ZDOTDIR: zdotdir, USER_ZDOTDIR: userZdotdir };
     }
   }
-  return process.env;
+  return env;
 };
