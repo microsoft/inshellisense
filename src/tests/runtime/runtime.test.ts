@@ -26,7 +26,7 @@ describe(`parseCommand`, () => {
   testData.forEach(({ command, name, skip, maxSuggestions }) => {
     if (skip) return;
     test(name, async () => {
-      const suggestions = await getSuggestions(command);
+      const suggestions = await getSuggestions(command, process.cwd());
       if (suggestions != null && suggestions.suggestions != null) {
         suggestions.suggestions = suggestions?.suggestions.slice(0, maxSuggestions);
       }
