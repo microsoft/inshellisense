@@ -4,10 +4,10 @@
 import { runTemplates } from "./template.js";
 import { buildExecuteShellCommand } from "./utils.js";
 
-const getGeneratorContext = (): Fig.GeneratorContext => {
+const getGeneratorContext = (cwd: string): Fig.GeneratorContext => {
   return {
     environmentVariables: Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] != null)),
-    currentWorkingDirectory: process.cwd(),
+    currentWorkingDirectory: cwd,
     currentProcess: "", // TODO: define current process
     sshPrefix: "", // deprecated, should be empty
     isDangerous: false,
@@ -16,7 +16,7 @@ const getGeneratorContext = (): Fig.GeneratorContext => {
 };
 
 // TODO: add support for caching, trigger, & getQueryTerm
-export const runGenerator = async (generator: Fig.Generator, tokens: string[]): Promise<Fig.Suggestion[]> => {
+export const runGenerator = async (generator: Fig.Generator, tokens: string[], cwd: string): Promise<Fig.Suggestion[]> => {
   const { script, postProcess, scriptTimeout, splitOn, custom, template } = generator;
 
   const executeShellCommand = buildExecuteShellCommand(scriptTimeout ?? 5000);
@@ -32,11 +32,11 @@ export const runGenerator = async (generator: Fig.Generator, tokens: string[]): 
     }
 
     if (custom) {
-      suggestions.push(...(await custom(tokens, executeShellCommand, getGeneratorContext())));
+      suggestions.push(...(await custom(tokens, executeShellCommand, getGeneratorContext(cwd))));
     }
 
     if (template != null) {
-      suggestions.push(...(await runTemplates(template)));
+      suggestions.push(...(await runTemplates(template, cwd)));
     }
     return suggestions;
   } catch (e) {

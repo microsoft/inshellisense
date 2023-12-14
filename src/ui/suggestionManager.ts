@@ -44,7 +44,7 @@ export class SuggestionManager {
       return;
     }
     this.#command = commandText;
-    const suggestionBlob = await getSuggestions(commandText);
+    const suggestionBlob = await getSuggestions(commandText, this.#term.cwd);
     this.#suggestBlob = suggestionBlob;
   }
 

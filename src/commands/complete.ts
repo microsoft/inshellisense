@@ -5,7 +5,7 @@ import { Command } from "commander";
 import { getSuggestions } from "../runtime/runtime.js";
 
 const action = async (input: string) => {
-  const suggestions = await getSuggestions(input);
+  const suggestions = await getSuggestions(input, process.cwd());
   process.stdout.write(JSON.stringify(suggestions));
 };
 

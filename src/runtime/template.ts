@@ -2,15 +2,15 @@
 // Licensed under the MIT License.
 
 import fsAsync from "node:fs/promises";
-import process from "node:process";
+import path from "node:path";
 
-const filepathsTemplate = async (): Promise<Fig.Suggestion[]> => {
-  const files = await fsAsync.readdir(process.cwd(), { withFileTypes: true });
+const filepathsTemplate = async (cwd: string): Promise<Fig.Suggestion[]> => {
+  const files = await fsAsync.readdir(cwd, { withFileTypes: true });
   return files.filter((f) => f.isFile() || f.isDirectory()).map((f) => ({ name: f.name, priority: 90 }));
 };
 
-const foldersTemplate = async (): Promise<Fig.Suggestion[]> => {
-  const files = await fsAsync.readdir(process.cwd(), { withFileTypes: true });
+const foldersTemplate = async (cwd: string): Promise<Fig.Suggestion[]> => {
+  const files = await fsAsync.readdir(cwd, { withFileTypes: true });
   return files.filter((f) => f.isDirectory()).map((f) => ({ name: f.name, priority: 90 }));
 };
 
@@ -24,16 +24,17 @@ const helpTemplate = (): Fig.Suggestion[] => {
   return [];
 };
 
-export const runTemplates = async (template: Fig.TemplateStrings[] | Fig.Template): Promise<Fig.Suggestion[]> => {
+export const runTemplates = async (template: Fig.TemplateStrings[] | Fig.Template, cwd: string): Promise<Fig.Suggestion[]> => {
+  const t = path.resolve(cwd);
   const templates = template instanceof Array ? template : [template];
   return (
     await Promise.all(
       templates.map(async (t) => {
         switch (t) {
           case "filepaths":
-            return await filepathsTemplate();
+            return await filepathsTemplate(cwd);
           case "folders":
-            return await foldersTemplate();
+            return await foldersTemplate(cwd);
           case "history":
             return historyTemplate();
           case "help":

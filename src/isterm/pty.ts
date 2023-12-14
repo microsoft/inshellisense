@@ -42,6 +42,7 @@ export class ISTerm implements IPty {
   readonly #ptyEmitter: EventEmitter;
   readonly #term: xterm.Terminal;
   readonly #commandManager: CommandManager;
+  readonly #shell: Shell;
 
   constructor({ shell, cols, rows, env, shellTarget, shellArgs }: ISTermOptions & { shellTarget: string }) {
     this.#pty = pty.spawn(shellTarget, shellArgs ?? [], {
@@ -59,6 +60,7 @@ export class ISTerm implements IPty {
     this.#term = new xterm.Terminal({ allowProposedApi: true, rows, cols });
     this.#term.parser.registerOscHandler(IsTermOscPs, (data) => this._handleIsSequence(data));
     this.#commandManager = new CommandManager(this.#term, shell);
+    this.#shell = shell;
 
     this.#ptyEmitter = new EventEmitter();
     this.#pty.onData((data) => {
@@ -85,6 +87,10 @@ export class ISTerm implements IPty {
   private _sanitizedCwd(cwd: string): string {
     if (cwd.match(/^['"].*['"]$/)) {
       cwd = cwd.substring(1, cwd.length - 1);
+    }
+    // Convert a drive prefix to windows style when using Git Bash
+    if (os.platform() === "win32" && this.#shell == Shell.Bash && cwd && cwd.match(/^\/[A-z]{1}\//)) {
+      cwd = `${cwd[1]}:\\` + cwd.substring(3, cwd.length);
     }
     // Make the drive letter uppercase on Windows (see vscode #9448)
     if (os.platform() === "win32" && cwd && cwd[1] === ":") {
