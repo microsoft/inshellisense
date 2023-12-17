@@ -6,6 +6,8 @@ export type CommandToken = {
   complete: boolean;
   isOption: boolean;
   isPersistent?: boolean;
+  isPath?: boolean;
+  isPathComplete?: boolean;
 };
 
 const cmdDelim = /(\|\|)|(&&)|(;)|(\|)/;

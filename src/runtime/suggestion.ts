@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import path from "node:path";
+
 import { CommandToken } from "./parser.js";
 import { runGenerator } from "./generator.js";
 import { runTemplates } from "./template.js";
@@ -178,9 +180,20 @@ const optionSuggestions = (
   return filter<Fig.Option>(validOptions ?? [], filterStrategy, partialCmd, "option");
 };
 
-const removeDuplicateSuggestions = (suggestions: Suggestion[], acceptedTokens: CommandToken[]): Suggestion[] => {
+const removeAcceptedSuggestions = (suggestions: Suggestion[], acceptedTokens: CommandToken[]): Suggestion[] => {
   const seen = new Set<string>(acceptedTokens.map((t) => t.token));
   return suggestions.filter((s) => s.allNames.every((n) => !seen.has(n)));
+};
+
+const removeDuplicateSuggestion = (suggestions: Suggestion[]): Suggestion[] => {
+  const seen = new Set<string>();
+  return suggestions
+    .map((s) => {
+      if (seen.has(s.name)) return null;
+      seen.add(s.name);
+      return s;
+    })
+    .filter((s): s is Suggestion => s != null);
 };
 
 const removeEmptySuggestion = (suggestions: Suggestion[]): Suggestion[] => {
@@ -190,7 +203,7 @@ const removeEmptySuggestion = (suggestions: Suggestion[]): Suggestion[] => {
 export const getSubcommandDrivenRecommendation = async (
   subcommand: Fig.Subcommand,
   persistentOptions: Fig.Option[],
-  partialCmd: string | undefined,
+  partialToken: CommandToken | undefined,
   argsDepleted: boolean,
   argsFromSubcommand: boolean,
   acceptedTokens: CommandToken[],
@@ -199,6 +212,11 @@ export const getSubcommandDrivenRecommendation = async (
   if (argsDepleted && argsFromSubcommand) {
     return;
   }
+  let partialCmd = partialToken?.token;
+  if (partialToken?.isPath) {
+    partialCmd = partialToken.isPathComplete ? "" : path.basename(partialCmd ?? "");
+  }
+
   const suggestions: Suggestion[] = [];
   const argLength = subcommand.args instanceof Array ? subcommand.args.length : subcommand.args ? 1 : 0;
   const allOptions = persistentOptions.concat(subcommand.options ?? []);
@@ -215,10 +233,12 @@ export const getSubcommandDrivenRecommendation = async (
   }
 
   return {
-    suggestions: removeEmptySuggestion(
-      removeDuplicateSuggestions(
-        suggestions.sort((a, b) => b.priority - a.priority),
-        acceptedTokens,
+    suggestions: removeDuplicateSuggestion(
+      removeEmptySuggestion(
+        removeAcceptedSuggestions(
+          suggestions.sort((a, b) => b.priority - a.priority),
+          acceptedTokens,
+        ),
       ),
     ),
   };
@@ -228,11 +248,16 @@ export const getArgDrivenRecommendation = async (
   args: Fig.Arg[],
   subcommand: Fig.Subcommand,
   persistentOptions: Fig.Option[],
-  partialCmd: string | undefined,
+  partialToken: CommandToken | undefined,
   acceptedTokens: CommandToken[],
   variadicArgBound: boolean,
   cwd: string,
 ): Promise<SuggestionBlob | undefined> => {
+  let partialCmd = partialToken?.token;
+  if (partialToken?.isPath) {
+    partialCmd = partialToken.isPathComplete ? "" : path.basename(partialCmd ?? "");
+  }
+
   const activeArg = args[0];
   const allOptions = persistentOptions.concat(subcommand.options ?? []);
   const suggestions = [
@@ -247,10 +272,12 @@ export const getArgDrivenRecommendation = async (
   }
 
   return {
-    suggestions: removeEmptySuggestion(
-      removeDuplicateSuggestions(
-        suggestions.sort((a, b) => b.priority - a.priority),
-        acceptedTokens,
+    suggestions: removeDuplicateSuggestion(
+      removeEmptySuggestion(
+        removeAcceptedSuggestions(
+          suggestions.sort((a, b) => b.priority - a.priority),
+          acceptedTokens,
+        ),
       ),
     ),
     argumentDescription: activeArg.description ?? activeArg.name,

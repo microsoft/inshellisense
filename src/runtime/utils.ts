@@ -1,30 +1,59 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { exec, spawn } from "node:child_process";
+import path from "node:path";
+import { spawn } from "node:child_process";
+import fsAsync from "node:fs/promises";
+
+import { CommandToken } from "./parser.js";
+import { Shell } from "../utils/shell.js";
 
 export type ExecuteShellCommandTTYResult = {
   code: number | null;
 };
 
 export const buildExecuteShellCommand =
-  (timeout: number) =>
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- TODO: use cwd in the future
-  async (command: string, cwd?: string): Promise<string> => {
+  (timeout: number): Fig.ExecuteCommandFunction =>
+  async ({ command, env, args, cwd }: Fig.ExecuteCommandInput): Promise<Fig.ExecuteCommandOutput> => {
+    const child = spawn(command, args, { cwd, env });
+    setTimeout(() => child.kill("SIGKILL"), timeout);
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (data) => (stdout += data));
+    child.stderr.on("data", (data) => (stderr += data));
     return new Promise((resolve) => {
-      exec(command, { timeout, cwd }, (_, stdout, stderr) => {
-        resolve(stdout || stderr);
+      child.on("close", (code) => {
+        resolve({
+          status: code ?? 0,
+          stderr,
+          stdout,
+        });
       });
     });
   };
 
-export const executeShellCommandTTY = async (shell: string, command: string): Promise<ExecuteShellCommandTTYResult> => {
-  const child = spawn(shell, ["-c", command.trim()], { stdio: "inherit" });
-  return new Promise((resolve) => {
-    child.on("close", (code) => {
-      resolve({
-        code,
-      });
-    });
-  });
+export const resolveCwd = async (
+  cmdToken: CommandToken | undefined,
+  cwd: string,
+  shell: Shell,
+): Promise<{ cwd: string; pathy: boolean; complete: boolean }> => {
+  if (cmdToken == null) return { cwd, pathy: false, complete: false };
+  const { token } = cmdToken;
+  const sep = shell == Shell.Bash ? "/" : path.sep;
+  if (!token.includes(sep)) return { cwd, pathy: false, complete: false };
+  const resolvedCwd = path.isAbsolute(token) ? token : path.join(cwd, token);
+  try {
+    await fsAsync.access(resolvedCwd, fsAsync.constants.R_OK);
+    return { cwd: resolvedCwd, pathy: true, complete: token.endsWith(sep) };
+  } catch {
+    // fallback to the parent folder if possible
+    const baselessCwd = resolvedCwd.substring(0, resolvedCwd.length - path.basename(resolvedCwd).length);
+    try {
+      await fsAsync.access(baselessCwd, fsAsync.constants.R_OK);
+      return { cwd: baselessCwd, pathy: true, complete: token.endsWith(sep) };
+    } catch {
+      /*empty*/
+    }
+    return { cwd, pathy: false, complete: false };
+  }
 };
