@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import { getSuggestions } from "../../runtime/runtime.js";
+import { Shell } from "../../utils/shell.js";
 
 const testData = [
   { name: "partialPrefixFilter", command: "git sta" },
@@ -26,7 +27,7 @@ describe(`parseCommand`, () => {
   testData.forEach(({ command, name, skip, maxSuggestions }) => {
     if (skip) return;
     test(name, async () => {
-      const suggestions = await getSuggestions(command, process.cwd());
+      const suggestions = await getSuggestions(command, process.cwd(), Shell.Cmd);
       if (suggestions != null && suggestions.suggestions != null) {
         suggestions.suggestions = suggestions?.suggestions.slice(0, maxSuggestions);
       }

@@ -8,6 +8,7 @@ import { renderBox, truncateText, truncateMultilineText } from "./utils.js";
 import ansi from "ansi-escapes";
 import chalk from "chalk";
 import { parseKeystroke } from "../utils/ansi.js";
+import { Shell } from "../utils/shell.js";
 
 const maxSuggestions = 5;
 const suggestionWidth = 40;
@@ -26,12 +27,14 @@ export class SuggestionManager {
   #command: string;
   #activeSuggestionIdx: number;
   #suggestBlob?: SuggestionBlob;
+  #shell: Shell;
 
-  constructor(terminal: ISTerm) {
+  constructor(terminal: ISTerm, shell: Shell) {
     this.#term = terminal;
     this.#suggestBlob = { suggestions: [] };
     this.#command = "";
     this.#activeSuggestionIdx = 0;
+    this.#shell = shell;
   }
 
   private async _loadSuggestions(): Promise<void> {
@@ -44,7 +47,7 @@ export class SuggestionManager {
       return;
     }
     this.#command = commandText;
-    const suggestionBlob = await getSuggestions(commandText, this.#term.cwd);
+    const suggestionBlob = await getSuggestions(commandText, this.#term.cwd, this.#shell);
     this.#suggestBlob = suggestionBlob;
   }
 
@@ -148,7 +151,8 @@ export class SuggestionManager {
       this.#activeSuggestionIdx = Math.min(this.#activeSuggestionIdx + 1, (this.#suggestBlob?.suggestions.length ?? 1) - 1);
     } else if (keyStroke == "tab") {
       const removals = "\u007F".repeat(this.#suggestBlob?.charactersToDrop ?? 0);
-      const chars = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx)?.name + " ";
+      const suggestion = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx);
+      const chars = suggestion?.insertValue ?? suggestion?.name + " ";
       if (this.#suggestBlob == null || !chars.trim() || this.#suggestBlob?.suggestions.length == 0) {
         return false;
       }

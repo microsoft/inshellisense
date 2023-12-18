@@ -18,24 +18,22 @@ const getGeneratorContext = (cwd: string): Fig.GeneratorContext => {
 
 // TODO: add support for caching, trigger, & getQueryTerm
 export const runGenerator = async (generator: Fig.Generator, tokens: string[], cwd: string): Promise<Fig.Suggestion[]> => {
-  const { script, postProcess, scriptTimeout, splitOn, custom, template } = generator;
+  // TODO: support trigger
+  const { script, postProcess, scriptTimeout, splitOn, custom, template, filterTemplateSuggestions } = generator;
 
   const executeShellCommand = buildExecuteShellCommand(scriptTimeout ?? 5000);
   const suggestions = [];
   try {
     if (script) {
-      const scriptOutput =
-        typeof script === "function"
-          ? script(tokens)
-          : typeof script === "string"
-          ? await executeShellCommand(script)
-          : script != null
-          ? await executeShellCommand((script as string[]).join(" "))
-          : "";
+      const shellInput = typeof script === "function" ? script(tokens) : script;
+      const scriptOutput = Array.isArray(shellInput)
+        ? await executeShellCommand({ command: shellInput.at(0) ?? "", args: shellInput.slice(1) })
+        : await executeShellCommand(shellInput);
+
       if (postProcess) {
-        suggestions.push(...postProcess(scriptOutput, tokens));
+        suggestions.push(...postProcess(scriptOutput.stdout, tokens));
       } else if (splitOn) {
-        suggestions.push(...scriptOutput.split(splitOn).map((s) => ({ name: s })));
+        suggestions.push(...scriptOutput.stdout.split(splitOn).map((s) => ({ name: s })));
       }
     }
 
@@ -44,7 +42,12 @@ export const runGenerator = async (generator: Fig.Generator, tokens: string[], c
     }
 
     if (template != null) {
-      suggestions.push(...(await runTemplates(template, cwd)));
+      const templateSuggestions = await runTemplates(template, cwd);
+      if (filterTemplateSuggestions) {
+        suggestions.push(...filterTemplateSuggestions(templateSuggestions));
+      } else {
+        suggestions.push(...templateSuggestions);
+      }
     }
     return suggestions;
   } catch (e) {

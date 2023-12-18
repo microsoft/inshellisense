@@ -6,10 +6,12 @@ import speclist, {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
 } from "@withfig/autocomplete/build/index.js";
+import path from "node:path";
 import { parseCommand, CommandToken } from "./parser.js";
 import { getArgDrivenRecommendation, getSubcommandDrivenRecommendation } from "./suggestion.js";
 import { SuggestionBlob } from "./model.js";
-import { buildExecuteShellCommand } from "./utils.js";
+import { buildExecuteShellCommand, resolveCwd } from "./utils.js";
+import { Shell } from "../utils/shell.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- recursive type, setting as any
 const specSet: any = {};
@@ -55,7 +57,7 @@ const lazyLoadSpecLocation = async (location: Fig.SpecLocation): Promise<Fig.Spe
   return; //TODO: implement spec location loading
 };
 
-export const getSuggestions = async (cmd: string, cwd: string): Promise<SuggestionBlob | undefined> => {
+export const getSuggestions = async (cmd: string, cwd: string, shell: Shell): Promise<SuggestionBlob | undefined> => {
   const activeCmd = parseCommand(cmd);
   const rootToken = activeCmd.at(0);
   if (activeCmd.length === 0 || !rootToken?.complete) {
@@ -67,10 +69,19 @@ export const getSuggestions = async (cmd: string, cwd: string): Promise<Suggesti
   const subcommand = getSubcommand(spec);
   if (subcommand == null) return;
 
-  const result = await runSubcommand(activeCmd.slice(1), subcommand, cwd);
-  if (result == null) return;
   const lastCommand = activeCmd.at(-1);
-  const charactersToDrop = lastCommand?.complete ? 0 : lastCommand?.token.length ?? 0;
+  const { cwd: resolvedCwd, pathy, complete: pathyComplete } = await resolveCwd(lastCommand, cwd, shell);
+  if (pathy && lastCommand) {
+    lastCommand.isPath = true;
+    lastCommand.isPathComplete = pathyComplete;
+  }
+  const result = await runSubcommand(activeCmd.slice(1), subcommand, resolvedCwd);
+  if (result == null) return;
+
+  let charactersToDrop = lastCommand?.complete ? 0 : lastCommand?.token.length ?? 0;
+  if (pathy) {
+    charactersToDrop = pathyComplete ? 0 : path.basename(lastCommand?.token ?? "").length;
+  }
   return { ...result, charactersToDrop };
 };
 
@@ -193,7 +204,7 @@ const runArg = async (
   } else if (tokens.length === 0) {
     return await getArgDrivenRecommendation(args, subcommand, persistentOptions, undefined, acceptedTokens, fromVariadic, cwd);
   } else if (!tokens.at(0)?.complete) {
-    return await getArgDrivenRecommendation(args, subcommand, persistentOptions, tokens[0].token, acceptedTokens, fromVariadic, cwd);
+    return await getArgDrivenRecommendation(args, subcommand, persistentOptions, tokens[0], acceptedTokens, fromVariadic, cwd);
   }
 
   const activeToken = tokens[0];
@@ -240,7 +251,7 @@ const runSubcommand = async (
   if (tokens.length === 0) {
     return getSubcommandDrivenRecommendation(subcommand, persistentOptions, undefined, argsDepleted, argsUsed, acceptedTokens, cwd);
   } else if (!tokens.at(0)?.complete) {
-    return getSubcommandDrivenRecommendation(subcommand, persistentOptions, tokens[0].token, argsDepleted, argsUsed, acceptedTokens, cwd);
+    return getSubcommandDrivenRecommendation(subcommand, persistentOptions, tokens[0], argsDepleted, argsUsed, acceptedTokens, cwd);
   }
 
   const activeToken = tokens[0];

@@ -484,6 +484,16 @@ exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
   "suggestions": [
     {
       "allNames": [
+        "package-lock.json",
+      ],
+      "description": undefined,
+      "icon": "📀",
+      "insertValue": undefined,
+      "name": "package-lock.json",
+      "priority": 90,
+    },
+    {
+      "allNames": [
         "-@",
       ],
       "description": "Display extended attribute keys and sizes in long (-l) output",
@@ -500,16 +510,6 @@ exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "-1",
-      "priority": 50,
-    },
-    {
-      "allNames": [
-        "-A",
-      ],
-      "description": "List all entries except for . and ...  Always set for the super-user",
-      "icon": "🔗",
-      "insertValue": undefined,
-      "name": "-A",
       "priority": 50,
     },
   ],

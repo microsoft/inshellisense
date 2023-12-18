@@ -18,7 +18,7 @@ export const renderConfirmation = (live: boolean): string => {
 
 export const render = async (shell: Shell) => {
   const term = await isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns });
-  const suggestionManager = new SuggestionManager(term);
+  const suggestionManager = new SuggestionManager(term, shell);
   let hasActiveSuggestions = false;
   let previousSuggestionsRows = 0;
   process.stdin.setRawMode(true);

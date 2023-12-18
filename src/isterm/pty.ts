@@ -112,7 +112,7 @@ export class ISTerm implements IPty {
       case IstermOscPt.CurrentWorkingDirectory: {
         const cwd = data.split(";").at(1);
         if (cwd != null) {
-          this.cwd = this._sanitizedCwd(this._deserializeIsMessage(cwd));
+          this.cwd = path.resolve(this._sanitizedCwd(this._deserializeIsMessage(cwd)));
         }
         break;
       }
