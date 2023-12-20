@@ -7,6 +7,7 @@ import fsAsync from "node:fs/promises";
 
 import { CommandToken } from "./parser.js";
 import { Shell } from "../utils/shell.js";
+import log from "../utils/log.js";
 
 export type ExecuteShellCommandTTYResult = {
   code: number | null;
@@ -21,6 +22,9 @@ export const buildExecuteShellCommand =
     let stderr = "";
     child.stdout.on("data", (data) => (stdout += data));
     child.stderr.on("data", (data) => (stderr += data));
+    child.on("error", (err) => {
+      log.debug({ msg: "shell command failed", e: err.message });
+    });
     return new Promise((resolve) => {
       child.on("close", (code) => {
         resolve({
