@@ -46,6 +46,9 @@ export class CommandManager {
     }
   }
   handlePromptStart() {
+    if (this.#activeCommand.promptStartMarker?.line == -1) {
+      this.#previousCommandLines = new Set();
+    }
     this.#activeCommand = { promptStartMarker: this.#terminal.registerMarker(0), hasOutput: false, cursorTerminated: false };
   }
 
