@@ -36,7 +36,7 @@ __is_escape_value() {
 }
 
 __is_update_cwd() {
-	builtin printf '\e]6973;CWD;%s\a' "$(__vsc_escape_value "${PWD}")"
+	builtin printf '\e]6973;CWD;%s\a' "$(__is_escape_value "${PWD}")"
 }
 
 __is_update_prompt() {
