@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "start": "node ./build/index.js",
+    "dev": "node --loader ts-node/esm src/index.ts -V",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "lint": "eslint src/ --ext .ts,.tsx && prettier src/ --check",
     "lint:fix": "eslint src/ --ext .ts,.tsx --fix && prettier src/ --write",
