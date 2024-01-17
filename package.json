@@ -34,7 +34,7 @@
   },
   "homepage": "https://github.com/microsoft/inshellisense#readme",
   "dependencies": {
-    "@withfig/autocomplete": "^2.633.0",
+    "@withfig/autocomplete": "2.648.2",
     "ajv": "^8.12.0",
     "ansi-escapes": "^6.2.0",
     "ansi-styles": "^6.2.1",
