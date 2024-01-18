@@ -8,6 +8,7 @@
 import { Command } from "commander";
 
 import complete from "./commands/complete.js";
+import list from "./commands/list.js";
 import uninstall from "./commands/uninstall.js";
 import { action, supportedShells } from "./commands/root.js";
 import { getVersion } from "./utils/version.js";
@@ -25,6 +26,7 @@ program
   .showHelpAfterError("(add --help for additional information)");
 
 program.addCommand(complete);
+program.addCommand(list);
 program.addCommand(uninstall);
 
 program.parse();

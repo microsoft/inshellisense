@@ -57,6 +57,10 @@ const lazyLoadSpecLocation = async (location: Fig.SpecLocation): Promise<Fig.Spe
   return; //TODO: implement spec location loading
 };
 
+export const getSpecs = async (): Promise<string[]> => {
+  return Object.entries(specSet).map(([k, _]) => k ).filter((v) => !v.startsWith("@") && v != "-");
+}
+
 export const getSuggestions = async (cmd: string, cwd: string, shell: Shell): Promise<SuggestionBlob | undefined> => {
   const activeCmd = parseCommand(cmd);
   const rootToken = activeCmd.at(0);
