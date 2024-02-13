@@ -1,27 +1,28 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import readline from "node:readline";
 import ansi from "ansi-escapes";
 import chalk from "chalk";
 
-import { inputModifier } from "./input.js";
 import log from "../utils/log.js";
 import { Shell } from "../utils/shell.js";
 import isterm from "../isterm/index.js";
 import { eraseLinesBelow } from "../utils/ansi.js";
-import { SuggestionManager, MAX_LINES } from "./suggestionManager.js";
+import { SuggestionManager, MAX_LINES, KeyPressEvent } from "./suggestionManager.js";
 
 export const renderConfirmation = (live: boolean): string => {
   const statusMessage = live ? chalk.green("live") : chalk.red("not found");
   return `inshellisense session [${statusMessage}]\n`;
 };
 
-export const render = async (shell: Shell) => {
-  const term = await isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns });
+export const render = async (shell: Shell, underTest: boolean) => {
+  const term = await isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns, underTest });
   const suggestionManager = new SuggestionManager(term, shell);
   let hasActiveSuggestions = false;
   let previousSuggestionsRows = 0;
-  process.stdin.setRawMode(true);
+  if (process.stdin.isTTY) process.stdin.setRawMode(true);
+  readline.emitKeypressEvents(process.stdin);
 
   const writeOutput = (data: string) => {
     log.debug({ msg: "writing data", data });
@@ -122,12 +123,14 @@ export const render = async (shell: Shell) => {
       previousSuggestionsRows = suggestion.rows;
     });
   });
-  process.stdin.on("data", (d: Buffer) => {
-    const suggestionResult = suggestionManager.update(d);
-    if (previousSuggestionsRows > 0 && suggestionResult == "handled") {
+
+  process.stdin.on("keypress", (...keyPress: KeyPressEvent) => {
+    const press = keyPress[1];
+    const inputHandled = suggestionManager.update(press);
+    if (previousSuggestionsRows > 0 && inputHandled) {
       term.noop();
-    } else if (suggestionResult != "fully-handled") {
-      term.write(inputModifier(d));
+    } else if (!inputHandled) {
+      term.write(press.sequence);
     }
   });
 
