@@ -19,7 +19,7 @@ const specSet: any = {};
   let activeSet = specSet;
   const specRoutes = s.split("/");
   specRoutes.forEach((route, idx) => {
-    if (typeof activeSet !== 'object') {
+    if (typeof activeSet !== "object") {
       return;
     }
     if (idx === specRoutes.length - 1) {
