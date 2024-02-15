@@ -7,8 +7,8 @@ import { ISTerm } from "../isterm/pty.js";
 import { renderBox, truncateText, truncateMultilineText } from "./utils.js";
 import ansi from "ansi-escapes";
 import chalk from "chalk";
-import { parseKeystroke } from "../utils/ansi.js";
 import { Shell } from "../utils/shell.js";
+import log from "../utils/log.js";
 
 const maxSuggestions = 5;
 const suggestionWidth = 40;
@@ -20,6 +20,13 @@ export const MAX_LINES = borderWidth + Math.max(maxSuggestions, descriptionHeigh
 type SuggestionsSequence = {
   data: string;
   rows: number;
+};
+
+export type KeyPressEvent = [string | null | undefined, KeyPress];
+
+type KeyPress = {
+  sequence: string;
+  name: string;
 };
 
 export class SuggestionManager {
@@ -140,16 +147,15 @@ export class SuggestionManager {
     };
   }
 
-  update(input: Buffer): "handled" | "fully-handled" | false {
-    const keyStroke = parseKeystroke(input);
-    if (keyStroke == null) return false;
-    if (keyStroke == "esc") {
+  update(keyPress: KeyPress): boolean {
+    const { name } = keyPress;
+    if (name == "escape") {
       this.#suggestBlob = undefined;
-    } else if (keyStroke == "up") {
+    } else if (name == "up") {
       this.#activeSuggestionIdx = Math.max(0, this.#activeSuggestionIdx - 1);
-    } else if (keyStroke == "down") {
+    } else if (name == "down") {
       this.#activeSuggestionIdx = Math.min(this.#activeSuggestionIdx + 1, (this.#suggestBlob?.suggestions.length ?? 1) - 1);
-    } else if (keyStroke == "tab") {
+    } else if (name == "tab") {
       const removals = "\u007F".repeat(this.#suggestBlob?.charactersToDrop ?? 0);
       const suggestion = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx);
       const chars = suggestion?.insertValue ?? suggestion?.name + " ";
@@ -157,7 +163,10 @@ export class SuggestionManager {
         return false;
       }
       this.#term.write(removals + chars);
+    } else {
+      return false;
     }
-    return "handled";
+    log.debug({ msg: "handled keypress", ...keyPress });
+    return true;
   }
 }
