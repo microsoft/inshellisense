@@ -3,17 +3,14 @@
 
 import os from "node:os";
 import isterm from "../../isterm";
-import { cursorBackward, IstermPromptEnd, IstermPromptStart } from "../../utils/ansi";
+import { cursorBackward } from "../../utils/ansi";
 import { Shell } from "../../utils/shell";
 
 const windowsTest = os.platform() == "win32" ? test.skip : test.skip;
 const unixTest = os.platform() == "darwin" || os.platform() == "linux" ? test.skip : test.skip;
 
-const bashEnv = { PS1: `${IstermPromptStart}\\u$ ${IstermPromptEnd}` };
-const zshEnv = { PROMPT: `%{${IstermPromptStart}%}%/ %# %{${IstermPromptEnd}%}` };
-
 const runTerm = async (shell: Shell, input: string[], env?: { [key: string]: string | undefined }) => {
-  const ptyProcess = await isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns, env });
+  const ptyProcess = await isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns, env, underTest: true });
   await new Promise((r) => setTimeout(r, 1_000));
   for (const data of input) {
     ptyProcess.write(data);
@@ -82,7 +79,7 @@ windowsTest(
 unixTest(
   "test bash on initial simple command input",
   async () => {
-    const r = await runTerm(Shell.Bash, ["ls\r", "zsh"], bashEnv);
+    const r = await runTerm(Shell.Bash, ["ls\r", "zsh"]);
     expect(r).toMatchSnapshot();
   },
   10000,
@@ -91,7 +88,7 @@ unixTest(
 unixTest(
   "test zsh on initial simple command input",
   async () => {
-    const r = await runTerm(Shell.Zsh, ["ls\r", "zsh"], zshEnv);
+    const r = await runTerm(Shell.Zsh, ["ls\r", "zsh"]);
     expect(r).toMatchSnapshot();
   },
   10000,
@@ -100,7 +97,7 @@ unixTest(
 unixTest(
   "test zsh on suggestion detection",
   async () => {
-    const r = await runTerm(Shell.Zsh, ["ls -la\r", "l"], zshEnv);
+    const r = await runTerm(Shell.Zsh, ["ls -la\r", "l"]);
     expect(r).toMatchSnapshot();
   },
   10000,

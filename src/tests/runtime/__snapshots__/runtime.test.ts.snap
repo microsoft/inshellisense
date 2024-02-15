@@ -480,7 +480,7 @@ exports[`parseCommand noOptionsSuggestedDuringVariadicArg 1`] = `
 exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
 {
   "argumentDescription": undefined,
-  "charactersToDrop": 1,
+  "charactersToDrop": 2,
   "suggestions": [
     {
       "allNames": [
@@ -494,22 +494,22 @@ exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
     },
     {
       "allNames": [
-        "-@",
+        "-L",
       ],
-      "description": "Display extended attribute keys and sizes in long (-l) output",
+      "description": "Follow all symbolic links to final target and list the file or directory the link references rather than the link itself.  This option cancels the -P option",
       "icon": "🔗",
       "insertValue": undefined,
-      "name": "-@",
+      "name": "-L",
       "priority": 50,
     },
     {
       "allNames": [
-        "-1",
+        "-l",
       ],
-      "description": "(The numeric digit \`\`one''.)  Force output to be one entry per line.  This is the default when output is not to a terminal",
+      "description": "(The lowercase letter \`\`ell''.)  List in long format.  (See below.)  A total sum for all the file sizes is output on a line before the long listing",
       "icon": "🔗",
       "insertValue": undefined,
-      "name": "-1",
+      "name": "-l",
       "priority": 50,
     },
   ],

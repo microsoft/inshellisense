@@ -18,4 +18,5 @@ module.exports = {
       },
     ],
   },
+  testPathIgnorePatterns: ["/node_modules/", "src/tests/ui/", ".tui-test/"],
 };
