@@ -41,6 +41,9 @@ __is_update_cwd() {
 
 __is_update_prompt() {
 	__is_prior_prompt="$PS1"
+	if [ $ISTERM_TESTING == "1" ]; then
+		__is_prior_prompt = "> "
+	fi
 	PS1="%{$(__is_prompt_start)%}$PS1%{$(__is_prompt_end)%}"
 }
 

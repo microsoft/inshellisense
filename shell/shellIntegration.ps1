@@ -1,5 +1,12 @@
 $Global:__IsOriginalPrompt = $function:Prompt
 
+function Global:__IsTestingPrompt() {
+    return "PS > "
+}
+if ($env:ISTERM_TESTING -eq "1") {
+    $Global:__IsOriginalPrompt = $function:__IsTestingPrompt
+}
+
 function Global:__IS-Escape-Value([string]$value) {
     [regex]::Replace($value, '[\\\n;]', { param($match)
             -Join (

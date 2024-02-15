@@ -57,6 +57,9 @@ fi
 __is_update_prompt() {
 	if [[ "$__is_custom_PS1" == "" || "$__is_custom_PS1" != "$PS1" ]]; then
         __is_original_PS1=$PS1
+		if [ $ISTERM_TESTING == "1" ]; then
+			__is_original_PS1="> "
+		fi
         __is_custom_PS1="\[$(__is_prompt_start)\]$__is_original_PS1\[$(__is_prompt_end)\]"
         export PS1="$__is_custom_PS1"
     fi

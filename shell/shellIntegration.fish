@@ -11,4 +11,9 @@ end
 function __is_update_cwd --on-event fish_prompt; set __is_cwd (__is_escape_value "$PWD"); printf "\e]6973;CWD;$__is_cwd\a"; end
 
 __is_copy_function fish_prompt is_user_prompt
+
+if [ "$ISTERM_TESTING" == "1" ]
+	function is_user_prompt; printf '> '; end
+end
+
 function fish_prompt; printf (__is_prompt_start); printf (is_user_prompt); printf (__is_prompt_end); end
