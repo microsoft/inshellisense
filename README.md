@@ -8,7 +8,7 @@
 
 ### Requirements
 
-- `21 < node >= 16.x`
+- `21 > node >= 16.x`
 - node-gyp dependencies installed for your platform (see [node-gyp](https://github.com/nodejs/node-gyp) for more details)
 
 ### Installation
