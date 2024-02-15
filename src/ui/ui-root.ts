@@ -16,8 +16,8 @@ export const renderConfirmation = (live: boolean): string => {
   return `inshellisense session [${statusMessage}]\n`;
 };
 
-export const render = async (shell: Shell) => {
-  const term = await isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns });
+export const render = async (shell: Shell, underTest: boolean) => {
+  const term = await isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns, underTest });
   const suggestionManager = new SuggestionManager(term, shell);
   let hasActiveSuggestions = false;
   let previousSuggestionsRows = 0;

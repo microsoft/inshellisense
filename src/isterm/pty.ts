@@ -25,6 +25,7 @@ type ISTermOptions = {
   cols: number;
   shell: Shell;
   shellArgs?: string[];
+  underTest: boolean;
 };
 
 export class ISTerm implements IPty {
@@ -44,13 +45,13 @@ export class ISTerm implements IPty {
   readonly #commandManager: CommandManager;
   readonly #shell: Shell;
 
-  constructor({ shell, cols, rows, env, shellTarget, shellArgs }: ISTermOptions & { shellTarget: string }) {
+  constructor({ shell, cols, rows, env, shellTarget, shellArgs, underTest }: ISTermOptions & { shellTarget: string }) {
     this.#pty = pty.spawn(shellTarget, shellArgs ?? [], {
       name: "xterm-256color",
       cols,
       rows,
       cwd: process.cwd(),
-      env: { ...convertToPtyEnv(shell), ...env },
+      env: { ...convertToPtyEnv(shell, underTest), ...env },
     });
     this.pid = this.#pty.pid;
     this.cols = this.#pty.cols;
@@ -264,10 +265,11 @@ const convertToPtyTarget = async (shell: Shell) => {
   return { shellTarget, shellArgs };
 };
 
-const convertToPtyEnv = (shell: Shell) => {
+const convertToPtyEnv = (shell: Shell, underTest: boolean) => {
   const env = {
     ...process.env,
     ISTERM: "1",
+    ISTERM_TESTING: underTest ? "1" : undefined,
   };
   switch (shell) {
     case Shell.Cmd: {
@@ -278,5 +280,6 @@ const convertToPtyEnv = (shell: Shell) => {
       return { ...env, ZDOTDIR: zdotdir, USER_ZDOTDIR: userZdotdir };
     }
   }
+
   return env;
 };
