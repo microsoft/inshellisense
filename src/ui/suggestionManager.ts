@@ -87,7 +87,10 @@ export class SuggestionManager {
 
   async render(remainingLines: number): Promise<SuggestionsSequence> {
     await this._loadSuggestions();
-    if (!this.#suggestBlob) return { data: "", rows: 0 };
+    if (!this.#suggestBlob) {
+      this.#activeSuggestionIdx = 0;
+      return {data: "", rows: 0};
+    }
     const { suggestions, argumentDescription } = this.#suggestBlob;
 
     const page = Math.min(Math.floor(this.#activeSuggestionIdx / maxSuggestions) + 1, Math.floor(suggestions.length / maxSuggestions) + 1);
