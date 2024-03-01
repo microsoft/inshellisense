@@ -89,7 +89,7 @@ export class SuggestionManager {
     await this._loadSuggestions();
     if (!this.#suggestBlob) {
       this.#activeSuggestionIdx = 0;
-      return {data: "", rows: 0};
+      return { data: "", rows: 0 };
     }
     const { suggestions, argumentDescription } = this.#suggestBlob;
 
