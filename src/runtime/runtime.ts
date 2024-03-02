@@ -113,8 +113,19 @@ const getSubcommand = (spec?: Fig.Spec): Fig.Subcommand | undefined => {
 const executeShellCommand = buildExecuteShellCommand(5000);
 
 const genSubcommand = async (command: string, parentCommand: Fig.Subcommand): Promise<Fig.Subcommand | undefined> => {
-  const subcommandIdx = parentCommand.subcommands?.findIndex((s) => s.name === command);
-  if (subcommandIdx == null) return;
+  if (!parentCommand.subcommands || parentCommand.subcommands.length === 0) return;
+  
+  const subcommandIdx = parentCommand.subcommands?.findIndex((s) => {
+    // subCommand.name can be a string or an array of strings
+    if (Array.isArray(s.name)) {
+      // if it's an array, we check if the command is included in the array
+      return s.name.includes(command);
+    } else {
+      return s.name === command;
+    }
+  });
+  
+  if (subcommandIdx === -1) return;
   const subcommand = parentCommand.subcommands?.at(subcommandIdx);
   if (subcommand == null) return;
 
