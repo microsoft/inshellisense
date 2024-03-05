@@ -254,7 +254,8 @@ const convertToPtyTarget = async (shell: Shell) => {
     case Shell.Bash:
       shellArgs = ["--init-file", path.join(shellFolderPath, "shellIntegration.bash")];
       break;
-    case (Shell.Powershell, Shell.Pwsh):
+    case Shell.Powershell:
+    case Shell.Pwsh:
       shellArgs = ["-noexit", "-command", `try { . "${path.join(shellFolderPath, "shellIntegration.ps1")}" } catch {}`];
       break;
     case Shell.Fish:
