@@ -48,6 +48,7 @@ export class SuggestionManager {
     const commandText = this.#term.getCommandState().commandText;
     if (!commandText) {
       this.#suggestBlob = undefined;
+      this.#activeSuggestionIdx = 0;
       return;
     }
     if (commandText == this.#command) {
@@ -56,6 +57,7 @@ export class SuggestionManager {
     this.#command = commandText;
     const suggestionBlob = await getSuggestions(commandText, this.#term.cwd, this.#shell);
     this.#suggestBlob = suggestionBlob;
+    this.#activeSuggestionIdx = 0;
   }
 
   private _renderArgumentDescription(description: string | undefined, x: number) {
@@ -88,7 +90,6 @@ export class SuggestionManager {
   async render(remainingLines: number): Promise<SuggestionsSequence> {
     await this._loadSuggestions();
     if (!this.#suggestBlob) {
-      this.#activeSuggestionIdx = 0;
       return { data: "", rows: 0 };
     }
     const { suggestions, argumentDescription } = this.#suggestBlob;
