@@ -130,7 +130,7 @@ export const render = async (shell: Shell, underTest: boolean) => {
     if (previousSuggestionsRows > 0 && inputHandled) {
       term.noop();
     } else if (!inputHandled) {
-      if (press.name == "backspace" && (shell === Shell.Pwsh || shell === Shell.Powershell)) {
+      if (press.name == "backspace" && (shell === Shell.Pwsh || shell === Shell.Powershell || shell === Shell.Cmd)) {
         term.write("\u007F");
       } else {
         term.write(press.sequence);
