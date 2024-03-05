@@ -115,15 +115,7 @@ const executeShellCommand = buildExecuteShellCommand(5000);
 const genSubcommand = async (command: string, parentCommand: Fig.Subcommand): Promise<Fig.Subcommand | undefined> => {
   if (!parentCommand.subcommands || parentCommand.subcommands.length === 0) return;
   
-  const subcommandIdx = parentCommand.subcommands?.findIndex((s) => {
-    // subCommand.name can be a string or an array of strings
-    if (Array.isArray(s.name)) {
-      // if it's an array, we check if the command is included in the array
-      return s.name.includes(command);
-    } else {
-      return s.name === command;
-    }
-  });
+  const subcommandIdx = parentCommand.subcommands.findIndex((s) => Array.isArray(s.name) ? s.name.includes(command) : s.name === command);
   
   if (subcommandIdx === -1) return;
   const subcommand = parentCommand.subcommands?.at(subcommandIdx);
