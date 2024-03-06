@@ -114,9 +114,9 @@ const executeShellCommand = buildExecuteShellCommand(5000);
 
 const genSubcommand = async (command: string, parentCommand: Fig.Subcommand): Promise<Fig.Subcommand | undefined> => {
   if (!parentCommand.subcommands || parentCommand.subcommands.length === 0) return;
-  
-  const subcommandIdx = parentCommand.subcommands.findIndex((s) => Array.isArray(s.name) ? s.name.includes(command) : s.name === command);
-  
+
+  const subcommandIdx = parentCommand.subcommands.findIndex((s) => (Array.isArray(s.name) ? s.name.includes(command) : s.name === command));
+
   if (subcommandIdx === -1) return;
   const subcommand = parentCommand.subcommands[subcommandIdx];
 
