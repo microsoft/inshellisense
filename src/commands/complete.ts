@@ -9,6 +9,7 @@ import { Shell } from "../utils/shell.js";
 const action = async (input: string) => {
   const suggestions = await getSuggestions(input, process.cwd(), os.platform() === "win32" ? Shell.Cmd : Shell.Bash);
   process.stdout.write(JSON.stringify(suggestions));
+  process.exit(0);
 };
 
 const cmd = new Command("complete");
