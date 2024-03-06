@@ -80,6 +80,12 @@ export class ISTerm implements IPty {
     };
     this.onExit = this.#pty.onExit;
   }
+  on(event: "data", listener: (data: string) => void): void;
+  on(event: "exit", listener: (exitCode: number, signal?: number | undefined) => void): void;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  on(_event: unknown, _listener: unknown): void {
+    throw new Error("Method not implemented as deprecated in node-pty.");
+  }
 
   private _deserializeIsMessage(message: string): string {
     return message.replaceAll(/\\(\\|x([0-9a-f]{2}))/gi, (_match: string, op: string, hex?: string) => (hex ? String.fromCharCode(parseInt(hex, 16)) : op));

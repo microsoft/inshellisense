@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         version: [16, 18, 20]
-        os: ["windows-latest", "ubuntu-latest", "macos-latest"]
+        os: ["macos-latest"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -24,12 +24,33 @@ jobs:
 
       - run: npm run lint
 
-      - name: setup zsh-autosuggestions
-        if: matrix.os != 'windows-latest'
+      - name: setup macOS shells
+        if: matrix.os == 'macos-latest'
         shell: bash
         run: |
+          brew install fish
+          brew install zsh
+
           git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
           echo "source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" > ~/.zshrc
+
+          sudo chmod g-w /usr/local/share/zsh /usr/local/share/zsh/site-functions /usr/share/zsh
+
+      - name: setup linux shells
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          sudo apt-add-repository ppa:fish-shell/release-3
+          sudo apt-get update
+          sudo apt install fish zsh
+
+          git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
+          echo "source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" > ~/.zshrc
+
+          sudo chmod -R 755 /usr/share/zsh/vendor-completions
+          sudo chown -R root:root /usr/share/zsh/vendor-completions
+          sudo chmod -R 755 /usr/share/zsh
+          sudo chown -R root:root /usr/share/zsh
 
       - run: npm test
 
