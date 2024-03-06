@@ -5,7 +5,7 @@ import { test, expect } from "@microsoft/tui-test";
 
 test.describe("status checks", () => {
   test.describe("inside inshellisense session", () => {
-    test.use({ program: { file: "is" } });
+    test.use({ program: { file: "is", args: ["-T"] } });
 
     test("current status", async ({ terminal }) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
