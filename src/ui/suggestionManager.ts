@@ -158,6 +158,10 @@ export class SuggestionManager {
 
   update(keyPress: KeyPress): boolean {
     const { name } = keyPress;
+    if (!this.#suggestBlob) {
+      return false;
+    }
+
     if (name == "escape") {
       this.#suggestBlob = undefined;
     } else if (name == "up") {
