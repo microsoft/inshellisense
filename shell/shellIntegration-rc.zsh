@@ -48,6 +48,9 @@ __is_update_prompt() {
 }
 
 __is_precmd() {
+	if [[ $PS1 != *"$(__is_prompt_start)"* ]]; then
+		__is_update_prompt
+	fi
 	__is_update_cwd
 }
 
