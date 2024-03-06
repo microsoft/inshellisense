@@ -12,7 +12,7 @@ shells.map((activeShell) => {
   test.describe(`[${activeShell}]`, () => {
     test.use({ program: { file: "is", args: ["-V", "-T", "-s", activeShell] } });
 
-    test.only("basic git suggestions", async ({ terminal }) => {
+    test("basic git suggestions", async ({ terminal }) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
       terminal.write("git ");
 
