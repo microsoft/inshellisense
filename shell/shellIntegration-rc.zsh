@@ -44,7 +44,7 @@ __is_update_prompt() {
 	if [[ $ISTERM_TESTING == "1" ]]; then
 		__is_prior_prompt="> "
 	fi
-	PS1="%{$(__is_prompt_start)%}$PS1%{$(__is_prompt_end)%}"
+	PS1="%{$(__is_prompt_start)%}$__is_prior_prompt%{$(__is_prompt_end)%}"
 }
 
 __is_precmd() {

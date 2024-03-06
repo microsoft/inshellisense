@@ -7,7 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import url from "node:url";
 
-import pty, { IPty, IEvent } from "node-pty";
+import pty, { IPty, IEvent } from "@homebridge/node-pty-prebuilt-multiarch";
 import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
 import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
 import xterm from "xterm-headless";
@@ -79,6 +79,12 @@ export class ISTerm implements IPty {
       };
     };
     this.onExit = this.#pty.onExit;
+  }
+  on(event: "data", listener: (data: string) => void): void;
+  on(event: "exit", listener: (exitCode: number, signal?: number | undefined) => void): void;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  on(_event: unknown, _listener: unknown): void {
+    throw new Error("Method not implemented as deprecated in node-pty.");
   }
 
   private _deserializeIsMessage(message: string): string {
