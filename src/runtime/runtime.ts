@@ -113,10 +113,12 @@ const getSubcommand = (spec?: Fig.Spec): Fig.Subcommand | undefined => {
 const executeShellCommand = buildExecuteShellCommand(5000);
 
 const genSubcommand = async (command: string, parentCommand: Fig.Subcommand): Promise<Fig.Subcommand | undefined> => {
-  const subcommandIdx = parentCommand.subcommands?.findIndex((s) => s.name === command);
-  if (subcommandIdx == null) return;
-  const subcommand = parentCommand.subcommands?.at(subcommandIdx);
-  if (subcommand == null) return;
+  if (!parentCommand.subcommands || parentCommand.subcommands.length === 0) return;
+
+  const subcommandIdx = parentCommand.subcommands.findIndex((s) => (Array.isArray(s.name) ? s.name.includes(command) : s.name === command));
+
+  if (subcommandIdx === -1) return;
+  const subcommand = parentCommand.subcommands[subcommandIdx];
 
   // this pulls in the spec from the load spec and overwrites the subcommand in the parent with the loaded spec.
   // then it returns the subcommand and clears the loadSpec field so that it doesn't get called again
