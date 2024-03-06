@@ -7,7 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import url from "node:url";
 
-import pty, { IPty, IEvent } from "node-pty";
+import pty, { IPty, IEvent } from "@homebridge/node-pty-prebuilt-multiarch";
 import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
 import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
 import xterm from "xterm-headless";
