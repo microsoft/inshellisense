@@ -183,11 +183,12 @@ export class CommandManager {
 
     if (globalCursorPosition < this.#activeCommand.promptStartMarker.line) {
       this.handleClear();
+      this.#activeCommand.promptEndMarker = this.#terminal.registerMarker(0);
     }
 
     // if we haven't fond the prompt yet, poll over the next 5 lines searching for it
     if (this.#activeCommand.promptText == null && withinPollDistance) {
-      for (let i = globalCursorPosition; i < this.#activeCommand.promptEndMarker.line + maxPromptPollDistance; i++) {
+      for (let i = globalCursorPosition; i < this.#activeCommand.promptEndMarker!.line + maxPromptPollDistance; i++) {
         if (this.#previousCommandLines.has(i)) continue;
         const promptResult = this._getWindowsPrompt(i);
         if (promptResult != null) {
