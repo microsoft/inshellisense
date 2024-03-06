@@ -1,11 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { test, expect } from "@microsoft/tui-test";
+import { test, expect, Shell } from "@microsoft/tui-test";
+import os from "node:os";
+
+const shell = os.platform() == "darwin" ? Shell.Zsh : os.platform() == "linux" ? Shell.Bash : Shell.Powershell;
 
 test.describe("status checks", () => {
   test.describe("inside inshellisense session", () => {
-    test.use({ program: { file: "is", args: ["-T"] } });
+    test.use({ program: { file: "is", args: ["-T", "-s", shell] } });
 
     test("current status", async ({ terminal }) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
