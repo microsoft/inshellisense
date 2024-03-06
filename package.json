@@ -4,7 +4,7 @@
   "description": "IDE style command line auto complete",
   "type": "module",
   "engines": {
-    "node" : ">=16.6.0 <21.0.0"
+    "node": ">=16.6.0 <21.0.0"
   },
   "bin": {
     "inshellisense": "./build/index.js",
@@ -20,6 +20,7 @@
     "build": "tsc",
     "dev": "node --loader ts-node/esm src/index.ts -V",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:e2e": "tui-test",
     "lint": "eslint src/ --ext .ts,.tsx && prettier src/ --check",
     "lint:fix": "eslint src/ --ext .ts,.tsx --fix && prettier src/ --write",
     "debug": "node --inspect --loader ts-node/esm src/index.ts -V",
@@ -38,6 +39,7 @@
   },
   "homepage": "https://github.com/microsoft/inshellisense#readme",
   "dependencies": {
+    "@microsoft/tui-test": "^0.0.1-rc.3",
     "@withfig/autocomplete": "2.651.0",
     "ajv": "^8.12.0",
     "ansi-escapes": "^6.2.0",

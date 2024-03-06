@@ -9,15 +9,16 @@ jobs:
   build:
     strategy:
       matrix:
-        os: ["windows-latest", "ubuntu-latest"]
+        version: [16, 18, 20]
+        os: ["windows-latest", "ubuntu-latest", "macos-latest"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js 18.x
+      - name: Use Node.js ${{ matrix.version }}.x
         uses: actions/setup-node@v3
         with:
-          node-version: 18.x
+          node-version: ${{ matrix.version }}
 
       - run: npm ci
 
@@ -31,4 +32,7 @@ jobs:
           echo "source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" > ~/.zshrc
 
       - run: npm test
+
+      - run: npm test:e2e
+
       - run: npm run build
