@@ -57,8 +57,9 @@ export const render = async (shell: Shell, underTest: boolean) => {
       writeOutput(data);
     }
 
-    setImmediate(async () => {
-      const suggestion = await suggestionManager.render(term.getCursorState().remainingLines);
+    process.nextTick(async () => {
+      // validate result to prevent stale suggestion being provided
+      const suggestion = suggestionManager.validate(await suggestionManager.render(term.getCursorState().remainingLines));
       const commandState = term.getCommandState();
 
       if (suggestion.data != "" && commandState.cursorTerminated && !commandState.hasOutput) {

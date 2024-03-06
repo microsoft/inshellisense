@@ -87,6 +87,11 @@ export class SuggestionManager {
     );
   }
 
+  validate(suggestion: SuggestionsSequence): SuggestionsSequence {
+    const commandText = this.#term.getCommandState().commandText;
+    return !commandText ? { data: "", rows: 0 } : suggestion;
+  }
+
   async render(remainingLines: number): Promise<SuggestionsSequence> {
     await this._loadSuggestions();
     if (!this.#suggestBlob) {
