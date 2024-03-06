@@ -36,7 +36,7 @@ export const render = async (shell: Shell, underTest: boolean) => {
       // Considers when data includes newlines which have shifted the cursor position downwards
       const newlines = Math.max((data.match(/\r/g) || []).length, (data.match(/\n/g) || []).length);
       const linesOfInterest = MAX_LINES + newlines;
-      if (term.getCursorState().remainingLines <= previousSuggestionsRows) {
+      if (term.getCursorState().remainingLines <= MAX_LINES) {
         // handles when suggestions get loaded before shell output so you need to always clear below output as a precaution
         if (term.getCursorState().remainingLines != 0) {
           writeOutput(ansi.cursorHide + ansi.cursorSavePosition + eraseLinesBelow(linesOfInterest + 1) + ansi.cursorRestorePosition);
@@ -64,7 +64,7 @@ export const render = async (shell: Shell, underTest: boolean) => {
 
       if (suggestion.data != "" && commandState.cursorTerminated && !commandState.hasOutput) {
         if (hasActiveSuggestions) {
-          if (term.getCursorState().remainingLines < suggestion.rows) {
+          if (term.getCursorState().remainingLines < MAX_LINES) {
             writeOutput(
               ansi.cursorHide +
                 ansi.cursorSavePosition +
@@ -90,7 +90,7 @@ export const render = async (shell: Shell, underTest: boolean) => {
             );
           }
         } else {
-          if (term.getCursorState().remainingLines < suggestion.rows) {
+          if (term.getCursorState().remainingLines < MAX_LINES) {
             writeOutput(ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorUp() + suggestion.data + ansi.cursorRestorePosition + ansi.cursorShow);
           } else {
             writeOutput(
@@ -106,7 +106,7 @@ export const render = async (shell: Shell, underTest: boolean) => {
         hasActiveSuggestions = true;
       } else {
         if (hasActiveSuggestions) {
-          if (term.getCursorState().remainingLines <= previousSuggestionsRows) {
+          if (term.getCursorState().remainingLines <= MAX_LINES) {
             writeOutput(
               ansi.cursorHide +
                 ansi.cursorSavePosition +
