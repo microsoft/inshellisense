@@ -125,7 +125,7 @@ export class CommandManager {
     }
 
     if (this.#shell == Shell.Cmd) {
-      return lineText.match(/^(?<prompt>(\(.+\)\s)?(?:[A-Z]:\\.*>))/)?.groups?.prompt;
+      return lineText.match(/^(?<prompt>(\(.+\)\s)?(?:[A-Z]:\\.*>)|(> ))/)?.groups?.prompt;
     }
 
     // Custom prompts like starship end in the common \u276f character
@@ -177,19 +177,18 @@ export class CommandManager {
     if (this.#activeCommand.promptEndMarker == null || this.#activeCommand.promptStartMarker == null) {
       return;
     }
-    const promptEndMarker = this.#activeCommand.promptEndMarker;
-    const promptStartMarker = this.#activeCommand.promptStartMarker;
 
     const globalCursorPosition = this.#terminal.buffer.active.baseY + this.#terminal.buffer.active.cursorY;
     const withinPollDistance = globalCursorPosition < this.#activeCommand.promptEndMarker.line + 5;
 
-    if (globalCursorPosition < promptStartMarker.line) {
+    if (globalCursorPosition < this.#activeCommand.promptStartMarker.line) {
       this.handleClear();
+      this.#activeCommand.promptEndMarker = this.#terminal.registerMarker(0);
     }
 
     // if we haven't fond the prompt yet, poll over the next 5 lines searching for it
     if (this.#activeCommand.promptText == null && withinPollDistance) {
-      for (let i = globalCursorPosition; i < promptEndMarker.line + maxPromptPollDistance; i++) {
+      for (let i = globalCursorPosition; i < this.#activeCommand.promptEndMarker!.line + maxPromptPollDistance; i++) {
         if (this.#previousCommandLines.has(i)) continue;
         const promptResult = this._getWindowsPrompt(i);
         if (promptResult != null) {
@@ -197,18 +196,19 @@ export class CommandManager {
           this.#activeCommand.promptEndX = promptResult.length;
           this.#activeCommand.promptText = promptResult;
           this.#previousCommandLines.add(i);
+          break;
         }
       }
     }
 
     // if the prompt is set, now parse out the values from the terminal
     if (this.#activeCommand.promptText != null) {
-      let lineY = promptEndMarker.line;
-      let line = this.#terminal.buffer.active.getLine(promptEndMarker.line);
+      let lineY = this.#activeCommand.promptEndMarker!.line;
+      let line = this.#terminal.buffer.active.getLine(this.#activeCommand.promptEndMarker!.line);
       let command = "";
       let suggestions = "";
       for (;;) {
-        for (let i = lineY == promptEndMarker.line ? this.#activeCommand.promptText.length : 0; i < this.#terminal.cols; i++) {
+        for (let i = lineY == this.#activeCommand.promptEndMarker!.line ? this.#activeCommand.promptText.length : 0; i < this.#terminal.cols; i++) {
           const cell = line?.getCell(i);
           if (cell == null) continue;
           const chars = cell.getChars();

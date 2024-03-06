@@ -274,6 +274,9 @@ const convertToPtyEnv = (shell: Shell, underTest: boolean) => {
   };
   switch (shell) {
     case Shell.Cmd: {
+      if (underTest) {
+        return { ...env, PROMPT: `${IstermPromptStart}$G ${IstermPromptEnd}` };
+      }
       const prompt = process.env.PROMPT ? process.env.PROMPT : "$P$G";
       return { ...env, PROMPT: `${IstermPromptStart}${prompt}${IstermPromptEnd}` };
     }
