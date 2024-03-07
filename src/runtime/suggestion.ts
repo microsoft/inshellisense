@@ -143,6 +143,7 @@ const generatorSuggestions = async (
 ): Promise<Suggestion[]> => {
   const generators = generator instanceof Array ? generator : generator ? [generator] : [];
   const tokens = acceptedTokens.map((t) => t.token);
+  if (partialCmd) tokens.push(partialCmd);
   const suggestions = (await Promise.all(generators.map((gen) => runGenerator(gen, tokens, cwd)))).flat();
   return filter<Fig.Suggestion>(
     suggestions.map((suggestion) => ({ ...suggestion, priority: suggestion.priority ?? 60 })),
