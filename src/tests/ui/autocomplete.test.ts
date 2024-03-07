@@ -162,6 +162,13 @@ shells.map((activeShell) => {
       await expect(terminal.getByText("clear")).toBeVisible();
     });
 
+    test("proper overflow truncation in command", async ({ terminal }) => {
+      await expect(terminal.getByText(">  ")).toBeVisible();
+
+      terminal.write("dotnet add package Holoon.Newtonsoft");
+      await expect(terminal.getByText("CanBeUndefi…│")).toBeVisible();
+    });
+
     test.skip("command detection with suggestions", async ({ terminal }) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
 
