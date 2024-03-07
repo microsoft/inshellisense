@@ -48,6 +48,7 @@
     "chalk": "^5.3.0",
     "commander": "^11.0.0",
     "find-process": "^1.4.7",
+    "wcwidth": "^1.0.1",
     "which": "^4.0.0",
     "wrap-ansi": "^8.1.0",
     "xterm-headless": "^5.3.0"
@@ -56,6 +57,7 @@
     "@tsconfig/node18": "^18.2.2",
     "@types/jest": "^29.5.5",
     "@types/react": "^18.2.24",
+    "@types/wcwidth": "^1.0.2",
     "@types/which": "^3.0.3",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",

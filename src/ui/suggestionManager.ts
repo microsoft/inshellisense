@@ -78,7 +78,7 @@ export class SuggestionManager {
   private _renderSuggestions(suggestions: Suggestion[], activeSuggestionIdx: number, x: number) {
     return renderBox(
       suggestions.map((suggestion, idx) => {
-        const suggestionText = `${suggestion.icon} ${suggestion.name}`.padEnd(suggestionWidth - borderWidth, " ");
+        const suggestionText = `${suggestion.icon} ${suggestion.name}`;
         const truncatedSuggestion = truncateText(suggestionText, suggestionWidth - 2);
         return idx == activeSuggestionIdx ? chalk.bgHex(activeSuggestionBackgroundColor)(truncatedSuggestion) : truncatedSuggestion;
       }),

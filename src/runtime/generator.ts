@@ -27,13 +27,14 @@ export const runGenerator = async (generator: Fig.Generator, tokens: string[], c
     if (script) {
       const shellInput = typeof script === "function" ? script(tokens) : script;
       const scriptOutput = Array.isArray(shellInput)
-        ? await executeShellCommand({ command: shellInput.at(0) ?? "", args: shellInput.slice(1) })
-        : await executeShellCommand(shellInput);
+        ? await executeShellCommand({ command: shellInput.at(0) ?? "", args: shellInput.slice(1), cwd })
+        : await executeShellCommand({ ...shellInput, cwd });
 
+      const scriptStdout = scriptOutput.stdout.trim();
       if (postProcess) {
-        suggestions.push(...postProcess(scriptOutput.stdout, tokens));
+        suggestions.push(...postProcess(scriptStdout, tokens));
       } else if (splitOn) {
-        suggestions.push(...scriptOutput.stdout.split(splitOn).map((s) => ({ name: s })));
+        suggestions.push(...scriptStdout.split(splitOn).map((s) => ({ name: s })));
       }
     }
 
@@ -51,7 +52,8 @@ export const runGenerator = async (generator: Fig.Generator, tokens: string[], c
     }
     return suggestions;
   } catch (e) {
-    log.debug({ msg: "generator failed", e, script, splitOn, template });
+    const err = typeof e === "string" ? e : e instanceof Error ? e.message : e;
+    log.debug({ msg: "generator failed", err, script, splitOn, template });
   }
   return suggestions;
 };

@@ -414,6 +414,24 @@ exports[`parseCommand fullyTypedSuggestion 1`] = `
 }
 `;
 
+exports[`parseCommand generatorUsingPartialInput 1`] = `
+{
+  "charactersToDrop": 21,
+  "suggestions": [
+    {
+      "allNames": [
+        "Microsoft.Azure.WebJobs",
+      ],
+      "description": "This package contains the runtime assemblies for Microsoft.Azure.WebJobs.Host. It also adds rich diagnostics capabilities which makes it easier to monitor the WebJobs in the dashboard. For more information, please visit http://go.microsoft.com/fwlink/?LinkID=320971",
+      "icon": "📀",
+      "insertValue": "Microsoft.Azure.WebJobs",
+      "name": "Microsoft.Azure.WebJobs",
+      "priority": 60,
+    },
+  ],
+}
+`;
+
 exports[`parseCommand loadSpec 1`] = `
 {
   "charactersToDrop": 3,
@@ -490,7 +508,7 @@ exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
       "icon": "📀",
       "insertValue": undefined,
       "name": "package-lock.json",
-      "priority": 90,
+      "priority": 55,
     },
     {
       "allNames": [

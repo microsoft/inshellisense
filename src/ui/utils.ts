@@ -4,6 +4,7 @@
 import ansi from "ansi-escapes";
 import wrapAnsi from "wrap-ansi";
 import chalk from "chalk";
+import wcwdith from "wcwidth";
 
 /**
  * Renders a box around the given rows
@@ -40,6 +41,7 @@ export const truncateMultilineText = (description: string, width: number, maxHei
  */
 export const truncateText = (text: string, width: number) => {
   const textPoints = [...text];
-  const slicedText = textPoints.slice(0, width - 1);
+  const wcOffset = Math.max(wcwdith(text) - textPoints.length, 0);
+  const slicedText = textPoints.slice(0, width - 1 - wcOffset);
   return slicedText.length == textPoints.length ? text.padEnd(width) : (slicedText.join("") + "…").padEnd(width);
 };

@@ -20,7 +20,11 @@ enum SuggestionIcons {
   Default = "📀",
 }
 
-const getIcon = (suggestionType?: Fig.SuggestionType | undefined): string => {
+const getIcon = (icon: string | undefined, suggestionType: Fig.SuggestionType | undefined): string => {
+  // TODO: enable fig icons once spacing is better
+  // if (icon && /[^\u0000-\u00ff]/.test(icon)) {
+  //   return icon;
+  // }
   switch (suggestionType) {
     case "arg":
       return SuggestionIcons.Argument;
@@ -51,7 +55,7 @@ const toSuggestion = (suggestion: Fig.Suggestion, name?: string, type?: Fig.Sugg
   return {
     name: name ?? getLong(suggestion.name),
     description: suggestion.description,
-    icon: getIcon(type ?? suggestion.type),
+    icon: getIcon(suggestion.icon, type ?? suggestion.type),
     allNames: suggestion.name instanceof Array ? suggestion.name : [suggestion.name],
     priority: suggestion.priority ?? 50,
     insertValue: suggestion.insertValue,
@@ -77,7 +81,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
               ? {
                   name: matchedName,
                   description: s.description,
-                  icon: getIcon(s.type ?? suggestionType),
+                  icon: getIcon(s.icon, s.type ?? suggestionType),
                   allNames: s.name,
                   priority: s.priority ?? 50,
                   insertValue: s.insertValue,
@@ -88,7 +92,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
             ? {
                 name: s.name,
                 description: s.description,
-                icon: getIcon(s.type ?? suggestionType),
+                icon: getIcon(s.icon, s.type ?? suggestionType),
                 allNames: [s.name],
                 priority: s.priority ?? 50,
                 insertValue: s.insertValue,
@@ -106,7 +110,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
               ? {
                   name: matchedName,
                   description: s.description,
-                  icon: getIcon(s.type ?? suggestionType),
+                  icon: getIcon(s.icon, s.type ?? suggestionType),
                   allNames: s.name,
                   insertValue: s.insertValue,
                   priority: s.priority ?? 50,
@@ -117,7 +121,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
             ? {
                 name: s.name,
                 description: s.description,
-                icon: getIcon(s.type ?? suggestionType),
+                icon: getIcon(s.icon, s.type ?? suggestionType),
                 allNames: [s.name],
                 insertValue: s.insertValue,
                 priority: s.priority ?? 50,
@@ -139,8 +143,14 @@ const generatorSuggestions = async (
 ): Promise<Suggestion[]> => {
   const generators = generator instanceof Array ? generator : generator ? [generator] : [];
   const tokens = acceptedTokens.map((t) => t.token);
+  if (partialCmd) tokens.push(partialCmd);
   const suggestions = (await Promise.all(generators.map((gen) => runGenerator(gen, tokens, cwd)))).flat();
-  return filter<Fig.Suggestion>(suggestions, filterStrategy, partialCmd, undefined);
+  return filter<Fig.Suggestion>(
+    suggestions.map((suggestion) => ({ ...suggestion, priority: suggestion.priority ?? 60 })),
+    filterStrategy,
+    partialCmd,
+    undefined,
+  );
 };
 
 const templateSuggestions = async (
