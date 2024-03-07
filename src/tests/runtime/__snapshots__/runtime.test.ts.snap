@@ -490,7 +490,7 @@ exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
       "icon": "📀",
       "insertValue": undefined,
       "name": "package-lock.json",
-      "priority": 90,
+      "priority": 55,
     },
     {
       "allNames": [
