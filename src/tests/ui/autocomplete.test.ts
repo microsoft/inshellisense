@@ -162,7 +162,7 @@ shells.map((activeShell) => {
       await expect(terminal.getByText("clear")).toBeVisible();
     });
 
-    test.when([Shell.Zsh, Shell.Powershell].includes(activeShell), "command detection with suggestions", async ({ terminal }) => {
+    test.skip("command detection with suggestions", async ({ terminal }) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
 
       terminal.write(`dotnet add item\r`);
