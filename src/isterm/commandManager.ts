@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import convert from "color-convert";
 import { IBufferCell, IMarker, Terminal } from "xterm-headless";
 import os from "node:os";
 import { Shell } from "../utils/shell.js";
@@ -98,6 +99,16 @@ export class CommandManager {
       }
     }
 
+    if (this.#shell == Shell.Xonsh) {
+      const xonshPrompt = lineText.match(/(?<prompt>.*@\s?)/)?.groups?.prompt;
+      if (xonshPrompt) {
+        const adjustedPrompt = this._adjustPrompt(xonshPrompt, lineText, "@");
+        if (adjustedPrompt) {
+          return adjustedPrompt;
+        }
+      }
+    }
+
     if (this.#shell == Shell.Powershell || this.#shell == Shell.Pwsh) {
       if (inshellisenseConfig.promptRegex?.pwsh != null && this.#shell == Shell.Pwsh) {
         const customPwshPrompt = lineText.match(new RegExp(inshellisenseConfig.promptRegex?.pwsh.regex))?.groups?.prompt;
@@ -149,8 +160,14 @@ export class CommandManager {
     return prompt;
   }
 
+  private _getFgPaletteColor(cell: IBufferCell | undefined): number | undefined {
+    if (cell?.isFgDefault()) return 0;
+    if (cell?.isFgPalette()) return cell.getFgColor();
+    if (cell?.isFgRGB()) return convert.hex.ansi256(cell.getFgColor().toString(16));
+  }
+
   private _isSuggestion(cell: IBufferCell | undefined): boolean {
-    const color = cell?.getFgColor();
+    const color = this._getFgPaletteColor(cell);
     const dim = (cell?.isDim() ?? 0) > 0;
     const italic = (cell?.isItalic() ?? 0) > 0;
     const dullColor = color == 8 || color == 7 || (color ?? 0) > 235 || (color == 15 && dim);

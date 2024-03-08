@@ -74,6 +74,10 @@ export const gitBashPath = async (): Promise<string> => {
   throw new Error("unable to find a git bash executable installed");
 };
 
+export const getPythonPath = async (): Promise<string> => {
+  return await which("python", { nothrow: true });
+};
+
 const getGitBashPaths = async (): Promise<string[]> => {
   const gitDirs: Set<string> = new Set();
 
