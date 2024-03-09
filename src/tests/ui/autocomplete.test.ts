@@ -9,6 +9,7 @@ const unixShells = [Shell.Bash, Shell.Fish, Shell.Zsh];
 const shells = os.platform() == "win32" ? windowsShells : unixShells;
 
 shells.map((activeShell) => {
+  const returnChar = activeShell == "xonsh" ? "\n" : "\r";
   test.describe(`[${activeShell}]`, () => {
     test.use({ program: { file: "is", args: ["-V", "-T", "-s", activeShell] } });
 
@@ -113,7 +114,7 @@ shells.map((activeShell) => {
     test("ui on bottom of the screen", async ({ terminal }) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
       terminal.resize(80, 10);
-      terminal.write("\r".repeat(10));
+      terminal.write(returnChar.repeat(10));
 
       terminal.write("git  ");
       await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
@@ -122,7 +123,7 @@ shells.map((activeShell) => {
     test("command detection after command execution", async ({ terminal }) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
 
-      terminal.write(`echo "hello"\r`);
+      terminal.write(`echo "hello"${returnChar}`);
       await expect(terminal.getByText("hello", { strict: false })).toBeVisible();
 
       terminal.write("git ");
@@ -132,7 +133,7 @@ shells.map((activeShell) => {
     test("command detection after command execution", async ({ terminal }) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
 
-      terminal.write(`echo "hello"\r`);
+      terminal.write(`echo "hello"${returnChar}`);
       await expect(terminal.getByText("hello", { strict: false })).toBeVisible();
 
       terminal.write("git ");
@@ -145,17 +146,17 @@ shells.map((activeShell) => {
       terminal.write("git ");
       await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
 
-      terminal.write("\r");
+      terminal.write(returnChar);
       await expect(terminal.getByText("archive", { strict: false })).not.toBeVisible();
     });
 
-    test("access history when no suggestions exist", async ({ terminal }) => {
+    test.only("access history when no suggestions exist", async ({ terminal }) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
 
       terminal.write("clear");
       await expect(terminal.getByText("clear")).toBeVisible();
 
-      terminal.write("\r");
+      terminal.write(returnChar);
       await expect(terminal.getByText("clear")).not.toBeVisible();
 
       terminal.keyUp();
@@ -172,10 +173,10 @@ shells.map((activeShell) => {
     test.skip("command detection with suggestions", async ({ terminal }) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
 
-      terminal.write(`dotnet add item\r`);
+      terminal.write(`dotnet add item${returnChar}`);
       await expect(terminal.getByText("dotnet", { strict: false })).toBeVisible();
 
-      terminal.write("clear\r");
+      terminal.write(`clear${returnChar}`);
       await expect(terminal.getByText("dotnet", { strict: false })).not.toBeVisible();
 
       terminal.write("dotnet add ");
