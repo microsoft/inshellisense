@@ -88,7 +88,7 @@ regex = "(?<prompt>^>\\s*)" # the prompt match group will be used to detect the 
 postfix = ">" # the postfix is the last expected character in your prompt
 ```
 
-This adds custom prompt detection for bash where the prompt is expected to be only `> `. You can add similar configurations for other shells as well as well as multiple configurations for each shell.
+This example adds custom prompt detection for bash where the prompt is expected to be only `> `. You can add similar configurations for other shells as well as well as multiple configurations for each shell.
 
 ## Contributing
 
