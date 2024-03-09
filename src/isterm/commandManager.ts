@@ -100,9 +100,17 @@ export class CommandManager {
     }
 
     if (this.#shell == Shell.Xonsh) {
-      const xonshPrompt = lineText.match(/(?<prompt>.*@\s?)/)?.groups?.prompt;
+      let xonshPrompt = lineText.match(/(?<prompt>.*@\s?)/)?.groups?.prompt;
       if (xonshPrompt) {
         const adjustedPrompt = this._adjustPrompt(xonshPrompt, lineText, "@");
+        if (adjustedPrompt) {
+          return adjustedPrompt;
+        }
+      }
+
+      xonshPrompt = lineText.match(/(?<prompt>.*>\s?)/)?.groups?.prompt;
+      if (xonshPrompt) {
+        const adjustedPrompt = this._adjustPrompt(xonshPrompt, lineText, ">");
         if (adjustedPrompt) {
           return adjustedPrompt;
         }
