@@ -21,7 +21,7 @@ const testData = [
   { name: "nestedNonCommands", command: "az az ", skip: true }, // TODO: fix skipped test
   { name: "loadSpec", command: "aws acm add" },
   { name: "noArgsArgumentGiven", command: "gcc lab ", maxSuggestions: 3 },
-  { name: "generatorUsingPartialInput", command: "dotnet add package Microsoft.Azure.WebJo", maxSuggestions: 1 },
+  { name: "generatorUsingPartialInput", command: "dotnet add package Microsoft.Azure.WebJobs.Cor", maxSuggestions: 1 },
 ];
 
 describe(`parseCommand`, () => {
