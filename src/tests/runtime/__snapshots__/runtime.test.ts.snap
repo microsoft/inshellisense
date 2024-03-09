@@ -416,16 +416,16 @@ exports[`parseCommand fullyTypedSuggestion 1`] = `
 
 exports[`parseCommand generatorUsingPartialInput 1`] = `
 {
-  "charactersToDrop": 21,
+  "charactersToDrop": 27,
   "suggestions": [
     {
       "allNames": [
-        "Microsoft.Azure.WebJobs",
+        "Microsoft.Azure.WebJobs.Core",
       ],
-      "description": "This package contains the runtime assemblies for Microsoft.Azure.WebJobs.Host. It also adds rich diagnostics capabilities which makes it easier to monitor the WebJobs in the dashboard. For more information, please visit http://go.microsoft.com/fwlink/?LinkID=320971",
+      "description": "This library simplifies the task of adding background processing to your Microsoft Azure Web Sites. The SDK uses Microsoft Azure Storage, triggering a function in your program when items are added to Queues and Blobs. A dashboard provides rich monitoring and diagnostics for the programs that you write by using the SDK. For more information, please visit http://go.microsoft.com/fwlink/?LinkID=320971",
       "icon": "📀",
-      "insertValue": "Microsoft.Azure.WebJobs",
-      "name": "Microsoft.Azure.WebJobs",
+      "insertValue": "Microsoft.Azure.WebJobs.Core",
+      "name": "Microsoft.Azure.WebJobs.Core",
       "priority": 60,
     },
   ],

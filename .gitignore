@@ -2,3 +2,4 @@ node_modules/
 build/
 t*.md
 .tui-test/
+tui-traces/
