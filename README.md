@@ -50,6 +50,7 @@ inshellisense supports the following shells:
 - [pwsh](https://github.com/PowerShell/PowerShell)
 - [powershell](https://learn.microsoft.com/en-us/powershell/scripting/windows-powershell/starting-windows-powershell) (Windows Powershell)
 - [cmd](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/cmd) _(experimental)_
+- [xonsh](https://xon.sh/)
 
 ## Contributing
 
