@@ -94,7 +94,15 @@ const configFile = ".inshellisenserc";
 const cachePath = path.join(os.homedir(), ".inshellisense");
 const configPath = path.join(os.homedir(), configFile);
 
-let globalConfig: Config;
+let globalConfig: Config = {
+  bindings: {
+    nextSuggestion: { key: "down" },
+    previousSuggestion: { key: "up" },
+    acceptSuggestion: { key: "tab" },
+    dismissSuggestions: { key: "escape" },
+  },
+};
+
 export const getConfig = (): Config => globalConfig;
 export const loadConfig = async (program: Command) => {
   if (fs.existsSync(configPath)) {
@@ -111,18 +119,10 @@ export const loadConfig = async (program: Command) => {
     }
     globalConfig = {
       bindings: {
-        nextSuggestion: config?.bindings?.nextSuggestion ?? {
-          key: "down",
-        },
-        previousSuggestion: config?.bindings?.previousSuggestion ?? {
-          key: "up",
-        },
-        acceptSuggestion: config?.bindings?.acceptSuggestion ?? {
-          key: "tab",
-        },
-        dismissSuggestions: config?.bindings?.dismissSuggestions ?? {
-          key: "escape",
-        },
+        nextSuggestion: config?.bindings?.nextSuggestion ?? globalConfig.bindings.nextSuggestion,
+        previousSuggestion: config?.bindings?.previousSuggestion ?? globalConfig.bindings.previousSuggestion,
+        acceptSuggestion: config?.bindings?.acceptSuggestion ?? globalConfig.bindings.acceptSuggestion,
+        dismissSuggestions: config?.bindings?.dismissSuggestions ?? globalConfig.bindings.dismissSuggestions,
       },
       prompt: {
         bash: config.prompt?.bash,
