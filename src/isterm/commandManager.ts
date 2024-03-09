@@ -82,11 +82,13 @@ export class CommandManager {
     // User defined prompt
     const inshellisenseConfig = getConfig();
     if (this.#shell == Shell.Bash) {
-      if (inshellisenseConfig.promptRegex?.bash != null) {
-        const customBashPrompt = lineText.match(new RegExp(inshellisenseConfig.promptRegex?.bash.regex))?.groups?.prompt;
-        const adjustedPrompt = this._adjustPrompt(customBashPrompt, lineText, inshellisenseConfig.promptRegex?.bash.postfix);
-        if (adjustedPrompt) {
-          return adjustedPrompt;
+      if (inshellisenseConfig?.prompt?.bash != null) {
+        for (const { regex, postfix } of inshellisenseConfig.prompt.bash) {
+          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
+          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
+          if (adjustedPrompt) {
+            return adjustedPrompt;
+          }
         }
       }
 
@@ -100,6 +102,16 @@ export class CommandManager {
     }
 
     if (this.#shell == Shell.Xonsh) {
+      if (inshellisenseConfig?.prompt?.xonsh != null) {
+        for (const { regex, postfix } of inshellisenseConfig.prompt.xonsh) {
+          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
+          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
+          if (adjustedPrompt) {
+            return adjustedPrompt;
+          }
+        }
+      }
+
       let xonshPrompt = lineText.match(/(?<prompt>.*@\s?)/)?.groups?.prompt;
       if (xonshPrompt) {
         const adjustedPrompt = this._adjustPrompt(xonshPrompt, lineText, "@");
@@ -118,19 +130,23 @@ export class CommandManager {
     }
 
     if (this.#shell == Shell.Powershell || this.#shell == Shell.Pwsh) {
-      if (inshellisenseConfig.promptRegex?.pwsh != null && this.#shell == Shell.Pwsh) {
-        const customPwshPrompt = lineText.match(new RegExp(inshellisenseConfig.promptRegex?.pwsh.regex))?.groups?.prompt;
-        const adjustedPrompt = this._adjustPrompt(customPwshPrompt, lineText, inshellisenseConfig.promptRegex?.pwsh.postfix);
-        if (adjustedPrompt) {
-          return adjustedPrompt;
+      if (inshellisenseConfig?.prompt?.powershell != null) {
+        for (const { regex, postfix } of inshellisenseConfig.prompt.powershell) {
+          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
+          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
+          if (adjustedPrompt) {
+            return adjustedPrompt;
+          }
         }
       }
 
-      if (inshellisenseConfig.promptRegex?.powershell != null && this.#shell == Shell.Powershell) {
-        const customPowershellPrompt = lineText.match(new RegExp(inshellisenseConfig.promptRegex?.powershell.regex))?.groups?.prompt;
-        const adjustedPrompt = this._adjustPrompt(customPowershellPrompt, lineText, inshellisenseConfig.promptRegex?.powershell.postfix);
-        if (adjustedPrompt) {
-          return adjustedPrompt;
+      if (inshellisenseConfig?.prompt?.pwsh != null) {
+        for (const { regex, postfix } of inshellisenseConfig.prompt.pwsh) {
+          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
+          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
+          if (adjustedPrompt) {
+            return adjustedPrompt;
+          }
         }
       }
 
