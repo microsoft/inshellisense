@@ -17,6 +17,7 @@ export enum Shell {
   Zsh = "zsh",
   Fish = "fish",
   Cmd = "cmd",
+  Xonsh = "xonsh",
 }
 
 export const supportedShells = [
@@ -26,6 +27,7 @@ export const supportedShells = [
   Shell.Zsh,
   Shell.Fish,
   process.platform == "win32" ? Shell.Cmd : null,
+  Shell.Xonsh,
 ].filter((shell) => shell != null) as Shell[];
 
 export const userZdotdir = process.env?.ZDOTDIR ?? os.homedir() ?? `~`;
@@ -70,6 +72,10 @@ export const gitBashPath = async (): Promise<string> => {
     }
   }
   throw new Error("unable to find a git bash executable installed");
+};
+
+export const getPythonPath = async (): Promise<string> => {
+  return await which("python", { nothrow: true });
 };
 
 const getGitBashPaths = async (): Promise<string[]> => {

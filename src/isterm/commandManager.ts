@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import convert from "color-convert";
 import { IBufferCell, IMarker, Terminal } from "xterm-headless";
 import os from "node:os";
 import { Shell } from "../utils/shell.js";
@@ -81,11 +82,13 @@ export class CommandManager {
     // User defined prompt
     const inshellisenseConfig = getConfig();
     if (this.#shell == Shell.Bash) {
-      if (inshellisenseConfig.promptRegex?.bash != null) {
-        const customBashPrompt = lineText.match(new RegExp(inshellisenseConfig.promptRegex?.bash.regex))?.groups?.prompt;
-        const adjustedPrompt = this._adjustPrompt(customBashPrompt, lineText, inshellisenseConfig.promptRegex?.bash.postfix);
-        if (adjustedPrompt) {
-          return adjustedPrompt;
+      if (inshellisenseConfig?.prompt?.bash != null) {
+        for (const { regex, postfix } of inshellisenseConfig.prompt.bash) {
+          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
+          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
+          if (adjustedPrompt) {
+            return adjustedPrompt;
+          }
         }
       }
 
@@ -98,20 +101,52 @@ export class CommandManager {
       }
     }
 
-    if (this.#shell == Shell.Powershell || this.#shell == Shell.Pwsh) {
-      if (inshellisenseConfig.promptRegex?.pwsh != null && this.#shell == Shell.Pwsh) {
-        const customPwshPrompt = lineText.match(new RegExp(inshellisenseConfig.promptRegex?.pwsh.regex))?.groups?.prompt;
-        const adjustedPrompt = this._adjustPrompt(customPwshPrompt, lineText, inshellisenseConfig.promptRegex?.pwsh.postfix);
+    if (this.#shell == Shell.Xonsh) {
+      if (inshellisenseConfig?.prompt?.xonsh != null) {
+        for (const { regex, postfix } of inshellisenseConfig.prompt.xonsh) {
+          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
+          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
+          if (adjustedPrompt) {
+            return adjustedPrompt;
+          }
+        }
+      }
+
+      let xonshPrompt = lineText.match(/(?<prompt>.*@\s?)/)?.groups?.prompt;
+      if (xonshPrompt) {
+        const adjustedPrompt = this._adjustPrompt(xonshPrompt, lineText, "@");
         if (adjustedPrompt) {
           return adjustedPrompt;
         }
       }
 
-      if (inshellisenseConfig.promptRegex?.powershell != null && this.#shell == Shell.Powershell) {
-        const customPowershellPrompt = lineText.match(new RegExp(inshellisenseConfig.promptRegex?.powershell.regex))?.groups?.prompt;
-        const adjustedPrompt = this._adjustPrompt(customPowershellPrompt, lineText, inshellisenseConfig.promptRegex?.powershell.postfix);
+      xonshPrompt = lineText.match(/(?<prompt>.*>\s?)/)?.groups?.prompt;
+      if (xonshPrompt) {
+        const adjustedPrompt = this._adjustPrompt(xonshPrompt, lineText, ">");
         if (adjustedPrompt) {
           return adjustedPrompt;
+        }
+      }
+    }
+
+    if (this.#shell == Shell.Powershell || this.#shell == Shell.Pwsh) {
+      if (inshellisenseConfig?.prompt?.powershell != null) {
+        for (const { regex, postfix } of inshellisenseConfig.prompt.powershell) {
+          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
+          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
+          if (adjustedPrompt) {
+            return adjustedPrompt;
+          }
+        }
+      }
+
+      if (inshellisenseConfig?.prompt?.pwsh != null) {
+        for (const { regex, postfix } of inshellisenseConfig.prompt.pwsh) {
+          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
+          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
+          if (adjustedPrompt) {
+            return adjustedPrompt;
+          }
         }
       }
 
@@ -149,8 +184,14 @@ export class CommandManager {
     return prompt;
   }
 
+  private _getFgPaletteColor(cell: IBufferCell | undefined): number | undefined {
+    if (cell?.isFgDefault()) return 0;
+    if (cell?.isFgPalette()) return cell.getFgColor();
+    if (cell?.isFgRGB()) return convert.hex.ansi256(cell.getFgColor().toString(16));
+  }
+
   private _isSuggestion(cell: IBufferCell | undefined): boolean {
-    const color = cell?.getFgColor();
+    const color = this._getFgPaletteColor(cell);
     const dim = (cell?.isDim() ?? 0) > 0;
     const italic = (cell?.isItalic() ?? 0) > 0;
     const dullColor = color == 8 || color == 7 || (color ?? 0) > 235 || (color == 15 && dim);

@@ -9,6 +9,7 @@ import ansi from "ansi-escapes";
 import chalk from "chalk";
 import { Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
+import { getConfig } from "../utils/config.js";
 
 const maxSuggestions = 5;
 const suggestionWidth = 40;
@@ -27,6 +28,8 @@ export type KeyPressEvent = [string | null | undefined, KeyPress];
 type KeyPress = {
   sequence: string;
   name: string;
+  ctrl: boolean;
+  shift: boolean;
 };
 
 export class SuggestionManager {
@@ -157,18 +160,24 @@ export class SuggestionManager {
   }
 
   update(keyPress: KeyPress): boolean {
-    const { name } = keyPress;
+    const { name, shift, ctrl } = keyPress;
     if (!this.#suggestBlob) {
       return false;
     }
+    const {
+      dismissSuggestions: { key: dismissKey, shift: dismissShift, control: dismissCtrl },
+      acceptSuggestion: { key: acceptKey, shift: acceptShift, control: acceptCtrl },
+      nextSuggestion: { key: nextKey, shift: nextShift, control: nextCtrl },
+      previousSuggestion: { key: prevKey, shift: prevShift, control: prevCtrl },
+    } = getConfig().bindings;
 
-    if (name == "escape") {
+    if (name == dismissKey && shift == !!dismissShift && ctrl == !!dismissCtrl) {
       this.#suggestBlob = undefined;
-    } else if (name == "up") {
+    } else if (name == prevKey && shift == !!prevShift && ctrl == !!prevCtrl) {
       this.#activeSuggestionIdx = Math.max(0, this.#activeSuggestionIdx - 1);
-    } else if (name == "down") {
+    } else if (name == nextKey && shift == !!nextShift && ctrl == !!nextCtrl) {
       this.#activeSuggestionIdx = Math.min(this.#activeSuggestionIdx + 1, (this.#suggestBlob?.suggestions.length ?? 1) - 1);
-    } else if (name == "tab") {
+    } else if (name == acceptKey && shift == !!acceptShift && ctrl == !!acceptCtrl) {
       const removals = "\u007F".repeat(this.#suggestBlob?.charactersToDrop ?? 0);
       const suggestion = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx);
       const chars = suggestion?.insertValue ?? suggestion?.name + " ";

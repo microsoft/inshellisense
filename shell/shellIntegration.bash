@@ -51,8 +51,13 @@ __is_update_cwd() {
 }
 
 if [[ -n "${bash_preexec_imported:-}" ]]; then
-    precmd_functions+=(__is_update_cwd)
+    precmd_functions+=(__is_precmd)
 fi
+
+__is_precmd() {
+	__is_update_cwd
+	__is_update_prompt
+}
 
 __is_update_prompt() {
 	if [[ "$__is_custom_PS1" == "" || "$__is_custom_PS1" != "$PS1" ]]; then
@@ -65,4 +70,19 @@ __is_update_prompt() {
     fi
 }
 
-__is_update_prompt
+__is_prompt_cmd_original() {
+	for cmd in "${__is_original_prompt_command[@]}"; do
+		eval "${cmd:-}"
+	done
+	__is_precmd
+}
+
+
+__is_original_prompt_command=${PROMPT_COMMAND:-}
+if [[ -z "${bash_preexec_imported:-}" ]]; then
+	if [[ -n "${__is_original_prompt_command:-}" && "${__is_original_prompt_command:-}" != "__is_precmd" ]]; then
+		PROMPT_COMMAND=__is_prompt_cmd_original
+	else
+		PROMPT_COMMAND=__is_precmd
+	fi
+fi

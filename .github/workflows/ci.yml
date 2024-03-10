@@ -52,6 +52,12 @@ jobs:
           sudo chmod -R 755 /usr/share/zsh
           sudo chown -R root:root /usr/share/zsh
 
+      - name: setup windows shells
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          python -m pip install 'xonsh[full]'
+
       - run: npm test
 
       - run: npm run build

@@ -6,9 +6,10 @@ import process from "node:process";
 import os from "node:os";
 import path from "node:path";
 import url from "node:url";
+import fs from "node:fs";
 
 import pty, { IPty, IEvent } from "@homebridge/node-pty-prebuilt-multiarch";
-import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
+import { Shell, getPythonPath, userZdotdir, zdotdir } from "../utils/shell.js";
 import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
 import xterm from "xterm-headless";
 import { CommandManager, CommandState } from "./commandManager.js";
@@ -252,7 +253,7 @@ export const spawn = async (options: ISTermOptions): Promise<ISTerm> => {
 
 const convertToPtyTarget = async (shell: Shell) => {
   const platform = os.platform();
-  const shellTarget = shell == Shell.Bash && platform == "win32" ? await gitBashPath() : platform == "win32" ? `${shell}.exe` : shell;
+  let shellTarget = shell == Shell.Bash && platform == "win32" ? await gitBashPath() : platform == "win32" ? `${shell}.exe` : shell;
   const shellFolderPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "..", "..", "shell");
   let shellArgs: string[] = [];
 
@@ -267,6 +268,19 @@ const convertToPtyTarget = async (shell: Shell) => {
     case Shell.Fish:
       shellArgs = ["--init-command", `. ${path.join(shellFolderPath, "shellIntegration.fish").replace(/(\s+)/g, "\\$1")}`];
       break;
+    case Shell.Xonsh: {
+      const sharedConfig = os.platform() == "win32" ? path.join("C:\\ProgramData", "xonsh", "xonshrc") : path.join("etc", "xonsh", "xonshrc");
+      const userConfigs = [
+        path.join(os.homedir(), ".xonshrc"),
+        path.join(os.homedir(), ".config", "xonsh", "rc.xsh"),
+        path.join(os.homedir(), ".config", "xonsh", "rc.d"),
+      ];
+      const configs = [sharedConfig, ...userConfigs].filter((config) => fs.existsSync(config));
+
+      shellArgs = ["-m", "xonsh", "--rc", ...configs, path.join(shellFolderPath, "shellIntegration.xsh")];
+      shellTarget = await getPythonPath();
+      break;
+    }
   }
 
   return { shellTarget, shellArgs };
