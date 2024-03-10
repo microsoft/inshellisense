@@ -16,7 +16,7 @@ export const renderConfirmation = (live: boolean): string => {
   return `inshellisense session [${statusMessage}]\n`;
 };
 
-export const render = async (shell: Shell, underTest: boolean) => {
+export const render = async (shell: Shell, underTest: boolean, parentTermExit: boolean) => {
   const term = await isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns, underTest });
   const suggestionManager = new SuggestionManager(term, shell);
   let hasActiveSuggestions = false;
@@ -140,6 +140,9 @@ export const render = async (shell: Shell, underTest: boolean) => {
   });
 
   term.onExit(({ exitCode }) => {
+    if (parentTermExit && process.ppid) {
+      process.kill(process.ppid);
+    }
     process.exit(exitCode);
   });
   process.stdout.on("resize", () => {

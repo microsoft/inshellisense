@@ -15,6 +15,7 @@ type RootCommandOptions = {
   verbose: boolean | undefined;
   check: boolean | undefined;
   test: boolean | undefined;
+  parentTermExit: boolean | undefined;
 };
 
 export const action = (program: Command) => async (options: RootCommandOptions) => {
@@ -40,5 +41,5 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
   } else if (shell == Shell.Bash) {
     await setupBashPreExec();
   }
-  await render(shell, options.test ?? false);
+  await render(shell, options.test ?? false, options.parentTermExit ?? false);
 };
