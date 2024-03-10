@@ -66,7 +66,7 @@ __is_update_prompt() {
 			__is_original_PS1="> "
 		fi
         __is_custom_PS1="\[$(__is_prompt_start)\]$__is_original_PS1\[$(__is_prompt_end)\]"
-        export PS1="$__is_custom_PS1"
+        PS1="$__is_custom_PS1"
     fi
 }
 
@@ -77,6 +77,16 @@ __is_prompt_cmd_original() {
 	__is_precmd
 }
 
+# handles when a user's PROMPT_COMMAND resets their prompt after the precmd hook is triggered
+__is_prompt_cmd_safe() {
+	for cmd in "${__is_original_prompt_command[@]}"; do
+		eval "${cmd:-}"
+	done
+	if [[ "$PS1" != "$__is_safe_PS1" ]]; then 
+		__is_precmd
+		__is_safe_PS1="$PS1"
+	fi
+}
 
 __is_original_prompt_command=${PROMPT_COMMAND:-}
 if [[ -z "${bash_preexec_imported:-}" ]]; then
@@ -85,4 +95,10 @@ if [[ -z "${bash_preexec_imported:-}" ]]; then
 	else
 		PROMPT_COMMAND=__is_precmd
 	fi
+else
+	if [[ -n "${__is_original_prompt_command:-}" && "${__is_original_prompt_command:-}" != "__is_precmd" ]]; then 
+		PROMPT_COMMAND=__is_prompt_cmd_safe
+	fi
 fi
+
+__is_precmd
