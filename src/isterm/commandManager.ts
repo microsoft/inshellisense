@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import convert from "color-convert";
-import { IBufferCell, IMarker, Terminal } from "xterm-headless";
+import { IBufferCell, IMarker, Terminal } from "@xterm/headless";
 import os from "node:os";
 import { Shell } from "../utils/shell.js";
 import log from "../utils/log.js";

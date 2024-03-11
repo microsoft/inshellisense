@@ -11,7 +11,7 @@ import fs from "node:fs";
 import pty, { IPty, IEvent } from "@homebridge/node-pty-prebuilt-multiarch";
 import { Shell, getPythonPath, userZdotdir, zdotdir } from "../utils/shell.js";
 import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
-import xterm from "xterm-headless";
+import xterm from "@xterm/headless";
 import { CommandManager, CommandState } from "./commandManager.js";
 import log from "../utils/log.js";
 import { gitBashPath } from "../utils/shell.js";
