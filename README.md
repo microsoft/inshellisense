@@ -27,7 +27,6 @@ After completing the installation, you can run `is` to start the autocomplete se
 | Start                                 | `is`                              | Start inshellisense session on the current shell |
 | Stop                                  | `exit`                            | Stop inshellisense session on the current shell  |
 | Check If Inside Inshellisense Session | `is -c`                           | Check if shell inside inshellisense session      |
-| Exit parent terminal                  | `is -p` or `is --parent-term-exit`| Exit parent terminal on exit, if exists. Useful for adding is to shell startup scripts like `~/.bashrc` or `~/.zshrc` |
 
 
 #### Keybindings
