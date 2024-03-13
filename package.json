@@ -52,7 +52,7 @@
     "wcwidth": "^1.0.1",
     "which": "^4.0.0",
     "wrap-ansi": "^8.1.0",
-    "xterm-headless": "^5.3.0"
+    "@xterm/headless": "^5.3.0"
   },
   "devDependencies": {
     "@microsoft/tui-test": "^0.0.1-rc.3",
