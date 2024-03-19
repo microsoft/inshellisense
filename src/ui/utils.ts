@@ -36,7 +36,7 @@ export const truncateMultilineText = (description: string, width: number, maxHei
   return truncatedLines.map((line) => line.padEnd(width));
 };
 
-const wcPadEnd = (text: string, width: number, char = " "): string => text + char.repeat(Math.max(width - wcwdith(text), 0));
+const wcPadEnd = (text: string, width: number, char = " "): string => text + char.repeat(Math.max(width - wcwidth(text), 0));
 
 const wcPoints = (text: string, length: number): [string, boolean] => {
   const points = [...text];
