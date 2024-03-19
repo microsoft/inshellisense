@@ -4,7 +4,7 @@
 import ansi from "ansi-escapes";
 import wrapAnsi from "wrap-ansi";
 import chalk from "chalk";
-import wcwdith from "wcwidth";
+import wcwidth from "wcwidth";
 
 /**
  * Renders a box around the given rows
@@ -36,12 +36,27 @@ export const truncateMultilineText = (description: string, width: number, maxHei
   return truncatedLines.map((line) => line.padEnd(width));
 };
 
+const wcPadEnd = (text: string, width: number, char = " "): string => text + char.repeat(Math.max(width - wcwdith(text), 0));
+
+const wcPoints = (text: string, length: number): [string, boolean] => {
+  const points = [...text];
+  const accPoints = [];
+  let accWidth = 0;
+  for (const point of points) {
+    const width = wcwidth(point);
+    if (width + accWidth > length) {
+      return wcwidth(accPoints.join("")) < length ? [accPoints.join(""), true] : [accPoints.slice(0, -1).join(""), true];
+    }
+    accPoints.push(point);
+    accWidth += width;
+  }
+  return [accPoints.join(""), false];
+};
+
 /**
  * Truncates the text to the given width
  */
 export const truncateText = (text: string, width: number) => {
-  const textPoints = [...text];
-  const wcOffset = Math.max(wcwdith(text) - textPoints.length, 0);
-  const slicedText = textPoints.slice(0, width - 1 - wcOffset);
-  return slicedText.length == textPoints.length ? text.padEnd(width) : (slicedText.join("") + "…").padEnd(width);
+  const [points, truncated] = wcPoints(text, width);
+  return !truncated ? wcPadEnd(text, width) : wcPadEnd(points + "…", width);
 };
