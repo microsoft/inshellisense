@@ -37,10 +37,6 @@ jobs:
 
           sudo chmod g-w /usr/local/share/zsh /usr/local/share/zsh/site-functions /usr/share/zsh
 
-          mkdir -p ~/.config/nushell
-          touch ~/.config/nushell/config.nu
-          touch ~/.config/nushell/env.nu
-
       - name: setup linux shells
         if: matrix.os == 'ubuntu-latest'
         shell: bash
@@ -59,20 +55,12 @@ jobs:
           sudo chmod -R 755 /usr/share/zsh
           sudo chown -R root:root /usr/share/zsh
 
-          mkdir -p ~/.config/nushell
-          touch ~/.config/nushell/config.nu
-          touch ~/.config/nushell/env.nu
-
       - name: setup windows shells
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
           pipx install 'xonsh[full]'
           choco install nushell
-
-          New-Item -Itemtype Directory -Force "$env:APPDATA\nushell"
-          New-Item -Itemtype File -Force "$env:APPDATA\nushell\env.nu"
-          New-Item -Itemtype File -Force "$env:APPDATA\nushell\config.nu"
 
       - run: npm test
 

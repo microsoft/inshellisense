@@ -247,11 +247,11 @@ export class ISTerm implements IPty {
 }
 
 export const spawn = async (options: ISTermOptions): Promise<ISTerm> => {
-  const { shellTarget, shellArgs } = await convertToPtyTarget(options.shell);
+  const { shellTarget, shellArgs } = await convertToPtyTarget(options.shell, options.underTest);
   return new ISTerm({ ...options, shellTarget, shellArgs });
 };
 
-const convertToPtyTarget = async (shell: Shell) => {
+const convertToPtyTarget = async (shell: Shell, underTest: boolean) => {
   const platform = os.platform();
   const shellTarget = shell == Shell.Bash && platform == "win32" ? await gitBashPath() : platform == "win32" ? `${shell}.exe` : shell;
   const shellFolderPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "..", "..", "shell");
@@ -281,6 +281,7 @@ const convertToPtyTarget = async (shell: Shell) => {
     }
     case Shell.Nushell:
       shellArgs = ["-e", `source \`${path.join(shellFolderPath, "shellIntegration.nu")}\``];
+      if (underTest) shellArgs.push("-n");
       break;
   }
 
