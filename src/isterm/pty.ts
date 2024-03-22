@@ -285,11 +285,12 @@ const convertToPtyTarget = async (shell: Shell) => {
 };
 
 const convertToPtyEnv = (shell: Shell, underTest: boolean) => {
-  const env = {
+  const env: Record<string, string> = {
     ...process.env,
     ISTERM: "1",
-    ISTERM_TESTING: underTest ? "1" : undefined,
   };
+  if (underTest) env.ISTERM_TESTING = "1";
+
   switch (shell) {
     case Shell.Cmd: {
       if (underTest) {
