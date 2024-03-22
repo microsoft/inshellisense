@@ -31,7 +31,6 @@ jobs:
           brew install fish
           brew install zsh
           brew install nushell
-          pipx install 'xonsh[full]'
 
           git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
           echo "source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" > ~/.zshrc
@@ -47,7 +46,6 @@ jobs:
           brew install fish
           brew install zsh
           brew install nushell
-          pipx install 'xonsh[full]'
 
           git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
           echo "source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" > ~/.zshrc
