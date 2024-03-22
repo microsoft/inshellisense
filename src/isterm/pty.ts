@@ -279,6 +279,9 @@ const convertToPtyTarget = async (shell: Shell) => {
       shellArgs = ["--rc", ...configs, path.join(shellFolderPath, "shellIntegration.xsh")];
       break;
     }
+    case Shell.Nushell:
+      shellArgs = ["-e", `source \`${path.join(shellFolderPath, "shellIntegration.nu")}\``];
+      break;
   }
 
   return { shellTarget, shellArgs };

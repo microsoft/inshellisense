@@ -12,7 +12,7 @@ import { Command } from "commander";
 const Ajv = _Ajv as unknown as typeof _Ajv.default;
 const ajv = new Ajv();
 
-type PromptPattern = {
+export type PromptPattern = {
   regex: string;
   postfix: string;
 };
@@ -34,6 +34,7 @@ type Config = {
     bash?: PromptPattern[];
     pwsh?: PromptPattern[];
     xonsh?: PromptPattern[];
+    nu?: PromptPattern[];
     powershell?: PromptPattern[];
   };
 };
@@ -84,6 +85,7 @@ const configSchema = {
         pwsh: promptPatternsSchema,
         powershell: promptPatternsSchema,
         xonsh: promptPatternsSchema,
+        nu: promptPatternsSchema,
       },
     },
   },
@@ -129,6 +131,7 @@ export const loadConfig = async (program: Command) => {
         powershell: config.prompt?.powershell,
         xonsh: config.prompt?.xonsh,
         pwsh: config.prompt?.pwsh,
+        nu: config.prompt?.nu,
       },
     };
   }

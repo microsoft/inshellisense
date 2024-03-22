@@ -18,6 +18,7 @@ export enum Shell {
   Fish = "fish",
   Cmd = "cmd",
   Xonsh = "xonsh",
+  Nushell = "nu",
 }
 
 export const supportedShells = [
@@ -28,6 +29,7 @@ export const supportedShells = [
   Shell.Fish,
   process.platform == "win32" ? Shell.Cmd : null,
   Shell.Xonsh,
+  Shell.Nushell,
 ].filter((shell) => shell != null) as Shell[];
 
 export const userZdotdir = process.env?.ZDOTDIR ?? os.homedir() ?? `~`;

@@ -6,7 +6,7 @@ import { IBufferCell, IMarker, Terminal } from "@xterm/headless";
 import os from "node:os";
 import { Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
-import { getConfig } from "../utils/config.js";
+import { getConfig, PromptPattern } from "../utils/config.js";
 
 const maxPromptPollDistance = 10;
 
@@ -69,6 +69,16 @@ export class CommandManager {
     this.#previousCommandLines = new Set();
   }
 
+  private _extractPrompt(lineText: string, patterns: PromptPattern[]): string | undefined {
+    for (const { regex, postfix } of patterns) {
+      const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
+      const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
+      if (adjustedPrompt) {
+        return adjustedPrompt;
+      }
+    }
+  }
+
   private _getWindowsPrompt(y: number) {
     const line = this.#terminal.buffer.active.getLine(y);
     if (!line) {
@@ -83,13 +93,8 @@ export class CommandManager {
     const inshellisenseConfig = getConfig();
     if (this.#shell == Shell.Bash) {
       if (inshellisenseConfig?.prompt?.bash != null) {
-        for (const { regex, postfix } of inshellisenseConfig.prompt.bash) {
-          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
-          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
-          if (adjustedPrompt) {
-            return adjustedPrompt;
-          }
-        }
+        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.bash);
+        if (extractedPrompt) return extractedPrompt;
       }
 
       const bashPrompt = lineText.match(/^(?<prompt>.*\$\s?)/)?.groups?.prompt;
@@ -101,15 +106,25 @@ export class CommandManager {
       }
     }
 
+    if (this.#shell == Shell.Nushell) {
+      if (inshellisenseConfig?.prompt?.nu != null) {
+        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.nu);
+        if (extractedPrompt) return extractedPrompt;
+      }
+
+      const nushellPrompt = lineText.match(/(?<prompt>.*>\s?)/)?.groups?.prompt;
+      if (nushellPrompt) {
+        const adjustedPrompt = this._adjustPrompt(nushellPrompt, lineText, ">");
+        if (adjustedPrompt) {
+          return adjustedPrompt;
+        }
+      }
+    }
+
     if (this.#shell == Shell.Xonsh) {
       if (inshellisenseConfig?.prompt?.xonsh != null) {
-        for (const { regex, postfix } of inshellisenseConfig.prompt.xonsh) {
-          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
-          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
-          if (adjustedPrompt) {
-            return adjustedPrompt;
-          }
-        }
+        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.xonsh);
+        if (extractedPrompt) return extractedPrompt;
       }
 
       let xonshPrompt = lineText.match(/(?<prompt>.*@\s?)/)?.groups?.prompt;
@@ -131,23 +146,13 @@ export class CommandManager {
 
     if (this.#shell == Shell.Powershell || this.#shell == Shell.Pwsh) {
       if (inshellisenseConfig?.prompt?.powershell != null) {
-        for (const { regex, postfix } of inshellisenseConfig.prompt.powershell) {
-          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
-          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
-          if (adjustedPrompt) {
-            return adjustedPrompt;
-          }
-        }
+        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.powershell);
+        if (extractedPrompt) return extractedPrompt;
       }
 
       if (inshellisenseConfig?.prompt?.pwsh != null) {
-        for (const { regex, postfix } of inshellisenseConfig.prompt.pwsh) {
-          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
-          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
-          if (adjustedPrompt) {
-            return adjustedPrompt;
-          }
-        }
+        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.pwsh);
+        if (extractedPrompt) return extractedPrompt;
       }
 
       const pwshPrompt = lineText.match(/(?<prompt>(\(.+\)\s)?(?:PS.+>\s?))/)?.groups?.prompt;
