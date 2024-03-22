@@ -41,11 +41,11 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          sudo apt-add-repository ppa:fish-shell/release-3
+          sudo apt-get update
+          sudo apt install fish zsh
+          npm install -g nushell
 
-          brew install fish
-          brew install zsh
-          brew install nushell
 
           git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
           echo "source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" > ~/.zshrc
