@@ -27,7 +27,6 @@ export type CommandState = {
 
 export class CommandManager {
   #activeCommand: TerminalCommand;
-  #previousCommandLines: Set<number>;
   #terminal: Terminal;
   #shell: Shell;
   readonly #supportsProperOscPlacements = os.platform() !== "win32";
@@ -36,7 +35,6 @@ export class CommandManager {
     this.#terminal = terminal;
     this.#shell = shell;
     this.#activeCommand = {};
-    this.#previousCommandLines = new Set();
     if (this.#supportsProperOscPlacements) {
       this.#terminal.parser.registerCsiHandler({ final: "J" }, (params) => {
         if (params.at(0) == 3 || params.at(0) == 2) {
@@ -47,9 +45,6 @@ export class CommandManager {
     }
   }
   handlePromptStart() {
-    if (this.#activeCommand.promptStartMarker?.line == -1) {
-      this.#previousCommandLines = new Set();
-    }
     this.#activeCommand = { promptStartMarker: this.#terminal.registerMarker(0), hasOutput: false, cursorTerminated: false };
   }
 
@@ -60,13 +55,11 @@ export class CommandManager {
     }
     if (this.#supportsProperOscPlacements) {
       this.#activeCommand.promptText = this.#terminal.buffer.active.getLine(this.#activeCommand.promptEndMarker?.line ?? 0)?.translateToString(true);
-      this.#previousCommandLines.add(this.#activeCommand.promptEndMarker?.line ?? -1);
     }
   }
 
   handleClear() {
     this.handlePromptStart();
-    this.#previousCommandLines = new Set();
   }
 
   private _extractPrompt(lineText: string, patterns: PromptPattern[]): string | undefined {
@@ -237,13 +230,11 @@ export class CommandManager {
     // if we haven't fond the prompt yet, poll over the next 5 lines searching for it
     if (this.#activeCommand.promptText == null && withinPollDistance) {
       for (let i = globalCursorPosition; i < this.#activeCommand.promptEndMarker.line + maxPromptPollDistance; i++) {
-        if (this.#previousCommandLines.has(i)) continue;
         const promptResult = this._getWindowsPrompt(i);
         if (promptResult != null) {
           this.#activeCommand.promptEndMarker = this.#terminal.registerMarker(i - globalCursorPosition);
           this.#activeCommand.promptEndX = promptResult.length;
           this.#activeCommand.promptText = promptResult;
-          this.#previousCommandLines.add(i);
           break;
         }
       }
@@ -256,7 +247,11 @@ export class CommandManager {
       let command = "";
       let suggestions = "";
       for (;;) {
-        for (let i = lineY == this.#activeCommand.promptEndMarker!.line ? this.#activeCommand.promptText.length : 0; i < this.#terminal.cols; i++) {
+        for (
+          let i = lineY == this.#activeCommand.promptEndMarker!.line ? this.#activeCommand.promptText.length : 0;
+          i < this.#terminal.buffer.active.cursorX;
+          i++
+        ) {
           const cell = line?.getCell(i);
           if (cell == null) continue;
           const chars = cell.getChars();

@@ -9,6 +9,7 @@ import fs from "node:fs";
 import url from "node:url";
 import os from "node:os";
 import fsAsync from "node:fs/promises";
+import { KeyPressEvent } from "../ui/suggestionManager.js";
 
 export enum Shell {
   Bash = "bash",
@@ -110,3 +111,8 @@ const getGitBashPaths = async (): Promise<string[]> => {
 
   return gitBashPaths;
 };
+
+export const getBackspaceSequence = (press: KeyPressEvent, shell: Shell) =>
+  shell === Shell.Pwsh || shell === Shell.Powershell || shell === Shell.Cmd || shell === Shell.Nushell ? "\u007F" : press[1].sequence;
+
+export const getPathSeperator = (shell: Shell) => (shell == Shell.Bash || shell == Shell.Xonsh || shell == Shell.Nushell ? "/" : path.sep);

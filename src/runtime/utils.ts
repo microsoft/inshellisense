@@ -6,7 +6,7 @@ import { spawn } from "node:child_process";
 import fsAsync from "node:fs/promises";
 
 import { CommandToken } from "./parser.js";
-import { Shell } from "../utils/shell.js";
+import { getPathSeperator, Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
 
 export type ExecuteShellCommandTTYResult = {
@@ -43,7 +43,7 @@ export const resolveCwd = async (
 ): Promise<{ cwd: string; pathy: boolean; complete: boolean }> => {
   if (cmdToken == null) return { cwd, pathy: false, complete: false };
   const { token } = cmdToken;
-  const sep = shell == Shell.Bash ? "/" : path.sep;
+  const sep = getPathSeperator(shell);
   if (!token.includes(sep)) return { cwd, pathy: false, complete: false };
   const resolvedCwd = path.isAbsolute(token) ? token : path.join(cwd, token);
   try {
