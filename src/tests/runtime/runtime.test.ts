@@ -13,6 +13,8 @@ const testData = [
   { name: "exclusiveOnOption", command: "ag --affinity --no" },
   { name: "providedSuggestion", command: "bw completion --shell " },
   { name: "fullyTypedSuggestion", command: "ls -W" },
+  { name: "provideFolderSuggestion", command: "ls sr" },
+  { name: "provideFileSuggestion", command: "ls READ" },
   { name: "optionsSuggestedAfterVariadicArg", command: "ls item -l", maxSuggestions: 3 },
   { name: "noOptionsSuggestedDuringVariadicArg", command: "ls -W ite" },
   { name: "providedArgDescription", command: "act completion bash -a " },

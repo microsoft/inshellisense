@@ -68,7 +68,7 @@ shells.map((activeShell) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
       terminal.write("ls ");
 
-      await expect(terminal.getByText("📀", { strict: false })).toBeVisible();
+      await expect(terminal.getByText("📄", { strict: false })).toBeVisible();
     });
 
     test("tab completion", async ({ terminal }) => {
