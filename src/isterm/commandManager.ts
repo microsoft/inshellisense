@@ -4,9 +4,9 @@
 import convert from "color-convert";
 import { IBufferCell, IMarker, Terminal } from "@xterm/headless";
 import os from "node:os";
-import { Shell } from "../utils/shell.js";
+import { getShellPromptRewrites, Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
-import { getConfig } from "../utils/config.js";
+import { getConfig, PromptPattern } from "../utils/config.js";
 
 const maxPromptPollDistance = 10;
 
@@ -27,9 +27,10 @@ export type CommandState = {
 
 export class CommandManager {
   #activeCommand: TerminalCommand;
-  #previousCommandLines: Set<number>;
   #terminal: Terminal;
+  #previousCommandLines: Set<number>;
   #shell: Shell;
+  #promptRewrites: boolean;
   readonly #supportsProperOscPlacements = os.platform() !== "win32";
 
   constructor(terminal: Terminal, shell: Shell) {
@@ -37,6 +38,8 @@ export class CommandManager {
     this.#shell = shell;
     this.#activeCommand = {};
     this.#previousCommandLines = new Set();
+    this.#promptRewrites = getShellPromptRewrites(shell);
+
     if (this.#supportsProperOscPlacements) {
       this.#terminal.parser.registerCsiHandler({ final: "J" }, (params) => {
         if (params.at(0) == 3 || params.at(0) == 2) {
@@ -47,9 +50,6 @@ export class CommandManager {
     }
   }
   handlePromptStart() {
-    if (this.#activeCommand.promptStartMarker?.line == -1) {
-      this.#previousCommandLines = new Set();
-    }
     this.#activeCommand = { promptStartMarker: this.#terminal.registerMarker(0), hasOutput: false, cursorTerminated: false };
   }
 
@@ -69,6 +69,16 @@ export class CommandManager {
     this.#previousCommandLines = new Set();
   }
 
+  private _extractPrompt(lineText: string, patterns: PromptPattern[]): string | undefined {
+    for (const { regex, postfix } of patterns) {
+      const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
+      const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
+      if (adjustedPrompt) {
+        return adjustedPrompt;
+      }
+    }
+  }
+
   private _getWindowsPrompt(y: number) {
     const line = this.#terminal.buffer.active.getLine(y);
     if (!line) {
@@ -83,13 +93,8 @@ export class CommandManager {
     const inshellisenseConfig = getConfig();
     if (this.#shell == Shell.Bash) {
       if (inshellisenseConfig?.prompt?.bash != null) {
-        for (const { regex, postfix } of inshellisenseConfig.prompt.bash) {
-          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
-          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
-          if (adjustedPrompt) {
-            return adjustedPrompt;
-          }
-        }
+        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.bash);
+        if (extractedPrompt) return extractedPrompt;
       }
 
       const bashPrompt = lineText.match(/^(?<prompt>.*\$\s?)/)?.groups?.prompt;
@@ -101,15 +106,25 @@ export class CommandManager {
       }
     }
 
+    if (this.#shell == Shell.Nushell) {
+      if (inshellisenseConfig?.prompt?.nu != null) {
+        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.nu);
+        if (extractedPrompt) return extractedPrompt;
+      }
+
+      const nushellPrompt = lineText.match(/(?<prompt>.*>\s?)/)?.groups?.prompt;
+      if (nushellPrompt) {
+        const adjustedPrompt = this._adjustPrompt(nushellPrompt, lineText, ">");
+        if (adjustedPrompt) {
+          return adjustedPrompt;
+        }
+      }
+    }
+
     if (this.#shell == Shell.Xonsh) {
       if (inshellisenseConfig?.prompt?.xonsh != null) {
-        for (const { regex, postfix } of inshellisenseConfig.prompt.xonsh) {
-          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
-          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
-          if (adjustedPrompt) {
-            return adjustedPrompt;
-          }
-        }
+        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.xonsh);
+        if (extractedPrompt) return extractedPrompt;
       }
 
       let xonshPrompt = lineText.match(/(?<prompt>.*@\s?)/)?.groups?.prompt;
@@ -131,23 +146,13 @@ export class CommandManager {
 
     if (this.#shell == Shell.Powershell || this.#shell == Shell.Pwsh) {
       if (inshellisenseConfig?.prompt?.powershell != null) {
-        for (const { regex, postfix } of inshellisenseConfig.prompt.powershell) {
-          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
-          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
-          if (adjustedPrompt) {
-            return adjustedPrompt;
-          }
-        }
+        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.powershell);
+        if (extractedPrompt) return extractedPrompt;
       }
 
       if (inshellisenseConfig?.prompt?.pwsh != null) {
-        for (const { regex, postfix } of inshellisenseConfig.prompt.pwsh) {
-          const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
-          const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
-          if (adjustedPrompt) {
-            return adjustedPrompt;
-          }
-        }
+        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.pwsh);
+        if (extractedPrompt) return extractedPrompt;
       }
 
       const pwshPrompt = lineText.match(/(?<prompt>(\(.+\)\s)?(?:PS.+>\s?))/)?.groups?.prompt;
@@ -232,7 +237,7 @@ export class CommandManager {
     // if we haven't fond the prompt yet, poll over the next 5 lines searching for it
     if (this.#activeCommand.promptText == null && withinPollDistance) {
       for (let i = globalCursorPosition; i < this.#activeCommand.promptEndMarker.line + maxPromptPollDistance; i++) {
-        if (this.#previousCommandLines.has(i)) continue;
+        if (this.#previousCommandLines.has(i) && !this.#promptRewrites) continue;
         const promptResult = this._getWindowsPrompt(i);
         if (promptResult != null) {
           this.#activeCommand.promptEndMarker = this.#terminal.registerMarker(i - globalCursorPosition);
@@ -252,6 +257,7 @@ export class CommandManager {
       let suggestions = "";
       for (;;) {
         for (let i = lineY == this.#activeCommand.promptEndMarker!.line ? this.#activeCommand.promptText.length : 0; i < this.#terminal.cols; i++) {
+          if (command.endsWith("    ")) break; // assume that a command that ends with 4 spaces is terminated, avoids capturing right prompts
           const cell = line?.getCell(i);
           if (cell == null) continue;
           const chars = cell.getChars();

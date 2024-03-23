@@ -6,7 +6,7 @@ import ansi from "ansi-escapes";
 import chalk from "chalk";
 
 import log from "../utils/log.js";
-import { Shell } from "../utils/shell.js";
+import { getBackspaceSequence, Shell } from "../utils/shell.js";
 import isterm from "../isterm/index.js";
 import { eraseLinesBelow } from "../utils/ansi.js";
 import { SuggestionManager, MAX_LINES, KeyPressEvent } from "./suggestionManager.js";
@@ -131,8 +131,8 @@ export const render = async (shell: Shell, underTest: boolean, parentTermExit: b
     if (previousSuggestionsRows > 0 && inputHandled) {
       term.noop();
     } else if (!inputHandled) {
-      if (press.name == "backspace" && (shell === Shell.Pwsh || shell === Shell.Powershell || shell === Shell.Cmd)) {
-        term.write("\u007F");
+      if (press.name == "backspace") {
+        term.write(getBackspaceSequence(keyPress, shell));
       } else {
         term.write(press.sequence);
       }

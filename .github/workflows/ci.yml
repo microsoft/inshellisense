@@ -30,6 +30,7 @@ jobs:
         run: |
           brew install fish
           brew install zsh
+          brew install nushell
 
           git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
           echo "source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" > ~/.zshrc
@@ -43,6 +44,8 @@ jobs:
           sudo apt-add-repository ppa:fish-shell/release-3
           sudo apt-get update
           sudo apt install fish zsh
+          npm install -g nushell
+
 
           git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
           echo "source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" > ~/.zshrc
@@ -57,6 +60,7 @@ jobs:
         shell: pwsh
         run: |
           pipx install 'xonsh[full]'
+          choco install nushell
 
       - run: npm test
 

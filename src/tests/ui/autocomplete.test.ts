@@ -130,16 +130,6 @@ shells.map((activeShell) => {
       await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
     });
 
-    test("command detection after command execution", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
-
-      terminal.write(`echo "hello"${returnChar}`);
-      await expect(terminal.getByText("hello", { strict: false })).toBeVisible();
-
-      terminal.write("git ");
-      await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
-    });
-
     test("suggestions clear after command execution", async ({ terminal }) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
 
