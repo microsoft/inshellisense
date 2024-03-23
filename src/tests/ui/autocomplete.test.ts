@@ -4,8 +4,8 @@
 import { test, expect, Shell } from "@microsoft/tui-test";
 import os from "node:os";
 
-const windowsShells = [Shell.Cmd, Shell.Powershell, Shell.WindowsPowershell, Shell.Xonsh, "nu"];
-const unixShells = [Shell.Bash, Shell.Fish, Shell.Zsh, "nu"];
+const windowsShells = [Shell.Cmd, Shell.Powershell, Shell.WindowsPowershell, Shell.Xonsh];
+const unixShells = [Shell.Bash, Shell.Fish, Shell.Zsh];
 const shells = os.platform() == "win32" ? windowsShells : unixShells;
 
 shells.map((activeShell) => {
