@@ -4,7 +4,7 @@
 import convert from "color-convert";
 import { IBufferCell, IMarker, Terminal } from "@xterm/headless";
 import os from "node:os";
-import { Shell } from "../utils/shell.js";
+import { getShellPromptRewrites, Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
 import { getConfig, PromptPattern } from "../utils/config.js";
 
@@ -28,13 +28,18 @@ export type CommandState = {
 export class CommandManager {
   #activeCommand: TerminalCommand;
   #terminal: Terminal;
+  #previousCommandLines: Set<number>;
   #shell: Shell;
+  #promptRewrites: boolean;
   readonly #supportsProperOscPlacements = os.platform() !== "win32";
 
   constructor(terminal: Terminal, shell: Shell) {
     this.#terminal = terminal;
     this.#shell = shell;
     this.#activeCommand = {};
+    this.#previousCommandLines = new Set();
+    this.#promptRewrites = getShellPromptRewrites(shell);
+
     if (this.#supportsProperOscPlacements) {
       this.#terminal.parser.registerCsiHandler({ final: "J" }, (params) => {
         if (params.at(0) == 3 || params.at(0) == 2) {
@@ -55,11 +60,13 @@ export class CommandManager {
     }
     if (this.#supportsProperOscPlacements) {
       this.#activeCommand.promptText = this.#terminal.buffer.active.getLine(this.#activeCommand.promptEndMarker?.line ?? 0)?.translateToString(true);
+      this.#previousCommandLines.add(this.#activeCommand.promptEndMarker?.line ?? -1);
     }
   }
 
   handleClear() {
     this.handlePromptStart();
+    this.#previousCommandLines = new Set();
   }
 
   private _extractPrompt(lineText: string, patterns: PromptPattern[]): string | undefined {
@@ -230,11 +237,13 @@ export class CommandManager {
     // if we haven't fond the prompt yet, poll over the next 5 lines searching for it
     if (this.#activeCommand.promptText == null && withinPollDistance) {
       for (let i = globalCursorPosition; i < this.#activeCommand.promptEndMarker.line + maxPromptPollDistance; i++) {
+        if (this.#previousCommandLines.has(i) && !this.#promptRewrites) continue;
         const promptResult = this._getWindowsPrompt(i);
         if (promptResult != null) {
           this.#activeCommand.promptEndMarker = this.#terminal.registerMarker(i - globalCursorPosition);
           this.#activeCommand.promptEndX = promptResult.length;
           this.#activeCommand.promptText = promptResult;
+          this.#previousCommandLines.add(i);
           break;
         }
       }
@@ -247,11 +256,8 @@ export class CommandManager {
       let command = "";
       let suggestions = "";
       for (;;) {
-        for (
-          let i = lineY == this.#activeCommand.promptEndMarker!.line ? this.#activeCommand.promptText.length : 0;
-          i < this.#terminal.buffer.active.cursorX;
-          i++
-        ) {
+        for (let i = lineY == this.#activeCommand.promptEndMarker!.line ? this.#activeCommand.promptText.length : 0; i < this.#terminal.cols; i++) {
+          if (command.endsWith("    ")) break; // assume that a command that ends with 4 spaces is terminated, avoids capturing right prompts
           const cell = line?.getCell(i);
           if (cell == null) continue;
           const chars = cell.getChars();

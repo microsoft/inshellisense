@@ -116,3 +116,6 @@ export const getBackspaceSequence = (press: KeyPressEvent, shell: Shell) =>
   shell === Shell.Pwsh || shell === Shell.Powershell || shell === Shell.Cmd || shell === Shell.Nushell ? "\u007F" : press[1].sequence;
 
 export const getPathSeperator = (shell: Shell) => (shell == Shell.Bash || shell == Shell.Xonsh || shell == Shell.Nushell ? "/" : path.sep);
+
+// nu fully re-writes the prompt every keystroke resulting in duplicate start/end sequences on the same line
+export const getShellPromptRewrites = (shell: Shell) => shell == Shell.Nushell;
