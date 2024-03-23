@@ -6,12 +6,21 @@ import log from "../utils/log.js";
 
 const filepathsTemplate = async (cwd: string): Promise<Fig.TemplateSuggestion[]> => {
   const files = await fsAsync.readdir(cwd, { withFileTypes: true });
-  return files.filter((f) => f.isFile() || f.isDirectory()).map((f) => ({ name: f.name, priority: 55, context: { templateType: "filepaths" } }));
+  return files
+    .filter((f) => f.isFile() || f.isDirectory())
+    .map((f) => ({ name: f.name, priority: 55, context: { templateType: "filepaths" }, type: f.isDirectory() ? "folder" : "file" }));
 };
 
 const foldersTemplate = async (cwd: string): Promise<Fig.TemplateSuggestion[]> => {
   const files = await fsAsync.readdir(cwd, { withFileTypes: true });
-  return files.filter((f) => f.isDirectory()).map((f) => ({ name: f.name, priority: 55, context: { templateType: "folders" } }));
+  return files
+    .filter((f) => f.isDirectory())
+    .map((f) => ({
+      name: f.name,
+      priority: 55,
+      context: { templateType: "folders" },
+      type: "folder",
+    }));
 };
 
 // TODO: implement history template

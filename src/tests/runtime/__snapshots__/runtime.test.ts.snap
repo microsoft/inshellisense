@@ -505,7 +505,7 @@ exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
         "package-lock.json",
       ],
       "description": undefined,
-      "icon": "📀",
+      "icon": "📄",
       "insertValue": undefined,
       "name": "package-lock.json",
       "priority": 55,
@@ -567,6 +567,42 @@ exports[`parseCommand partialPrefixFilter 1`] = `
       "insertValue": undefined,
       "name": "stash",
       "priority": 50,
+    },
+  ],
+}
+`;
+
+exports[`parseCommand provideFileSuggestion 1`] = `
+{
+  "charactersToDrop": 4,
+  "suggestions": [
+    {
+      "allNames": [
+        "README.md",
+      ],
+      "description": undefined,
+      "icon": "📄",
+      "insertValue": undefined,
+      "name": "README.md",
+      "priority": 55,
+    },
+  ],
+}
+`;
+
+exports[`parseCommand provideFolderSuggestion 1`] = `
+{
+  "charactersToDrop": 2,
+  "suggestions": [
+    {
+      "allNames": [
+        "src",
+      ],
+      "description": undefined,
+      "icon": "📁",
+      "insertValue": undefined,
+      "name": "src",
+      "priority": 55,
     },
   ],
 }
