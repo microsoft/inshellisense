@@ -9,7 +9,7 @@ import url from "node:url";
 import fs from "node:fs";
 
 import pty, { IPty, IEvent } from "@homebridge/node-pty-prebuilt-multiarch";
-import { Shell, getPythonPath, userZdotdir, zdotdir } from "../utils/shell.js";
+import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
 import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
 import xterm from "@xterm/headless";
 import { CommandManager, CommandState } from "./commandManager.js";
@@ -253,7 +253,7 @@ export const spawn = async (options: ISTermOptions): Promise<ISTerm> => {
 
 const convertToPtyTarget = async (shell: Shell) => {
   const platform = os.platform();
-  let shellTarget = shell == Shell.Bash && platform == "win32" ? await gitBashPath() : platform == "win32" ? `${shell}.exe` : shell;
+  const shellTarget = shell == Shell.Bash && platform == "win32" ? await gitBashPath() : platform == "win32" ? `${shell}.exe` : shell;
   const shellFolderPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "..", "..", "shell");
   let shellArgs: string[] = [];
 
@@ -276,9 +276,7 @@ const convertToPtyTarget = async (shell: Shell) => {
         path.join(os.homedir(), ".config", "xonsh", "rc.d"),
       ];
       const configs = [sharedConfig, ...userConfigs].filter((config) => fs.existsSync(config));
-
-      shellArgs = ["-m", "xonsh", "--rc", ...configs, path.join(shellFolderPath, "shellIntegration.xsh")];
-      shellTarget = await getPythonPath();
+      shellArgs = ["--rc", ...configs, path.join(shellFolderPath, "shellIntegration.xsh")];
       break;
     }
   }
@@ -287,11 +285,12 @@ const convertToPtyTarget = async (shell: Shell) => {
 };
 
 const convertToPtyEnv = (shell: Shell, underTest: boolean) => {
-  const env = {
+  const env: Record<string, string> = {
     ...process.env,
     ISTERM: "1",
-    ISTERM_TESTING: underTest ? "1" : undefined,
   };
+  if (underTest) env.ISTERM_TESTING = "1";
+
   switch (shell) {
     case Shell.Cmd: {
       if (underTest) {

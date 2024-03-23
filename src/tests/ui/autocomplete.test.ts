@@ -4,7 +4,7 @@
 import { test, expect, Shell } from "@microsoft/tui-test";
 import os from "node:os";
 
-const windowsShells = [Shell.Cmd, Shell.Powershell, Shell.WindowsPowershell, "xonsh"];
+const windowsShells = [Shell.Cmd, Shell.Powershell, Shell.WindowsPowershell, Shell.Xonsh];
 const unixShells = [Shell.Bash, Shell.Fish, Shell.Zsh];
 const shells = os.platform() == "win32" ? windowsShells : unixShells;
 
