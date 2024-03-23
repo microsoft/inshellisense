@@ -22,12 +22,11 @@ After completing the installation, you can run `is` to start the autocomplete se
 
 ### Usage
 
-| Action                                | Command                           | Description                                      |
-| ------------------------------------- | --------------------------------- | ------------------------------------------------ |
-| Start                                 | `is`                              | Start inshellisense session on the current shell |
-| Stop                                  | `exit`                            | Stop inshellisense session on the current shell  |
-| Check If Inside Inshellisense Session | `is -c`                           | Check if shell inside inshellisense session      |
-
+| Action                                | Command | Description                                      |
+| ------------------------------------- | ------- | ------------------------------------------------ |
+| Start                                 | `is`    | Start inshellisense session on the current shell |
+| Stop                                  | `exit`  | Stop inshellisense session on the current shell  |
+| Check If Inside Inshellisense Session | `is -c` | Check if shell inside inshellisense session      |
 
 #### Keybindings
 
@@ -51,6 +50,7 @@ inshellisense supports the following shells:
 - [powershell](https://learn.microsoft.com/en-us/powershell/scripting/windows-powershell/starting-windows-powershell) (Windows Powershell)
 - [cmd](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/cmd) _(experimental)_
 - [xonsh](https://xon.sh/)
+- [nushell](https://www.nushell.sh/)
 
 ## Configuration
 
