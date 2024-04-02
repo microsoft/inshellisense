@@ -22,6 +22,7 @@ describe("aliasExpand", () => {
     mockExecuteShellCommand.mockResolvedValue({
       stdout: `alias glo='git log --oneline'
 alias la='echo '\\''lo'\\'' '\\''la'\\'''`,
+      status: 0,
     });
 
     await loadAliases(Shell.Bash);
@@ -35,6 +36,7 @@ alias la='echo '\\''lo'\\'' '\\''la'\\'''`,
     mockExecuteShellCommand.mockResolvedValue({
       stdout: `glo='git log --oneline'
 la='echo '\\''lo'\\'' '\\''la'\\'''`,
+      status: 0,
     });
 
     await loadAliases(Shell.Zsh);
