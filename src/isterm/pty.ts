@@ -176,6 +176,27 @@ export class ISTerm implements IPty {
     };
   }
 
+  private _sameAccent(baseCell: xterm.IBufferCell | undefined, targetCell: xterm.IBufferCell | undefined) {
+    return baseCell?.isBold() == targetCell?.isBold() && baseCell?.isItalic() == targetCell?.isItalic() && baseCell?.isUnderline() == targetCell?.isUnderline();
+  }
+
+  private _getAnsiAccents(cell: xterm.IBufferCell | undefined): string {
+    if (cell == null) return "";
+    let boldAnsi = "";
+    if (cell.isBold()) {
+      boldAnsi = "\x1b[1m";
+    }
+    let italicAnsi = "";
+    if (cell.isItalic()) {
+      italicAnsi = "\x1b[3m";
+    }
+    let underlineAnsi = "";
+    if (cell.isUnderline()) {
+      underlineAnsi = "\x1b[4m";
+    }
+    return boldAnsi + italicAnsi + underlineAnsi;
+  }
+
   private _sameColor(baseCell: xterm.IBufferCell | undefined, targetCell: xterm.IBufferCell | undefined) {
     return (
       baseCell?.getBgColorMode() == targetCell?.getBgColorMode() &&
@@ -221,6 +242,9 @@ export class ISTerm implements IPty {
         const chars = cell?.getChars() ?? "";
         if (!this._sameColor(prevCell, cell)) {
           ansiLine.push(this._getAnsiColors(cell));
+        }
+        if (!this._sameAccent(prevCell, cell)) {
+          ansiLine.push(this._getAnsiAccents(cell));
         }
         ansiLine.push(chars == "" ? " " : chars);
         prevCell = cell;
