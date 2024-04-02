@@ -7,6 +7,7 @@ import { inferShell } from "../utils/shell.js";
 import { loadConfig } from "../utils/config.js";
 import { Command } from "commander";
 import log from "../utils/log.js";
+import { loadAliases } from "../runtime/alias.js";
 
 export const supportedShells = shells.join(", ");
 
@@ -41,5 +42,6 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
   } else if (shell == Shell.Bash) {
     await setupBashPreExec();
   }
+  await loadAliases(shell);
   await render(shell, options.test ?? false, options.parentTermExit ?? false);
 };
