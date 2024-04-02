@@ -14,27 +14,33 @@ const executeShellCommand = buildExecuteShellCommand(5_000);
 const loadBashAliases = async () => {
   const shellTarget = platform == "win32" ? await gitBashPath() : Shell.Bash;
   const { stdout, stderr, status } = await executeShellCommand({ command: shellTarget, args: ["-i", "-c", "alias"], cwd: process.cwd() });
-  if (status !== 0) log.debug({ msg: "Failed to load aliases", stderr, status });
+  if (status !== 0) {
+    log.debug({ msg: "failed to load bash aliases", stderr, status });
+    return;
+  }
 
   return stdout
     .trim()
     .split("\n")
     .forEach((line) => {
-      const [alias, command] = line.replace("alias ", "").replaceAll("'\\''", "'").split("=", 2);
-      loadedAliases[alias] = parseCommand(command.slice(1, -1) + " ");
+      const [alias, ...commandSegments] = line.replace("alias ", "").replaceAll("'\\''", "'").split("=");
+      loadedAliases[alias] = parseCommand(commandSegments.join("=").slice(1, -1) + " ");
     });
 };
 
 const loadZshAliases = async () => {
   const { stdout, stderr, status } = await executeShellCommand({ command: Shell.Zsh, args: ["-i", "-c", "alias"], cwd: process.cwd() });
-  if (status !== 0) log.debug({ msg: "Failed to load aliases", stderr, status });
+  if (status !== 0) {
+    log.debug({ msg: "failed to load zsh aliases", stderr, status });
+    return;
+  }
 
   return stdout
     .trim()
     .split("\n")
     .forEach((line) => {
-      const [alias, command] = line.replaceAll("'\\''", "'").split("=", 2);
-      loadedAliases[alias] = parseCommand(command.slice(1, -1) + " ");
+      const [alias, ...commandSegments] = line.replaceAll("'\\''", "'").split("=");
+      loadedAliases[alias] = parseCommand(commandSegments.join("=").slice(1, -1) + " ");
     });
 };
 
@@ -55,6 +61,7 @@ export const aliasExpand = (command: CommandToken[]): CommandToken[] => {
 
   const alias = loadedAliases[command.at(0)?.token ?? ""];
   if (alias) {
+    log.debug({ msg: "expanding alias", alias, command: command.slice(1) });
     return [...alias, ...command.slice(1)];
   }
   return command;
