@@ -21,7 +21,8 @@ describe("aliasExpand", () => {
     //@ts-expect-error - jest.fn() has no implementation
     mockExecuteShellCommand.mockResolvedValue({
       stdout: `alias glo='git log --oneline'
-alias la='echo '\\''lo'\\'' '\\''la'\\'''`,
+alias la='echo '\\''lo'\\'' '\\''la'\\'''
+alias ls='ls --color=auto'`,
       status: 0,
     });
 
@@ -29,13 +30,15 @@ alias la='echo '\\''lo'\\'' '\\''la'\\'''`,
     expect(aliasExpand([{ token: "glo", complete: false, isOption: false }])).toMatchSnapshot();
     expect(aliasExpand([{ token: "la", complete: true, isOption: false }])).toMatchSnapshot();
     expect(aliasExpand([{ token: "git", complete: true, isOption: false }])).toMatchSnapshot();
+    expect(aliasExpand([{ token: "ls", complete: true, isOption: false }])).toMatchSnapshot();
   });
 
   test("expand on zsh aliases", async () => {
     //@ts-expect-error - jest.fn() has no implementation
     mockExecuteShellCommand.mockResolvedValue({
       stdout: `glo='git log --oneline'
-la='echo '\\''lo'\\'' '\\''la'\\'''`,
+la='echo '\\''lo'\\'' '\\''la'\\'''
+ls='ls --color=auto'`,
       status: 0,
     });
 
@@ -43,5 +46,6 @@ la='echo '\\''lo'\\'' '\\''la'\\'''`,
     expect(aliasExpand([{ token: "glo", complete: false, isOption: false }])).toMatchSnapshot();
     expect(aliasExpand([{ token: "la", complete: true, isOption: false }])).toMatchSnapshot();
     expect(aliasExpand([{ token: "git", complete: true, isOption: false }])).toMatchSnapshot();
+    expect(aliasExpand([{ token: "ls", complete: true, isOption: false }])).toMatchSnapshot();
   });
 });

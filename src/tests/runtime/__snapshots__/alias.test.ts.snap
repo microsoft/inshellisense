@@ -40,6 +40,26 @@ exports[`aliasExpand expand on bash aliases 3`] = `
 ]
 `;
 
+exports[`aliasExpand expand on bash aliases 4`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "ls",
+  },
+  {
+    "complete": true,
+    "isOption": true,
+    "token": "--color",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "auto",
+  },
+]
+`;
+
 exports[`aliasExpand expand on zsh aliases 1`] = `
 [
   {
@@ -76,6 +96,26 @@ exports[`aliasExpand expand on zsh aliases 3`] = `
     "complete": true,
     "isOption": false,
     "token": "git",
+  },
+]
+`;
+
+exports[`aliasExpand expand on zsh aliases 4`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "ls",
+  },
+  {
+    "complete": true,
+    "isOption": true,
+    "token": "--color",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "auto",
   },
 ]
 `;
