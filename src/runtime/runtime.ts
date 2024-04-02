@@ -12,6 +12,7 @@ import { getArgDrivenRecommendation, getSubcommandDrivenRecommendation } from ".
 import { SuggestionBlob } from "./model.js";
 import { buildExecuteShellCommand, resolveCwd } from "./utils.js";
 import { Shell } from "../utils/shell.js";
+import { aliasExpand } from "./alias.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- recursive type, setting as any
 const specSet: any = {};
@@ -61,11 +62,12 @@ const lazyLoadSpecLocation = async (location: Fig.SpecLocation): Promise<Fig.Spe
 };
 
 export const getSuggestions = async (cmd: string, cwd: string, shell: Shell): Promise<SuggestionBlob | undefined> => {
-  const activeCmd = parseCommand(cmd);
+  let activeCmd = parseCommand(cmd);
   const rootToken = activeCmd.at(0);
   if (activeCmd.length === 0 || !rootToken?.complete) {
     return;
   }
+  activeCmd = aliasExpand(activeCmd);
 
   const spec = await loadSpec(activeCmd);
   if (spec == null) return;

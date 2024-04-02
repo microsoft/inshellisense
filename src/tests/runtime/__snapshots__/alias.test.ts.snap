@@ -1,0 +1,121 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`aliasExpand expand on bash aliases 1`] = `
+[
+  {
+    "complete": false,
+    "isOption": false,
+    "token": "glo",
+  },
+]
+`;
+
+exports[`aliasExpand expand on bash aliases 2`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "echo",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "'lo'",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "'la'",
+  },
+]
+`;
+
+exports[`aliasExpand expand on bash aliases 3`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "git",
+  },
+]
+`;
+
+exports[`aliasExpand expand on bash aliases 4`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "ls",
+  },
+  {
+    "complete": true,
+    "isOption": true,
+    "token": "--color",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "auto",
+  },
+]
+`;
+
+exports[`aliasExpand expand on zsh aliases 1`] = `
+[
+  {
+    "complete": false,
+    "isOption": false,
+    "token": "glo",
+  },
+]
+`;
+
+exports[`aliasExpand expand on zsh aliases 2`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "echo",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "'lo'",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "'la'",
+  },
+]
+`;
+
+exports[`aliasExpand expand on zsh aliases 3`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "git",
+  },
+]
+`;
+
+exports[`aliasExpand expand on zsh aliases 4`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "ls",
+  },
+  {
+    "complete": true,
+    "isOption": true,
+    "token": "--color",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "auto",
+  },
+]
+`;
