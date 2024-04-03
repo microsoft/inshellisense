@@ -254,7 +254,9 @@ export class CommandManager {
       let lineY = this.#activeCommand.promptEndMarker!.line;
       let line = this.#terminal.buffer.active.getLine(this.#activeCommand.promptEndMarker!.line);
       let command = "";
+      let wrappedCommand = "";
       let suggestions = "";
+      let isWrapped = false;
       for (;;) {
         for (let i = lineY == this.#activeCommand.promptEndMarker!.line ? this.#activeCommand.promptText.length : 0; i < this.#terminal.cols; i++) {
           if (command.endsWith("    ")) break; // assume that a command that ends with 4 spaces is terminated, avoids capturing right prompts
@@ -264,18 +266,27 @@ export class CommandManager {
           const cleanedChars = chars == "" ? " " : chars;
           if (!this._isSuggestion(cell) && suggestions.length == 0) {
             command += cleanedChars;
+            wrappedCommand += cleanedChars;
           } else {
             suggestions += cleanedChars;
           }
         }
         lineY += 1;
         line = this.#terminal.buffer.active.getLine(lineY);
-        if (!line?.isWrapped) {
+
+        const wrapped = line?.isWrapped || this.#terminal.buffer.active.cursorY + this.#terminal.buffer.active.baseY != lineY - 1;
+        isWrapped = isWrapped || wrapped;
+
+        if (!wrapped) {
           break;
         }
+        wrappedCommand = "";
       }
 
-      const cursorAtEndOfInput = (this.#activeCommand.promptText.length + command.trim().length) % this.#terminal.cols <= this.#terminal.buffer.active.cursorX;
+      const cursorAtEndOfInput = isWrapped
+        ? wrappedCommand.trim().length % this.#terminal.cols <= this.#terminal.buffer.active.cursorX
+        : (this.#activeCommand.promptText.length + command.trim().length) % this.#terminal.cols <= this.#terminal.buffer.active.cursorX;
+
       let hasOutput = false;
 
       let cell = undefined;
@@ -288,7 +299,11 @@ export class CommandManager {
         }
       }
 
-      const commandPostfix = this.#activeCommand.promptText.length + command.trim().length < this.#terminal.buffer.active.cursorX ? " " : "";
+      const postfixActive = isWrapped
+        ? wrappedCommand.trim().length < this.#terminal.buffer.active.cursorX
+        : this.#activeCommand.promptText.length + command.trim().length < this.#terminal.buffer.active.cursorX;
+
+      const commandPostfix = postfixActive ? " " : "";
       this.#activeCommand.persistentOutput = this.#activeCommand.hasOutput && hasOutput;
       this.#activeCommand.hasOutput = hasOutput;
       this.#activeCommand.suggestionsText = suggestions.trim();
