@@ -54,6 +54,8 @@ export class CommandManager {
   }
 
   handlePromptEnd() {
+    if (this.#activeCommand.promptEndMarker != null) return;
+
     this.#activeCommand.promptEndMarker = this.#terminal.registerMarker(0);
     if (this.#activeCommand.promptEndMarker?.line === this.#terminal.buffer.active.cursorY) {
       this.#activeCommand.promptEndX = this.#terminal.buffer.active.cursorX;
@@ -275,7 +277,7 @@ export class CommandManager {
         }
       }
 
-      const cursorAtEndOfInput = (this.#activeCommand.promptText.length + command.trim().length) % this.#terminal.cols <= this.#terminal.buffer.active.cursorX;
+      const cursorAtEndOfInput = (this.#activeCommand.promptText.length + command.trimEnd().length) % this.#terminal.cols <= this.#terminal.buffer.active.cursorX;
       let hasOutput = false;
 
       let cell = undefined;
@@ -288,7 +290,7 @@ export class CommandManager {
         }
       }
 
-      const commandPostfix = this.#activeCommand.promptText.length + command.trim().length < this.#terminal.buffer.active.cursorX ? " " : "";
+      const commandPostfix = this.#activeCommand.promptText.length + command.trimEnd().length < this.#terminal.buffer.active.cursorX ? " " : "";
       this.#activeCommand.persistentOutput = this.#activeCommand.hasOutput && hasOutput;
       this.#activeCommand.hasOutput = hasOutput;
       this.#activeCommand.suggestionsText = suggestions.trim();
