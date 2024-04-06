@@ -8,6 +8,7 @@ import { loadConfig } from "../utils/config.js";
 import { Command } from "commander";
 import log from "../utils/log.js";
 import { loadAliases } from "../runtime/alias.js";
+import { loadLocalSpecsSet } from "../runtime/runtime.js";
 
 export const supportedShells = shells.join(", ");
 
@@ -29,6 +30,8 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
   if (options.verbose) await log.enable();
 
   await loadConfig(program);
+
+  await loadLocalSpecsSet();
 
   const shell = options.shell ?? ((await inferShell()) as unknown as Shell | undefined);
   if (shell == null) {
