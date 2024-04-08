@@ -37,6 +37,9 @@ type Config = {
     nu?: PromptPattern[];
     powershell?: PromptPattern[];
   };
+  specs?: {
+    path?: string[];
+  };
 };
 
 const bindingSchema: JSONSchemaType<Binding> = {
@@ -63,6 +66,12 @@ const promptPatternsSchema: JSONSchemaType<PromptPattern[]> = {
   },
 };
 
+const specPathsSchema: JSONSchemaType<string[]> = {
+  type: "array",
+  items: { type: "string" },
+  nullable: true,
+};
+
 const configSchema = {
   type: "object",
   nullable: true,
@@ -86,6 +95,13 @@ const configSchema = {
         powershell: promptPatternsSchema,
         xonsh: promptPatternsSchema,
         nu: promptPatternsSchema,
+      },
+    },
+    specs: {
+      type: "object",
+      nullable: true,
+      properties: {
+        path: specPathsSchema,
       },
     },
   },
@@ -132,6 +148,9 @@ export const loadConfig = async (program: Command) => {
         xonsh: config.prompt?.xonsh,
         pwsh: config.prompt?.pwsh,
         nu: config.prompt?.nu,
+      },
+      specs: {
+        path: [`${os.homedir()}/.fig/autocomplete/build`, ...(config?.specs?.path ?? [])],
       },
     };
   }
