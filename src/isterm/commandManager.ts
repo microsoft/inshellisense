@@ -277,7 +277,8 @@ export class CommandManager {
         }
       }
 
-      const cursorAtEndOfInput = (this.#activeCommand.promptText.length + command.trimEnd().length) % this.#terminal.cols <= this.#terminal.buffer.active.cursorX;
+      const cursorAtEndOfInput =
+        (this.#activeCommand.promptText.length + command.trimEnd().length) % this.#terminal.cols <= this.#terminal.buffer.active.cursorX;
       let hasOutput = false;
 
       let cell = undefined;
