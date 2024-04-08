@@ -13,25 +13,32 @@ import { SuggestionBlob } from "./model.js";
 import { buildExecuteShellCommand, resolveCwd } from "./utils.js";
 import { Shell } from "../utils/shell.js";
 import { aliasExpand } from "./alias.js";
+import { getConfig } from "../utils/config.js";
+import log from "../utils/log.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- recursive type, setting as any
 const specSet: any = {};
-(speclist as string[]).forEach((s) => {
-  let activeSet = specSet;
-  const specRoutes = s.split("/");
-  specRoutes.forEach((route, idx) => {
-    if (typeof activeSet !== "object") {
-      return;
-    }
-    if (idx === specRoutes.length - 1) {
-      const prefix = versionedSpeclist.includes(s) ? "/index.js" : `.js`;
-      activeSet[route] = `@withfig/autocomplete/build/${s}${prefix}`;
-    } else {
-      activeSet[route] = activeSet[route] || {};
-      activeSet = activeSet[route];
-    }
+
+function loadSpecsSet(speclist: string[], versionedSpeclist: string[], specsPath: string) {
+  speclist.forEach((s) => {
+    let activeSet = specSet;
+    const specRoutes = s.split("/");
+    specRoutes.forEach((route, idx) => {
+      if (typeof activeSet !== "object") {
+        return;
+      }
+      if (idx === specRoutes.length - 1) {
+        const prefix = versionedSpeclist.includes(s) ? "/index.js" : `.js`;
+        activeSet[route] = `${specsPath}/${s}${prefix}`;
+      } else {
+        activeSet[route] = activeSet[route] || {};
+        activeSet = activeSet[route];
+      }
+    });
   });
-});
+}
+
+loadSpecsSet(speclist as string[], versionedSpeclist, `@withfig/autocomplete/build`);
 
 const loadedSpecs: { [key: string]: Fig.Spec } = {};
 
@@ -59,6 +66,29 @@ const lazyLoadSpec = async (key: string): Promise<Fig.Spec | undefined> => {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- will be implemented in below TODO
 const lazyLoadSpecLocation = async (location: Fig.SpecLocation): Promise<Fig.Spec | undefined> => {
   return; //TODO: implement spec location loading
+};
+
+export const loadLocalSpecsSet = async () => {
+  const specsPath = getConfig()?.specs?.path;
+  if (!specsPath) {
+    return;
+  }
+  try {
+    await Promise.allSettled(
+      specsPath.map((specPath) =>
+        import(path.join(specPath, "index.js"))
+          .then((res) => {
+            const { default: speclist, diffVersionedCompletions: versionedSpeclist } = res;
+            loadSpecsSet(speclist, versionedSpeclist, specPath);
+          })
+          .catch((e) => {
+            log.debug({ msg: "load local spec failed", e: (e as Error).message, specPath });
+          }),
+      ),
+    );
+  } catch (e) {
+    log.debug({ msg: "load local specs failed", e: (e as Error).message, specsPath });
+  }
 };
 
 export const getSuggestions = async (cmd: string, cwd: string, shell: Shell): Promise<SuggestionBlob | undefined> => {
@@ -145,17 +175,29 @@ const genSubcommand = async (command: string, parentCommand: Fig.Subcommand): Pr
         };
         return (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx];
       } else {
-        (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = { ...subcommand, ...partSpec, loadSpec: undefined };
+        (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = {
+          ...subcommand,
+          ...partSpec,
+          loadSpec: undefined,
+        };
         return (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx];
       }
     }
     case "string": {
       const spec = await lazyLoadSpec(subcommand.loadSpec as string);
-      (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = { ...subcommand, ...(getSubcommand(spec) ?? []), loadSpec: undefined };
+      (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = {
+        ...subcommand,
+        ...(getSubcommand(spec) ?? []),
+        loadSpec: undefined,
+      };
       return (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx];
     }
     case "object": {
-      (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = { ...subcommand, ...(subcommand.loadSpec ?? {}), loadSpec: undefined };
+      (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = {
+        ...subcommand,
+        ...(subcommand.loadSpec ?? {}),
+        loadSpec: undefined,
+      };
       return (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx];
     }
     case "undefined": {
@@ -193,7 +235,16 @@ const runOption = async (
     const args = option.args instanceof Array ? option.args : [option.args];
     return runArg(tokens.slice(1), args, subcommand, cwd, persistentOptions, acceptedTokens.concat(activeToken), true, false);
   }
-  return runSubcommand(tokens.slice(1), subcommand, cwd, persistentOptions, acceptedTokens.concat({ ...activeToken, isPersistent }));
+  return runSubcommand(
+    tokens.slice(1),
+    subcommand,
+    cwd,
+    persistentOptions,
+    acceptedTokens.concat({
+      ...activeToken,
+      isPersistent,
+    }),
+  );
 };
 
 const runArg = async (
