@@ -285,7 +285,6 @@ export class CommandManager {
         wrappedCommand = "";
       }
 
-
       const cursorAtEndOfInput = isWrapped
         ? wrappedCommand.trim().length % this.#terminal.cols <= this.#terminal.buffer.active.cursorX
         : (this.#activeCommand.promptText.length + command.trimEnd().length) % this.#terminal.cols <= this.#terminal.buffer.active.cursorX;
@@ -301,7 +300,6 @@ export class CommandManager {
           break;
         }
       }
-
 
       const postfixActive = isWrapped
         ? wrappedCommand.trim().length < this.#terminal.buffer.active.cursorX
