@@ -7,6 +7,7 @@ import { CommandToken } from "./parser.js";
 import { runGenerator } from "./generator.js";
 import { runTemplates } from "./template.js";
 import { Suggestion, SuggestionBlob } from "./model.js";
+import log from "../utils/log.js";
 
 enum SuggestionIcons {
   File = "📄",
@@ -50,6 +51,10 @@ const getLong = (suggestion: Fig.SingleOrArray<string>): string => {
   return suggestion instanceof Array ? suggestion.reduce((p, c) => (p.length > c.length ? p : c)) : suggestion;
 };
 
+const getPathy = (type: Fig.SuggestionType | undefined): boolean => {
+  return type === "file" || type === "folder";
+};
+
 const toSuggestion = (suggestion: Fig.Suggestion, name?: string, type?: Fig.SuggestionType): Suggestion | undefined => {
   if (suggestion.name == null) return;
   return {
@@ -59,6 +64,7 @@ const toSuggestion = (suggestion: Fig.Suggestion, name?: string, type?: Fig.Sugg
     allNames: suggestion.name instanceof Array ? suggestion.name : [suggestion.name],
     priority: suggestion.priority ?? 50,
     insertValue: suggestion.insertValue,
+    pathy: getPathy(suggestion.type),
   };
 };
 
@@ -85,6 +91,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
                   allNames: s.name,
                   priority: s.priority ?? 50,
                   insertValue: s.insertValue,
+                  pathy: getPathy(s.type),
                 }
               : undefined;
           }
@@ -96,6 +103,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
                 allNames: [s.name],
                 priority: s.priority ?? 50,
                 insertValue: s.insertValue,
+                pathy: getPathy(s.type),
               }
             : undefined;
         })
@@ -114,6 +122,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
                   allNames: s.name,
                   insertValue: s.insertValue,
                   priority: s.priority ?? 50,
+                  pathy: getPathy(s.type),
                 }
               : undefined;
           }
@@ -125,6 +134,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
                 allNames: [s.name],
                 insertValue: s.insertValue,
                 priority: s.priority ?? 50,
+                pathy: getPathy(s.type),
               }
             : undefined;
         })
@@ -190,6 +200,17 @@ const optionSuggestions = (
   return filter<Fig.Option>(validOptions ?? [], filterStrategy, partialCmd, "option");
 };
 
+const getEscapedPath = (value?: string): string | undefined => {
+  return value?.replaceAll(" ", "\\ ");
+};
+
+function adjustPathSuggestions(suggestions: Suggestion[], partialToken?: CommandToken): Suggestion[] {
+  if (partialToken == null || partialToken.isQuoted) return suggestions;
+  return suggestions.map((s) =>
+    s.pathy ? { ...s, insertValue: getEscapedPath(s.insertValue), name: s.insertValue == null ? getEscapedPath(s.name)! : s.name } : s,
+  );
+}
+
 const removeAcceptedSuggestions = (suggestions: Suggestion[], acceptedTokens: CommandToken[]): Suggestion[] => {
   const seen = new Set<string>(acceptedTokens.map((t) => t.token));
   return suggestions.filter((s) => s.allNames.every((n) => !seen.has(n)));
@@ -219,6 +240,7 @@ export const getSubcommandDrivenRecommendation = async (
   acceptedTokens: CommandToken[],
   cwd: string,
 ): Promise<SuggestionBlob | undefined> => {
+  log.debug({ msg: "suggestion point", subcommand, persistentOptions, partialToken, argsDepleted, argsFromSubcommand, acceptedTokens, cwd });
   if (argsDepleted && argsFromSubcommand) {
     return;
   }
@@ -246,7 +268,10 @@ export const getSubcommandDrivenRecommendation = async (
     suggestions: removeDuplicateSuggestion(
       removeEmptySuggestion(
         removeAcceptedSuggestions(
-          suggestions.sort((a, b) => b.priority - a.priority),
+          adjustPathSuggestions(
+            suggestions.sort((a, b) => b.priority - a.priority),
+            partialToken,
+          ),
           acceptedTokens,
         ),
       ),
@@ -285,7 +310,10 @@ export const getArgDrivenRecommendation = async (
     suggestions: removeDuplicateSuggestion(
       removeEmptySuggestion(
         removeAcceptedSuggestions(
-          suggestions.sort((a, b) => b.priority - a.priority),
+          adjustPathSuggestions(
+            suggestions.sort((a, b) => b.priority - a.priority),
+            partialToken,
+          ),
           acceptedTokens,
         ),
       ),

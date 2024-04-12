@@ -8,6 +8,7 @@ export type CommandToken = {
   isPersistent?: boolean;
   isPath?: boolean;
   isPathComplete?: boolean;
+  isQuoted?: boolean;
 };
 
 const cmdDelim = /(\|\|)|(&&)|(;)|(\|)/;
@@ -41,9 +42,10 @@ const lex = (command: string): CommandToken[] => {
       readingQuotedString = false;
       const complete = idx + 1 < command.length && spaceRegex.test(command[idx + 1]);
       tokens.push({
-        token: command.slice(readingIdx, idx + 1),
+        token: command.slice(readingIdx + 1, idx),
         complete,
         isOption: false,
+        isQuoted: true,
       });
     } else if ((readingFlag && spaceRegex.test(char)) || char === "=") {
       readingFlag = false;
@@ -52,7 +54,7 @@ const lex = (command: string): CommandToken[] => {
         complete: true,
         isOption: true,
       });
-    } else if (readingCmd && spaceRegex.test(char)) {
+    } else if (readingCmd && spaceRegex.test(char) && command.at(idx - 1) !== "\\") {
       readingCmd = false;
       tokens.push({
         token: command.slice(readingIdx, idx),
@@ -64,11 +66,20 @@ const lex = (command: string): CommandToken[] => {
 
   const reading = readingQuotedString || readingFlag || readingCmd;
   if (reading) {
-    tokens.push({
-      token: command.slice(readingIdx),
-      complete: false,
-      isOption: readingFlag,
-    });
+    if (readingQuotedString) {
+      tokens.push({
+        token: command.slice(readingIdx + 1),
+        complete: false,
+        isOption: false,
+        isQuoted: true,
+      });
+    } else {
+      tokens.push({
+        token: command.slice(readingIdx),
+        complete: false,
+        isOption: readingFlag,
+      });
+    }
   }
 
   return tokens;

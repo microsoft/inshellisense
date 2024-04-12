@@ -8,6 +8,7 @@ export type Suggestion = {
   icon: string;
   priority: number;
   insertValue?: string;
+  pathy?: boolean;
 };
 
 export type SuggestionBlob = {

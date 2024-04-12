@@ -1,5 +1,15 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`parseCommand OneDrive\\ -\\ Microsoft/ 1`] = `
+[
+  {
+    "complete": false,
+    "isOption": false,
+    "token": "OneDrive\\ -\\ Microsoft/",
+  },
+]
+`;
+
 exports[`parseCommand cmd  1`] = `
 [
   {
@@ -20,7 +30,8 @@ exports[`parseCommand cmd "value'  1`] = `
   {
     "complete": false,
     "isOption": false,
-    "token": ""value' ",
+    "isQuoted": true,
+    "token": "value' ",
   },
 ]
 `;
@@ -35,7 +46,8 @@ exports[`parseCommand cmd "value'\\"\\""  1`] = `
   {
     "complete": true,
     "isOption": false,
-    "token": ""value'\\"\\""",
+    "isQuoted": true,
+    "token": "value'\\"\\"",
   },
 ]
 `;
@@ -50,7 +62,8 @@ exports[`parseCommand cmd 'value'  1`] = `
   {
     "complete": true,
     "isOption": false,
-    "token": "'value'",
+    "isQuoted": true,
+    "token": "value",
   },
 ]
 `;
@@ -90,7 +103,8 @@ exports[`parseCommand cmd --flag="value"  1`] = `
   {
     "complete": true,
     "isOption": false,
-    "token": ""value"",
+    "isQuoted": true,
+    "token": "value",
   },
 ]
 `;
@@ -110,7 +124,8 @@ exports[`parseCommand cmd --flag='value'  1`] = `
   {
     "complete": true,
     "isOption": false,
-    "token": "'value'",
+    "isQuoted": true,
+    "token": "value",
   },
 ]
 `;
@@ -165,7 +180,8 @@ exports[`parseCommand cmd -f 'value'  1`] = `
   {
     "complete": true,
     "isOption": false,
-    "token": "'value'",
+    "isQuoted": true,
+    "token": "value",
   },
 ]
 `;
@@ -250,7 +266,8 @@ exports[`parseCommand cmd -f="value"  1`] = `
   {
     "complete": true,
     "isOption": false,
-    "token": ""value"",
+    "isQuoted": true,
+    "token": "value",
   },
 ]
 `;
@@ -270,7 +287,8 @@ exports[`parseCommand cmd -f='val 1`] = `
   {
     "complete": false,
     "isOption": false,
-    "token": "'val",
+    "isQuoted": true,
+    "token": "val",
   },
 ]
 `;
@@ -301,6 +319,21 @@ exports[`parseCommand cmd 1`] = `
     "complete": false,
     "isOption": false,
     "token": "cmd",
+  },
+]
+`;
+
+exports[`parseCommand cmd dir\\ 1/dir\\ 2/item1 1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+  },
+  {
+    "complete": false,
+    "isOption": false,
+    "token": "dir\\ 1/dir\\ 2/item1",
   },
 ]
 `;
