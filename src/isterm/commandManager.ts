@@ -259,7 +259,7 @@ export class CommandManager {
       let wrappedCommand = "";
       let suggestions = "";
       let isWrapped = false;
-      for (;;) {
+      for (; lineY < this.#terminal.buffer.active.baseY + this.#terminal.rows; ) {
         for (let i = lineY == this.#activeCommand.promptEndMarker!.line ? this.#activeCommand.promptText.length : 0; i < this.#terminal.cols; i++) {
           if (command.endsWith("    ")) break; // assume that a command that ends with 4 spaces is terminated, avoids capturing right prompts
           const cell = line?.getCell(i);
