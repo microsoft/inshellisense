@@ -12,6 +12,7 @@ exports[`parseCommand alreadyUsedOption 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--bug-report",
+      "pathy": false,
       "priority": 50,
     },
   ],
@@ -32,6 +33,7 @@ exports[`parseCommand command 1`] = `
       "icon": "📦",
       "insertValue": undefined,
       "name": "stage",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -42,6 +44,7 @@ exports[`parseCommand command 1`] = `
       "icon": "📦",
       "insertValue": undefined,
       "name": "status",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -52,6 +55,7 @@ exports[`parseCommand command 1`] = `
       "icon": "📦",
       "insertValue": undefined,
       "name": "stash",
+      "pathy": false,
       "priority": 50,
     },
   ],
@@ -70,6 +74,7 @@ exports[`parseCommand completePrefixFilter 1`] = `
       "icon": "📦",
       "insertValue": undefined,
       "name": "status",
+      "pathy": false,
       "priority": 50,
     },
   ],
@@ -88,6 +93,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--artifact-server-path",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -98,6 +104,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--artifact-server-port",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -108,6 +115,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--container-architecture",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -118,6 +126,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--container-daemon-socket",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -129,6 +138,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--directory",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -140,6 +150,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--dryrun",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -150,6 +161,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--env-file",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -160,6 +172,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--github-instance",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -170,6 +183,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--insecure-secrets",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -180,6 +194,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--json",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -190,6 +205,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--no-recurse",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -200,6 +216,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--no-skip-checkout",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -211,6 +228,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--quiet",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -221,6 +239,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--secret-file",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -232,6 +251,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--verbose",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -243,6 +263,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--workflows",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -254,6 +275,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--help",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -264,6 +286,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--no-descriptions",
+      "pathy": false,
       "priority": 50,
     },
   ],
@@ -289,6 +312,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nobreak",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -299,6 +323,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nocolor",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -309,6 +334,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nofilename",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -319,6 +345,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nofollow",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -329,6 +356,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nogroup",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -339,6 +367,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--noheading",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -349,6 +378,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nommap",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -359,6 +389,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nomultiline",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -370,6 +401,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--norecurse",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -380,6 +412,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nonumbers",
+      "pathy": false,
       "priority": 50,
     },
   ],
@@ -398,6 +431,7 @@ exports[`parseCommand fullyTypedSuggestion 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "-W",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -408,6 +442,7 @@ exports[`parseCommand fullyTypedSuggestion 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "-w",
+      "pathy": false,
       "priority": 50,
     },
   ],
@@ -426,6 +461,7 @@ exports[`parseCommand generatorUsingPartialInput 1`] = `
       "icon": "📀",
       "insertValue": "Microsoft.Azure.WebJobs.Core",
       "name": "Microsoft.Azure.WebJobs.Core",
+      "pathy": false,
       "priority": 60,
     },
   ],
@@ -444,6 +480,7 @@ exports[`parseCommand loadSpec 1`] = `
       "icon": "📦",
       "insertValue": undefined,
       "name": "add-tags-to-certificate",
+      "pathy": false,
       "priority": 50,
     },
   ],
@@ -462,6 +499,7 @@ exports[`parseCommand noArgsArgumentGiven 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--analyzer-output",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -472,6 +510,7 @@ exports[`parseCommand noArgsArgumentGiven 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--analyze",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -482,6 +521,7 @@ exports[`parseCommand noArgsArgumentGiven 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "-arcmt-migrate-emit-errors",
+      "pathy": false,
       "priority": 50,
     },
   ],
@@ -508,6 +548,7 @@ exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
       "icon": "📄",
       "insertValue": undefined,
       "name": "package-lock.json",
+      "pathy": true,
       "priority": 55,
     },
     {
@@ -518,6 +559,7 @@ exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "-L",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -528,6 +570,7 @@ exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "-l",
+      "pathy": false,
       "priority": 50,
     },
   ],
@@ -546,6 +589,7 @@ exports[`parseCommand partialPrefixFilter 1`] = `
       "icon": "📦",
       "insertValue": undefined,
       "name": "stage",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -556,6 +600,7 @@ exports[`parseCommand partialPrefixFilter 1`] = `
       "icon": "📦",
       "insertValue": undefined,
       "name": "status",
+      "pathy": false,
       "priority": 50,
     },
     {
@@ -566,6 +611,7 @@ exports[`parseCommand partialPrefixFilter 1`] = `
       "icon": "📦",
       "insertValue": undefined,
       "name": "stash",
+      "pathy": false,
       "priority": 50,
     },
   ],
@@ -584,6 +630,7 @@ exports[`parseCommand provideFileSuggestion 1`] = `
       "icon": "📄",
       "insertValue": undefined,
       "name": "README.md",
+      "pathy": true,
       "priority": 55,
     },
   ],
@@ -602,6 +649,7 @@ exports[`parseCommand provideFolderSuggestion 1`] = `
       "icon": "📁",
       "insertValue": undefined,
       "name": "src",
+      "pathy": true,
       "priority": 55,
     },
   ],
@@ -629,6 +677,7 @@ exports[`parseCommand providedSuggestion 1`] = `
       "icon": "📀",
       "insertValue": undefined,
       "name": "zsh",
+      "pathy": false,
       "priority": 50,
     },
   ],

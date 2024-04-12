@@ -20,12 +20,14 @@ exports[`aliasExpand expand on bash aliases 2`] = `
   {
     "complete": true,
     "isOption": false,
-    "token": "'lo'",
+    "isQuoted": true,
+    "token": "lo",
   },
   {
     "complete": true,
     "isOption": false,
-    "token": "'la'",
+    "isQuoted": true,
+    "token": "la",
   },
 ]
 `;
@@ -80,12 +82,14 @@ exports[`aliasExpand expand on zsh aliases 2`] = `
   {
     "complete": true,
     "isOption": false,
-    "token": "'lo'",
+    "isQuoted": true,
+    "token": "lo",
   },
   {
     "complete": true,
     "isOption": false,
-    "token": "'la'",
+    "isQuoted": true,
+    "token": "la",
   },
 ]
 `;

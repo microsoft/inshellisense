@@ -25,6 +25,7 @@ const testData = [
   { command: `cmd "value'\\"\\"" ` },
   { command: `cmd1 | cmd2 ` },
   { command: `cmd1 -` },
+  { command: `cmd dir\\ 1/dir\\ 2/item1` },
 ];
 
 describe(`parseCommand`, () => {

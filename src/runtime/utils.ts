@@ -42,7 +42,8 @@ export const resolveCwd = async (
   shell: Shell,
 ): Promise<{ cwd: string; pathy: boolean; complete: boolean }> => {
   if (cmdToken == null) return { cwd, pathy: false, complete: false };
-  const { token } = cmdToken;
+  const { token: rawToken, isQuoted } = cmdToken;
+  const token = !isQuoted ? rawToken.replaceAll("\\ ", " ") : rawToken;
   const sep = getPathSeperator(shell);
   if (!token.includes(sep)) return { cwd, pathy: false, complete: false };
   const resolvedCwd = path.isAbsolute(token) ? token : path.join(cwd, token);
