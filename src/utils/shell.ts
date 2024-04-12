@@ -33,7 +33,7 @@ export const supportedShells = [
   Shell.Nushell,
 ].filter((shell) => shell != null) as Shell[];
 
-export const shellEnvSupportedShells = [Shell.Bash];
+export const initSupportedShells = [Shell.Bash];
 
 export const userZdotdir = process.env?.ZDOTDIR ?? os.homedir() ?? `~`;
 export const zdotdir = path.join(os.tmpdir(), `is-zsh`);

@@ -9,7 +9,7 @@ import { Command, Option } from "commander";
 
 import complete from "./commands/complete.js";
 import uninstall from "./commands/uninstall.js";
-import shellenv from "./commands/shellenv.js";
+import init from "./commands/init.js";
 import { action, supportedShells } from "./commands/root.js";
 import { getVersion } from "./utils/version.js";
 
@@ -34,6 +34,6 @@ program
 
 program.addCommand(complete);
 program.addCommand(uninstall);
-program.addCommand(shellenv);
+program.addCommand(init);
 
 program.parse();

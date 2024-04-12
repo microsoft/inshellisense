@@ -26,7 +26,7 @@ If you'd like to automatically start inshellisense when you open your shell, run
 
 ```shell
 # bash
-is shellenv bash >> ~/.bashrc
+is init bash >> ~/.bashrc
 ```
 
 ### Usage

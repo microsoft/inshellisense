@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { Command } from "commander";
-import { Shell, shellEnvSupportedShells as shells, getShellConfig } from "../utils/shell.js";
+import { Shell, initSupportedShells as shells, getShellConfig } from "../utils/shell.js";
 
 const supportedShells = shells.join(", ");
 
@@ -15,7 +15,7 @@ const action = (program: Command) => async (shell: string) => {
   process.exit(0);
 };
 
-const cmd = new Command("shellenv");
+const cmd = new Command("init");
 cmd.description(`generates shell configurations for the provided shell`);
 cmd.argument("<shell>", `shell to generate configuration for, supported shells: ${supportedShells}`);
 cmd.action(action(cmd));
