@@ -1,15 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`parseCommand OneDrive\\ -\\ Microsoft/ 1`] = `
-[
-  {
-    "complete": false,
-    "isOption": false,
-    "token": "OneDrive\\ -\\ Microsoft/",
-  },
-]
-`;
-
 exports[`parseCommand cmd  1`] = `
 [
   {
