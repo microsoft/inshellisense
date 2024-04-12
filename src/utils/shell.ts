@@ -33,6 +33,8 @@ export const supportedShells = [
   Shell.Nushell,
 ].filter((shell) => shell != null) as Shell[];
 
+export const shellEnvSupportedShells = [Shell.Bash];
+
 export const userZdotdir = process.env?.ZDOTDIR ?? os.homedir() ?? `~`;
 export const zdotdir = path.join(os.tmpdir(), `is-zsh`);
 const configFolder = ".inshellisense";
@@ -119,3 +121,13 @@ export const getPathSeperator = (shell: Shell) => (shell == Shell.Bash || shell 
 
 // nu fully re-writes the prompt every keystroke resulting in duplicate start/end sequences on the same line
 export const getShellPromptRewrites = (shell: Shell) => shell == Shell.Nushell;
+
+export const getShellConfig = (shell: Shell): string => {
+  switch (shell) {
+    case Shell.Bash:
+      return `if [[ -z "\${ISTERM}" && $- = *i* && $- != *c* ]]; then
+  is -s bash ; exit
+fi`;
+  }
+  return "";
+};
