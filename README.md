@@ -20,6 +20,15 @@ npm install -g @microsoft/inshellisense
 
 After completing the installation, you can run `is` to start the autocomplete session for your desired shell. Additionally, inshellisense is also aliased under `inshellisense` after installation.
 
+### Shell Plugin
+
+If you'd like to automatically start inshellisense when you open your shell, run the respective command for your shell. After running the command, inshellisense will automatically open when you start any new shell session:
+
+```shell
+# bash
+is init bash >> ~/.bashrc
+```
+
 ### Usage
 
 | Action                                | Command | Description                                      |
