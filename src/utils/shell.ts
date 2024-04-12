@@ -33,7 +33,7 @@ export const supportedShells = [
   Shell.Nushell,
 ].filter((shell) => shell != null) as Shell[];
 
-export const initSupportedShells = [Shell.Bash];
+export const initSupportedShells = supportedShells.filter((shell) => shell != Shell.Cmd);
 
 export const userZdotdir = process.env?.ZDOTDIR ?? os.homedir() ?? `~`;
 export const zdotdir = path.join(os.tmpdir(), `is-zsh`);
@@ -124,10 +124,31 @@ export const getShellPromptRewrites = (shell: Shell) => shell == Shell.Nushell;
 
 export const getShellConfig = (shell: Shell): string => {
   switch (shell) {
+    case Shell.Zsh:
     case Shell.Bash:
       return `if [[ -z "\${ISTERM}" && $- = *i* && $- != *c* ]]; then
-  is -s bash ; exit
+  is -s ${shell} ; exit
 fi`;
+    case Shell.Powershell:
+    case Shell.Pwsh:
+      return `$__IsCommandFlag = ([Environment]::GetCommandLineArgs() | ForEach-Object { $_.contains("-Command") }) -contains $true
+$__IsNoExitFlag = ([Environment]::GetCommandLineArgs() | ForEach-Object { $_.contains("-NoExit") }) -contains $true
+$__IsInteractive = -not $__IsCommandFlag -or ($__IsCommandFlag -and $__IsNoExitFlag)
+if ([string]::IsNullOrEmpty($env:ISTERM) -and [Environment]::UserInteractive -and $__IsInteractive) {
+  is -s ${shell}
+  Stop-Process -Id $pid
+}`;
+    case Shell.Fish:
+      return `if test -z "$ISTERM" && status --is-interactive
+  is -s fish ; kill %self
+end`;
+    case Shell.Xonsh:
+      return `if 'ISTERM' not in \${...} and $XONSH_INTERACTIVE:
+    is -s xonsh ; exit`;
+    case Shell.Nushell:
+      return `if "ISTERM" not-in $env and $nu.is-interactive {
+    is -s nu ; exit
+}`;
   }
   return "";
 };

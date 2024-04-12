@@ -27,6 +27,24 @@ If you'd like to automatically start inshellisense when you open your shell, run
 ```shell
 # bash
 is init bash >> ~/.bashrc
+
+# zsh
+is init zsh >> ~/.zshrc
+
+# fish
+is init fish >> ~/.config/fish/config.fish
+
+# pwsh
+is init pwsh >> $profile
+
+# powershell
+is init powershell >> $profile
+
+# xonsh
+is init xonsh >> ~/.xonshrc
+
+# nushell
+is init nu >> $nu.env-path
 ```
 
 ### Usage
