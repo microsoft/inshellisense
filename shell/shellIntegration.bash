@@ -1,5 +1,19 @@
-if [ -r ~/.bashrc ]; then
-    . ~/.bashrc
+if [ -z "$ISTERM_LOGIN" ]; then
+	if [ -r ~/.bashrc ]; then
+		. ~/.bashrc
+	fi
+else
+	if [ -r /etc/profile ]; then
+		. /etc/profile
+	fi
+	# execute the first that exists
+	if [ -r ~/.bash_profile ]; then
+		. ~/.bash_profile
+	elif [ -r ~/.bash_login ]; then
+		. ~/.bash_login
+	elif [ -r ~/.profile ]; then
+		. ~/.profile
+	fi
 fi
 
 if [ -r ~/.inshellisense/bash-preexec.sh ]; then
