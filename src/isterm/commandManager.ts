@@ -236,6 +236,7 @@ export class CommandManager {
     if (globalCursorPosition < this.#activeCommand.promptStartMarker.line) {
       this.handleClear();
       this.#activeCommand.promptEndMarker = this.#terminal.registerMarker(0);
+      return;
     }
 
     if (this.#activeCommand.promptEndMarker == null) return;
