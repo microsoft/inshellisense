@@ -12,6 +12,7 @@ import pty, { IPty, IEvent } from "@homebridge/node-pty-prebuilt-multiarch";
 import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
 import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
 import xterm from "@xterm/headless";
+import type { ICellData } from "@xterm/xterm/src/common/Types.js";
 import { CommandManager, CommandState } from "./commandManager.js";
 import log from "../utils/log.js";
 import { gitBashPath } from "../utils/shell.js";
@@ -177,28 +178,43 @@ export class ISTerm implements IPty {
     };
   }
 
-  private _sameAccent(baseCell: xterm.IBufferCell | undefined, targetCell: xterm.IBufferCell | undefined) {
-    return baseCell?.isBold() == targetCell?.isBold() && baseCell?.isItalic() == targetCell?.isItalic() && baseCell?.isUnderline() == targetCell?.isUnderline();
+  private _sameAccent(baseCell: ICellData | undefined, targetCell: ICellData | undefined) {
+    return (
+      baseCell?.isBold() == targetCell?.isBold() &&
+      baseCell?.isItalic() == targetCell?.isItalic() &&
+      baseCell?.isUnderline() == targetCell?.isUnderline() &&
+      baseCell?.extended.underlineStyle == targetCell?.extended.underlineStyle &&
+      baseCell?.hasExtendedAttrs() == targetCell?.hasExtendedAttrs() &&
+      baseCell?.isInverse() == targetCell?.isInverse() &&
+      baseCell?.isBlink() == targetCell?.isBlink() &&
+      baseCell?.isInvisible() == targetCell?.isInvisible() &&
+      baseCell?.isDim() == targetCell?.isDim() &&
+      baseCell?.isStrikethrough() == targetCell?.isStrikethrough()
+    );
   }
 
-  private _getAnsiAccents(cell: xterm.IBufferCell | undefined): string {
+  private _getAnsiAccents(cell: ICellData | undefined): string {
     if (cell == null) return "";
-    let boldAnsi = "";
-    if (cell.isBold()) {
-      boldAnsi = "\x1b[1m";
-    }
-    let italicAnsi = "";
-    if (cell.isItalic()) {
-      italicAnsi = "\x1b[3m";
-    }
     let underlineAnsi = "";
     if (cell.isUnderline()) {
-      underlineAnsi = "\x1b[4m";
+      if (cell.hasExtendedAttrs() && cell.extended.underlineStyle) {
+        underlineAnsi = `\x1b[4:${cell.extended.underlineStyle}m`;
+      } else {
+        underlineAnsi = "\x1b[4m";
+      }
     }
-    return boldAnsi + italicAnsi + underlineAnsi;
+    const boldAnsi = cell.isBold() ? "\x1b[1m" : "";
+    const dimAnsi = cell.isDim() ? "\x1b[2m" : "";
+    const italicAnsi = cell.isItalic() ? "\x1b[3m" : "";
+    const blinkAnsi = cell.isBlink() ? "\x1b[5m" : "";
+    const inverseAnsi = cell.isInverse() ? "\x1b[7m" : "";
+    const invisibleAnsi = cell.isInvisible() ? "\x1b[8m" : "";
+    const strikethroughAnsi = cell.isStrikethrough() ? "\x1b[9m" : "";
+
+    return boldAnsi + italicAnsi + underlineAnsi + inverseAnsi + dimAnsi + blinkAnsi + invisibleAnsi + strikethroughAnsi;
   }
 
-  private _sameColor(baseCell: xterm.IBufferCell | undefined, targetCell: xterm.IBufferCell | undefined) {
+  private _sameColor(baseCell: ICellData | undefined, targetCell: ICellData | undefined) {
     return (
       baseCell?.getBgColorMode() == targetCell?.getBgColorMode() &&
       baseCell?.getBgColor() == targetCell?.getBgColor() &&
@@ -207,7 +223,7 @@ export class ISTerm implements IPty {
     );
   }
 
-  private _getAnsiColors(cell: xterm.IBufferCell | undefined): string {
+  private _getAnsiColors(cell: ICellData | undefined): string {
     if (cell == null) return "";
     let bgAnsi = "";
     cell.getBgColor;
@@ -237,14 +253,20 @@ export class ISTerm implements IPty {
       const line = this.#term.buffer.active.getLine(y);
       const ansiLine = ["\x1b[0m"];
       if (line == null) return "";
-      let prevCell: xterm.IBufferCell | undefined;
+      let prevCell: ICellData | undefined;
       for (let x = 0; x < line.length; x++) {
-        const cell = line.getCell(x);
+        const cell = line.getCell(x) as unknown as ICellData | undefined;
         const chars = cell?.getChars() ?? "";
-        if (!this._sameColor(prevCell, cell)) {
+
+        const sameColor = this._sameColor(prevCell, cell);
+        const sameAccents = this._sameAccent(prevCell, cell);
+        if (!sameColor || !sameAccents) {
+          ansiLine.push("\x1b[0m");
+        }
+        if (!sameColor) {
           ansiLine.push(this._getAnsiColors(cell));
         }
-        if (!this._sameAccent(prevCell, cell)) {
+        if (!sameAccents) {
           ansiLine.push(this._getAnsiAccents(cell));
         }
         ansiLine.push(chars == "" ? " " : chars);
