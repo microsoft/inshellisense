@@ -151,7 +151,7 @@ if ([string]::IsNullOrEmpty($env:ISTERM) -and [Environment]::UserInteractive -an
 }`;
     case Shell.Fish:
       return `if test -z "$ISTERM" && status --is-interactive
-  if status --is-interactive
+  if status --is-login
     is -s fish --login ; kill %self
   else
     is -s fish ; kill %self
