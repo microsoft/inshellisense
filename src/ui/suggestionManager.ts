@@ -186,6 +186,9 @@ export class SuggestionManager {
       }
       this.#term.write(removals + chars);
     } else {
+      if (name == "return") {
+        this.#term.clearCommand(); // clear the current command on enter
+      }
       return false;
     }
     log.debug({ msg: "handled keypress", ...keyPress });
