@@ -221,6 +221,10 @@ export class CommandManager {
     };
   }
 
+  clearActiveCommand() {
+    this.#activeCommand = {};
+  }
+
   termSync() {
     if (this.#activeCommand.promptEndMarker == null || this.#activeCommand.promptStartMarker == null) {
       return;

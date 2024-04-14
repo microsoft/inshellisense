@@ -247,6 +247,10 @@ export class ISTerm implements IPty {
     return bgAnsi + fgAnsi;
   }
 
+  clearCommand() {
+    this.#commandManager.clearActiveCommand();
+  }
+
   getCells(height: number, direction: "below" | "above") {
     const currentCursorPosition = this.#term.buffer.active.cursorY + this.#term.buffer.active.baseY;
     const writeLine = (y: number) => {
