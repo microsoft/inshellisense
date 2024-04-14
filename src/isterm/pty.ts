@@ -28,6 +28,7 @@ type ISTermOptions = {
   shell: Shell;
   shellArgs?: string[];
   underTest: boolean;
+  login: boolean;
 };
 
 export class ISTerm implements IPty {
@@ -47,13 +48,13 @@ export class ISTerm implements IPty {
   readonly #commandManager: CommandManager;
   readonly #shell: Shell;
 
-  constructor({ shell, cols, rows, env, shellTarget, shellArgs, underTest }: ISTermOptions & { shellTarget: string }) {
+  constructor({ shell, cols, rows, env, shellTarget, shellArgs, underTest, login }: ISTermOptions & { shellTarget: string }) {
     this.#pty = pty.spawn(shellTarget, shellArgs ?? [], {
       name: "xterm-256color",
       cols,
       rows,
       cwd: process.cwd(),
-      env: { ...convertToPtyEnv(shell, underTest), ...env },
+      env: { ...convertToPtyEnv(shell, underTest, login), ...env },
     });
     this.pid = this.#pty.pid;
     this.cols = this.#pty.cols;
@@ -293,11 +294,11 @@ export class ISTerm implements IPty {
 }
 
 export const spawn = async (options: ISTermOptions): Promise<ISTerm> => {
-  const { shellTarget, shellArgs } = await convertToPtyTarget(options.shell, options.underTest);
+  const { shellTarget, shellArgs } = await convertToPtyTarget(options.shell, options.underTest, options.login);
   return new ISTerm({ ...options, shellTarget, shellArgs });
 };
 
-const convertToPtyTarget = async (shell: Shell, underTest: boolean) => {
+const convertToPtyTarget = async (shell: Shell, underTest: boolean, login: boolean) => {
   const platform = os.platform();
   const shellTarget = shell == Shell.Bash && platform == "win32" ? await gitBashPath() : platform == "win32" ? `${shell}.exe` : shell;
   const shellFolderPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "..", "..", "shell");
@@ -331,15 +332,31 @@ const convertToPtyTarget = async (shell: Shell, underTest: boolean) => {
       break;
   }
 
+  if (login) {
+    switch (shell) {
+      case Shell.Powershell:
+      case Shell.Pwsh:
+        shellArgs.unshift("-login");
+        break;
+      case Shell.Zsh:
+      case Shell.Fish:
+      case Shell.Xonsh:
+      case Shell.Nushell:
+        shellArgs.unshift("--login");
+        break;
+    }
+  }
+
   return { shellTarget, shellArgs };
 };
 
-const convertToPtyEnv = (shell: Shell, underTest: boolean) => {
+const convertToPtyEnv = (shell: Shell, underTest: boolean, login: boolean) => {
   const env: Record<string, string> = {
     ...process.env,
     ISTERM: "1",
   };
   if (underTest) env.ISTERM_TESTING = "1";
+  if (login) env.ISTERM_LOGIN = "1";
 
   switch (shell) {
     case Shell.Cmd: {

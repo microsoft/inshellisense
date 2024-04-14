@@ -125,9 +125,20 @@ export const getShellPromptRewrites = (shell: Shell) => shell == Shell.Nushell;
 export const getShellConfig = (shell: Shell): string => {
   switch (shell) {
     case Shell.Zsh:
+      return `if [[ -z "\${ISTERM}" && $- = *i* && $- != *c* ]]; then
+  if [[ -o login ]]; then
+    is -s zsh --login ; exit
+  else
+    is -s zsh ; exit
+  fi
+fi`;
     case Shell.Bash:
       return `if [[ -z "\${ISTERM}" && $- = *i* && $- != *c* ]]; then
-  is -s ${shell} ; exit
+  if [ shopt -q login_shell ]; then
+    is -s bash --login ; exit
+  else
+    is -s bash ; exit
+  fi 
 fi`;
     case Shell.Powershell:
     case Shell.Pwsh:
@@ -140,14 +151,21 @@ if ([string]::IsNullOrEmpty($env:ISTERM) -and [Environment]::UserInteractive -an
 }`;
     case Shell.Fish:
       return `if test -z "$ISTERM" && status --is-interactive
-  is -s fish ; kill %self
+  if status --is-login
+    is -s fish --login ; kill %self
+  else
+    is -s fish ; kill %self
+  end 
 end`;
     case Shell.Xonsh:
       return `if 'ISTERM' not in \${...} and $XONSH_INTERACTIVE:
-    is -s xonsh ; exit`;
+    if $XONSH_LOGIN:
+        is -s xonsh --login ; exit
+    else:
+        is -s xonsh ; exit`;
     case Shell.Nushell:
       return `if "ISTERM" not-in $env and $nu.is-interactive {
-    is -s nu ; exit
+    if $nu.is-login { is -s nu --login ; exit } else { is -s nu ; exit }
 }`;
   }
   return "";

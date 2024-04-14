@@ -17,13 +17,14 @@ type RootCommandOptions = {
   verbose: boolean | undefined;
   check: boolean | undefined;
   test: boolean | undefined;
+  login: boolean | undefined;
 };
 
 export const action = (program: Command) => async (options: RootCommandOptions) => {
   const inISTerm = process.env.ISTERM === "1";
   if (options.check || inISTerm) {
     process.stdout.write(renderConfirmation(inISTerm));
-    return;
+    process.exit(0);
   }
 
   if (options.verbose) await log.enable();
@@ -45,5 +46,5 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
     await setupBashPreExec();
   }
   await loadAliases(shell);
-  await render(shell, options.test ?? false);
+  await render(shell, options.test ?? false, options.login ?? false);
 };

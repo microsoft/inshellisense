@@ -26,6 +26,7 @@ program
   .description("IDE style command line auto complete")
   .version(await getVersion(), "-v, --version", "output the current version")
   .action(action(program))
+  .option("-l, --login", `start shell as a login shell`)
   .option("-s, --shell <shell>", `shell to use for command execution, supported shells: ${supportedShells}`)
   .option("-c, --check", `check if shell is in an inshellisense session`)
   .addOption(hiddenOption("-T, --test", "used to make e2e tests reproducible across machines"))
