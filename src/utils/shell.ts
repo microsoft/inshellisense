@@ -134,7 +134,9 @@ export const getShellConfig = (shell: Shell): string => {
 fi`;
     case Shell.Bash:
       return `if [[ -z "\${ISTERM}" && $- = *i* && $- != *c* ]]; then
-  if [ shopt -q login_shell ]; then
+  shopt -q login_shell
+  login_shell=$?
+  if [ $login_shell -eq 0 ]; then
     is -s bash --login ; exit
   else
     is -s bash ; exit
