@@ -120,6 +120,10 @@ export const getSuggestions = async (cmd: string, cwd: string, shell: Shell): Pr
   return { ...result, charactersToDrop };
 };
 
+export const getSpecNames = (): string[] => {
+  return Object.keys(specSet).filter((spec) => !spec.startsWith("@") && spec != "-");
+};
+
 const getPersistentOptions = (persistentOptions: Fig.Option[], options?: Fig.Option[]) => {
   const persistentOptionNames = new Set(persistentOptions.map((o) => (typeof o.name === "string" ? [o.name] : o.name)).flat());
   return persistentOptions.concat(
