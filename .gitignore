@@ -3,3 +3,5 @@ build/
 t*.md
 .tui-test/
 tui-traces/
+.idea/
+.vscode/
