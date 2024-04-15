@@ -56,6 +56,8 @@ export const loadAliases = async (shell: Shell) => {
   return [];
 };
 
+export const getAliasNames = () => Object.keys(loadedAliases);
+
 export const aliasExpand = (command: CommandToken[]): CommandToken[] => {
   if (!command.at(0)?.complete) return command;
 

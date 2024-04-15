@@ -10,6 +10,7 @@ import { Command, Option } from "commander";
 import complete from "./commands/complete.js";
 import uninstall from "./commands/uninstall.js";
 import init from "./commands/init.js";
+import specs from "./commands/specs/root.js";
 import { action, supportedShells } from "./commands/root.js";
 import { getVersion } from "./utils/version.js";
 
@@ -31,10 +32,12 @@ program
   .option("-c, --check", `check if shell is in an inshellisense session`)
   .addOption(hiddenOption("-T, --test", "used to make e2e tests reproducible across machines"))
   .option("-V, --verbose", `enable verbose logging`)
-  .showHelpAfterError("(add --help for additional information)");
+  .showHelpAfterError("(add --help for additional information)")
+  .passThroughOptions();
 
 program.addCommand(complete);
 program.addCommand(uninstall);
 program.addCommand(init);
+program.addCommand(specs);
 
 program.parse();
