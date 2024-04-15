@@ -108,9 +108,13 @@ const configSchema = {
   additionalProperties: false,
 };
 
-const configFile = ".inshellisenserc";
+const rcFile = ".inshellisenserc";
+const xdgFile = "rc.toml";
 const cachePath = path.join(os.homedir(), ".inshellisense");
-const configPath = path.join(os.homedir(), configFile);
+const rcPath = path.join(os.homedir(), rcFile);
+const xdgPath = path.join(os.homedir(), ".config", "inshellisense", xdgFile);
+
+const configPaths = [rcPath, xdgPath];
 
 let globalConfig: Config = {
   bindings: {
@@ -123,37 +127,40 @@ let globalConfig: Config = {
 
 export const getConfig = (): Config => globalConfig;
 export const loadConfig = async (program: Command) => {
-  if (fs.existsSync(configPath)) {
-    let config: Config;
-    try {
-      config = toml.parse((await fsAsync.readFile(configPath)).toString());
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (e: any) {
-      program.error(`${configFile} is invalid toml. Parsing error on line ${e.line}, column ${e.column}: ${e.message}`);
+  configPaths.forEach(async (configPath) => {
+    if (fs.existsSync(configPath)) {
+      let config: Config;
+      try {
+        config = toml.parse((await fsAsync.readFile(configPath)).toString());
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (e: any) {
+        program.error(`${configPath} is invalid toml. Parsing error on line ${e.line}, column ${e.column}: ${e.message}`);
+      }
+      const isValid = ajv.validate(configSchema, config);
+      if (!isValid) {
+        program.error(`${configPath} is invalid: ${ajv.errorsText()}`);
+      }
+      globalConfig = {
+        bindings: {
+          nextSuggestion: config?.bindings?.nextSuggestion ?? globalConfig.bindings.nextSuggestion,
+          previousSuggestion: config?.bindings?.previousSuggestion ?? globalConfig.bindings.previousSuggestion,
+          acceptSuggestion: config?.bindings?.acceptSuggestion ?? globalConfig.bindings.acceptSuggestion,
+          dismissSuggestions: config?.bindings?.dismissSuggestions ?? globalConfig.bindings.dismissSuggestions,
+        },
+        prompt: {
+          bash: config.prompt?.bash ?? globalConfig?.prompt?.bash,
+          powershell: config.prompt?.powershell ?? globalConfig?.prompt?.powershell,
+          xonsh: config.prompt?.xonsh ?? globalConfig?.prompt?.xonsh,
+          pwsh: config.prompt?.pwsh ?? globalConfig?.prompt?.pwsh,
+          nu: config.prompt?.nu ?? globalConfig?.prompt?.nu,
+        },
+        specs: {
+          path: [...(config?.specs?.path ?? []), ...(config?.specs?.path ?? [])],
+        },
+      };
     }
-    const isValid = ajv.validate(configSchema, config);
-    if (!isValid) {
-      program.error(`${configFile} is invalid: ${ajv.errorsText()}`);
-    }
-    globalConfig = {
-      bindings: {
-        nextSuggestion: config?.bindings?.nextSuggestion ?? globalConfig.bindings.nextSuggestion,
-        previousSuggestion: config?.bindings?.previousSuggestion ?? globalConfig.bindings.previousSuggestion,
-        acceptSuggestion: config?.bindings?.acceptSuggestion ?? globalConfig.bindings.acceptSuggestion,
-        dismissSuggestions: config?.bindings?.dismissSuggestions ?? globalConfig.bindings.dismissSuggestions,
-      },
-      prompt: {
-        bash: config.prompt?.bash,
-        powershell: config.prompt?.powershell,
-        xonsh: config.prompt?.xonsh,
-        pwsh: config.prompt?.pwsh,
-        nu: config.prompt?.nu,
-      },
-      specs: {
-        path: [`${os.homedir()}/.fig/autocomplete/build`, ...(config?.specs?.path ?? [])],
-      },
-    };
-  }
+  });
+  globalConfig.specs = { path: [`${os.homedir()}/.fig/autocomplete/build`, ...(globalConfig.specs?.path ?? [])] };
 };
 
 export const deleteCacheFolder = async (): Promise<void> => {
