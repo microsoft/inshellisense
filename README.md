@@ -81,7 +81,7 @@ inshellisense supports the following shells:
 
 ## Configuration
 
-All configuration is done through a [toml](https://toml.io/) file located at `~/.inshellisenserc`. The [JSON schema](https://json-schema.org/) for the configuration file can be found [here](https://github.com/microsoft/inshellisense/blob/main/src/utils/config.ts).
+All configuration is done through a [toml](https://toml.io/) file. You can create this file at `~/.inshellisenserc` or, for XDG compliance, at `~/.config/inshellisense/rc.toml`. The [JSON schema](https://json-schema.org/) for the configuration file can be found [here](https://github.com/microsoft/inshellisense/blob/main/src/utils/config.ts).
 
 ### Keybindings
 

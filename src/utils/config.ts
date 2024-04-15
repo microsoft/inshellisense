@@ -112,7 +112,7 @@ const rcFile = ".inshellisenserc";
 const xdgFile = "rc.toml";
 const cachePath = path.join(os.homedir(), ".inshellisense");
 const rcPath = path.join(os.homedir(), rcFile);
-const xdgPath = path.join(os.homedir(), ".config", xdgFile);
+const xdgPath = path.join(os.homedir(), ".config", "inshellisense", xdgFile);
 
 const configPaths = [rcPath, xdgPath];
 
