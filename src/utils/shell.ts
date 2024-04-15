@@ -34,6 +34,7 @@ export const supportedShells = [
 ].filter((shell) => shell != null) as Shell[];
 
 export const initSupportedShells = supportedShells.filter((shell) => shell != Shell.Cmd);
+export const aliasSupportedShells = [Shell.Bash, Shell.Zsh];
 
 export const userZdotdir = process.env?.ZDOTDIR ?? os.homedir() ?? `~`;
 export const zdotdir = path.join(os.tmpdir(), `is-zsh`);
