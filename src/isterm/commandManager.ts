@@ -29,6 +29,7 @@ export class CommandManager {
   #activeCommand: TerminalCommand;
   #terminal: Terminal;
   #previousCommandLines: Set<number>;
+  #maxCursorY: number;
   #shell: Shell;
   #promptRewrites: boolean;
   readonly #supportsProperOscPlacements = os.platform() !== "win32";
@@ -37,6 +38,7 @@ export class CommandManager {
     this.#terminal = terminal;
     this.#shell = shell;
     this.#activeCommand = {};
+    this.#maxCursorY = 0;
     this.#previousCommandLines = new Set();
     this.#promptRewrites = getShellPromptRewrites(shell);
 
@@ -68,6 +70,7 @@ export class CommandManager {
 
   handleClear() {
     this.handlePromptStart();
+    this.#maxCursorY = 0;
     this.#previousCommandLines = new Set();
   }
 
@@ -247,8 +250,9 @@ export class CommandManager {
 
     const globalCursorPosition = this.#terminal.buffer.active.baseY + this.#terminal.buffer.active.cursorY;
     const withinPollDistance = globalCursorPosition < this.#activeCommand.promptEndMarker.line + 5;
+    this.#maxCursorY = Math.max(this.#maxCursorY, globalCursorPosition);
 
-    if (globalCursorPosition < this.#activeCommand.promptStartMarker.line) {
+    if (globalCursorPosition < this.#activeCommand.promptStartMarker.line || globalCursorPosition < this.#maxCursorY) {
       this.handleClear();
       this.#activeCommand.promptEndMarker = this.#terminal.registerMarker(0);
       return;
