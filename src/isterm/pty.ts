@@ -317,7 +317,10 @@ const convertToPtyTarget = async (shell: Shell, underTest: boolean, login: boole
       shellArgs = ["-noexit", "-command", `try { . "${path.join(shellFolderPath, "shellIntegration.ps1")}" } catch {}`];
       break;
     case Shell.Fish:
-      shellArgs = ["--init-command", `. ${path.join(shellFolderPath, "shellIntegration.fish").replace(/(\s+)/g, "\\$1")}`];
+      shellArgs =
+        platform == "win32"
+          ? ["--init-command", `. "$(cygpath -u '${path.join(shellFolderPath, "shellIntegration.fish")}')"`]
+          : ["--init-command", `. ${path.join(shellFolderPath, "shellIntegration.fish").replace(/(\s+)/g, "\\$1")}`];
       break;
     case Shell.Xonsh: {
       const sharedConfig = os.platform() == "win32" ? path.join("C:\\ProgramData", "xonsh", "xonshrc") : path.join("etc", "xonsh", "xonshrc");

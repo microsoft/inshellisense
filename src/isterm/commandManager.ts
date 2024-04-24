@@ -108,6 +108,21 @@ export class CommandManager {
       }
     }
 
+    if (this.#shell == Shell.Fish) {
+      if (inshellisenseConfig?.prompt?.fish != null) {
+        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.fish);
+        if (extractedPrompt) return extractedPrompt;
+      }
+
+      const fishPrompt = lineText.match(/(?<prompt>.*>\s?)/)?.groups?.prompt;
+      if (fishPrompt) {
+        const adjustedPrompt = this._adjustPrompt(fishPrompt, lineText, ">");
+        if (adjustedPrompt) {
+          return adjustedPrompt;
+        }
+      }
+    }
+
     if (this.#shell == Shell.Nushell) {
       if (inshellisenseConfig?.prompt?.nu != null) {
         const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.nu);
