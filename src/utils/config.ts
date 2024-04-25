@@ -36,6 +36,7 @@ type Config = {
     xonsh?: PromptPattern[];
     nu?: PromptPattern[];
     powershell?: PromptPattern[];
+    fish?: PromptPattern[];
   };
   specs?: {
     path?: string[];
@@ -95,6 +96,7 @@ const configSchema = {
         powershell: promptPatternsSchema,
         xonsh: promptPatternsSchema,
         nu: promptPatternsSchema,
+        fish: promptPatternsSchema,
       },
     },
     specs: {
@@ -153,6 +155,7 @@ export const loadConfig = async (program: Command) => {
           xonsh: config.prompt?.xonsh ?? globalConfig?.prompt?.xonsh,
           pwsh: config.prompt?.pwsh ?? globalConfig?.prompt?.pwsh,
           nu: config.prompt?.nu ?? globalConfig?.prompt?.nu,
+          fish: config.prompt?.fish ?? globalConfig?.prompt?.fish,
         },
         specs: {
           path: [...(config?.specs?.path ?? []), ...(config?.specs?.path ?? [])],
