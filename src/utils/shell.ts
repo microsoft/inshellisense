@@ -58,6 +58,20 @@ export const setupZshDotfiles = async () => {
 };
 
 export const inferShell = async () => {
+  // try getting shell from shell specific env variables
+  if (process.env.NU_VERSION != null) {
+    return Shell.Nushell;
+  } else if (process.env.XONSHRC != null) {
+    return Shell.Xonsh;
+  } else if (process.env.FISH_VERSION != null) {
+    return Shell.Fish;
+  } else if (process.env.ZSH_VERSION != null) {
+    return Shell.Zsh;
+  } else if (process.env.BASH_VERSION != null) {
+    return Shell.Bash;
+  }
+
+  // try getting shell from env
   try {
     const name = path.parse(process.env.SHELL ?? "").name;
     const shellName = supportedShells.find((shell) => name.includes(shell));
@@ -65,6 +79,8 @@ export const inferShell = async () => {
   } catch {
     /* empty */
   }
+
+  // try getting shell from parent process
   const processResult = (await find("pid", process.ppid)).at(0);
   const name = processResult?.name;
   return name != null ? supportedShells.find((shell) => name.includes(shell)) : undefined;
