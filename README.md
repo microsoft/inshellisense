@@ -106,18 +106,6 @@ key = "escape"
 
 Key names are matched against the Node.js [keypress](https://nodejs.org/api/readline.html#readlineemitkeypresseventsstream-interface) events.
 
-### Custom Prompts (Windows)
-
-If you are using a custom prompt in your shell (anything that is not the default PS1), you will need to set up a custom prompt in the inshellisense config file. This is because Windows strips details from your prompt which are required for inshellisense to work. To do this, update your config file in your home directory and add the following configuration:
-
-```toml
-[[prompt.bash]]
-regex = "(?<prompt>^>\\s*)" # the prompt match group will be used to detect the prompt
-postfix = ">" # the postfix is the last expected character in your prompt
-```
-
-This example adds custom prompt detection for bash where the prompt is expected to be only `> `. You can add similar configurations for other shells as well as well as multiple configurations for each shell.
-
 ## Contributing
 
 This project welcomes contributions and suggestions. Most contributions require you to agree to a

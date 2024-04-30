@@ -33,6 +33,7 @@ export class CommandManager {
   #shell: Shell;
   #promptRewrites: boolean;
   readonly #supportsProperOscPlacements = os.platform() !== "win32";
+  promptTerminator: string = "";
 
   constructor(terminal: Terminal, shell: Shell) {
     this.#terminal = terminal;
@@ -94,15 +95,17 @@ export class CommandManager {
       return;
     }
 
-    // User defined prompt
-    const inshellisenseConfig = getConfig();
-    if (this.#shell == Shell.Bash) {
-      if (inshellisenseConfig?.prompt?.bash != null) {
-        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.bash);
-        if (extractedPrompt) return extractedPrompt;
+    // dynamic prompt terminator
+    if (this.promptTerminator && lineText.trim().endsWith(this.promptTerminator)) {
+      const adjustedPrompt = this._adjustPrompt(lineText, lineText, this.promptTerminator);
+      if (adjustedPrompt) {
+        return adjustedPrompt;
       }
+    }
 
-      const bashPrompt = lineText.match(/^(?<prompt>.*\$\s?)/)?.groups?.prompt;
+    // User defined prompt
+    if (this.#shell == Shell.Bash) {
+      const bashPrompt = lineText.match(/^(?<prompt>\$\s?)/)?.groups?.prompt;
       if (bashPrompt) {
         const adjustedPrompt = this._adjustPrompt(bashPrompt, lineText, "$");
         if (adjustedPrompt) {
@@ -112,11 +115,6 @@ export class CommandManager {
     }
 
     if (this.#shell == Shell.Fish) {
-      if (inshellisenseConfig?.prompt?.fish != null) {
-        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.fish);
-        if (extractedPrompt) return extractedPrompt;
-      }
-
       const fishPrompt = lineText.match(/(?<prompt>.*>\s?)/)?.groups?.prompt;
       if (fishPrompt) {
         const adjustedPrompt = this._adjustPrompt(fishPrompt, lineText, ">");
@@ -127,11 +125,6 @@ export class CommandManager {
     }
 
     if (this.#shell == Shell.Nushell) {
-      if (inshellisenseConfig?.prompt?.nu != null) {
-        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.nu);
-        if (extractedPrompt) return extractedPrompt;
-      }
-
       const nushellPrompt = lineText.match(/(?<prompt>.*>\s?)/)?.groups?.prompt;
       if (nushellPrompt) {
         const adjustedPrompt = this._adjustPrompt(nushellPrompt, lineText, ">");
@@ -142,11 +135,6 @@ export class CommandManager {
     }
 
     if (this.#shell == Shell.Xonsh) {
-      if (inshellisenseConfig?.prompt?.xonsh != null) {
-        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.xonsh);
-        if (extractedPrompt) return extractedPrompt;
-      }
-
       let xonshPrompt = lineText.match(/(?<prompt>.*@\s?)/)?.groups?.prompt;
       if (xonshPrompt) {
         const adjustedPrompt = this._adjustPrompt(xonshPrompt, lineText, "@");
@@ -165,16 +153,6 @@ export class CommandManager {
     }
 
     if (this.#shell == Shell.Powershell || this.#shell == Shell.Pwsh) {
-      if (inshellisenseConfig?.prompt?.powershell != null) {
-        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.powershell);
-        if (extractedPrompt) return extractedPrompt;
-      }
-
-      if (inshellisenseConfig?.prompt?.pwsh != null) {
-        const extractedPrompt = this._extractPrompt(lineText, inshellisenseConfig.prompt.pwsh);
-        if (extractedPrompt) return extractedPrompt;
-      }
-
       const pwshPrompt = lineText.match(/(?<prompt>(\(.+\)\s)?(?:PS.+>\s?))/)?.groups?.prompt;
       if (pwshPrompt) {
         const adjustedPrompt = this._adjustPrompt(pwshPrompt, lineText, ">");

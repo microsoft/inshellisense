@@ -109,6 +109,11 @@ export class ISTerm implements IPty {
     return cwd;
   }
 
+  private _sanitizedPrompt(prompt: string): string {
+    // eslint-disable-next-line no-control-regex
+    return prompt.replace(/\x1b\[[0-9;]*m/g, "");
+  }
+
   private _handleIsSequence(data: string): boolean {
     const argsIndex = data.indexOf(";");
     const sequence = argsIndex === -1 ? data : data.substring(0, argsIndex);
@@ -123,6 +128,19 @@ export class ISTerm implements IPty {
         const cwd = data.split(";").at(1);
         if (cwd != null) {
           this.cwd = path.resolve(this._sanitizedCwd(this._deserializeIsMessage(cwd)));
+        }
+        break;
+      }
+      case IstermOscPt.Prompt: {
+        const prompt = data.split(";").slice(1).join(";");
+        if (prompt != null) {
+          const sanitizedPrompt = this._sanitizedPrompt(this._deserializeIsMessage(prompt));
+          const lastPromptLine = sanitizedPrompt.substring(sanitizedPrompt.lastIndexOf("\n")).trim();
+          const promptTerminator = lastPromptLine.substring(lastPromptLine.lastIndexOf(" ")).trim();
+          if (promptTerminator) {
+            this.#commandManager.promptTerminator = promptTerminator;
+            log.debug({ msg: "prompt terminator", promptTerminator });
+          }
         }
         break;
       }

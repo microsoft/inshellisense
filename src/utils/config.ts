@@ -87,6 +87,7 @@ const configSchema = {
         acceptSuggestion: bindingSchema,
       },
     },
+    // DEPRECATED: prompt patterns are no longer used
     prompt: {
       type: "object",
       nullable: true,

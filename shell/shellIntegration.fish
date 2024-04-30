@@ -6,6 +6,8 @@ function __is_escape_value
 	echo $argv \
 	| string replace --all '\\' '\\\\' \
 	| string replace --all ';' '\\x3b' \
+	| string replace --all '\n' '\x0a' \
+	| string replace --all '\e' '\\x1b' \
 	;
 end
 function __is_update_cwd --on-event fish_prompt; set __is_cwd (__is_escape_value "$PWD"); printf "\e]6973;CWD;$__is_cwd\a"; end
