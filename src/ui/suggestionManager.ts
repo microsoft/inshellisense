@@ -38,6 +38,7 @@ export class SuggestionManager {
   #activeSuggestionIdx: number;
   #suggestBlob?: SuggestionBlob;
   #shell: Shell;
+  #hideSuggestions: boolean = false;
 
   constructor(terminal: ISTerm, shell: Shell) {
     this.#term = terminal;
@@ -49,7 +50,7 @@ export class SuggestionManager {
 
   private async _loadSuggestions(): Promise<void> {
     const commandText = this.#term.getCommandState().commandText;
-    if (!commandText) {
+    if (!commandText || this.#hideSuggestions) {
       this.#suggestBlob = undefined;
       this.#activeSuggestionIdx = 0;
       return;
@@ -164,6 +165,12 @@ export class SuggestionManager {
     if (name == "return") {
       this.#term.clearCommand(); // clear the current command on enter
     }
+
+    // if suggestions are hidden, keep them hidden until during command navigation
+    if (this.#hideSuggestions) {
+      this.#hideSuggestions = name == "up" || name == "down";
+    }
+
     if (!this.#suggestBlob) {
       return false;
     }
@@ -176,6 +183,7 @@ export class SuggestionManager {
 
     if (name == dismissKey && shift == !!dismissShift && ctrl == !!dismissCtrl) {
       this.#suggestBlob = undefined;
+      this.#hideSuggestions = true;
     } else if (name == prevKey && shift == !!prevShift && ctrl == !!prevCtrl) {
       this.#activeSuggestionIdx = Math.max(0, this.#activeSuggestionIdx - 1);
     } else if (name == nextKey && shift == !!nextShift && ctrl == !!nextCtrl) {
