@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import ansi from "ansi-escapes";
+import { resetColor } from "../utils/ansi.js";
 import wrapAnsi from "wrap-ansi";
 import chalk from "chalk";
 import wcwidth from "wcwidth";
@@ -14,7 +15,7 @@ import wcwidth from "wcwidth";
  */
 export const renderBox = (rows: string[], width: number, x: number, borderColor?: string) => {
   const result = [];
-  const setColor = (text: string) => (borderColor ? chalk.hex(borderColor).apply(text) : text);
+  const setColor = (text: string) => resetColor + (borderColor ? chalk.hex(borderColor).apply(text) : text);
   result.push(ansi.cursorTo(x) + setColor("┌" + "─".repeat(width - 2) + "┐") + ansi.cursorTo(x));
   rows.forEach((row) => {
     result.push(ansi.cursorDown() + setColor("│") + row + setColor("│") + ansi.cursorTo(x));

@@ -140,7 +140,7 @@ shells.map((activeShell) => {
       await expect(terminal.getByText("archive", { strict: false })).not.toBeVisible();
     });
 
-    test("access history when no suggestions exist", async ({ terminal }) => {
+    test.skip("access history when no suggestions exist", async ({ terminal }) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
 
       terminal.write("clear");

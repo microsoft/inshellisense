@@ -7,6 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import url from "node:url";
 import fs from "node:fs";
+import stripAnsi from "strip-ansi";
 
 import pty, { IPty, IEvent } from "@homebridge/node-pty-prebuilt-multiarch";
 import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
@@ -16,8 +17,8 @@ import type { ICellData } from "@xterm/xterm/src/common/Types.js";
 import { CommandManager, CommandState } from "./commandManager.js";
 import log from "../utils/log.js";
 import { gitBashPath } from "../utils/shell.js";
-import ansi from "ansi-escapes";
 import styles from "ansi-styles";
+import * as ansi from "../utils/ansi.js";
 
 const ISTermOnDataEvent = "data";
 
@@ -109,6 +110,10 @@ export class ISTerm implements IPty {
     return cwd;
   }
 
+  private _sanitizedPrompt(prompt: string): string {
+    return stripAnsi(prompt);
+  }
+
   private _handleIsSequence(data: string): boolean {
     const argsIndex = data.indexOf(";");
     const sequence = argsIndex === -1 ? data : data.substring(0, argsIndex);
@@ -123,6 +128,19 @@ export class ISTerm implements IPty {
         const cwd = data.split(";").at(1);
         if (cwd != null) {
           this.cwd = path.resolve(this._sanitizedCwd(this._deserializeIsMessage(cwd)));
+        }
+        break;
+      }
+      case IstermOscPt.Prompt: {
+        const prompt = data.split(";").slice(1).join(";");
+        if (prompt != null) {
+          const sanitizedPrompt = this._sanitizedPrompt(this._deserializeIsMessage(prompt));
+          const lastPromptLine = sanitizedPrompt.substring(sanitizedPrompt.lastIndexOf("\n")).trim();
+          const promptTerminator = lastPromptLine.substring(lastPromptLine.lastIndexOf(" ")).trim();
+          if (promptTerminator) {
+            this.#commandManager.promptTerminator = promptTerminator;
+            log.debug({ msg: "prompt terminator", promptTerminator });
+          }
         }
         break;
       }
@@ -255,7 +273,7 @@ export class ISTerm implements IPty {
     const currentCursorPosition = this.#term.buffer.active.cursorY + this.#term.buffer.active.baseY;
     const writeLine = (y: number) => {
       const line = this.#term.buffer.active.getLine(y);
-      const ansiLine = ["\x1b[0m"];
+      const ansiLine = [ansi.resetColor, ansi.resetLine];
       if (line == null) return "";
       let prevCell: ICellData | undefined;
       for (let x = 0; x < line.length; x++) {
@@ -265,7 +283,7 @@ export class ISTerm implements IPty {
         const sameColor = this._sameColor(prevCell, cell);
         const sameAccents = this._sameAccent(prevCell, cell);
         if (!sameColor || !sameAccents) {
-          ansiLine.push("\x1b[0m");
+          ansiLine.push(ansi.resetColor);
         }
         if (!sameColor) {
           ansiLine.push(this._getAnsiColors(cell));
@@ -273,7 +291,7 @@ export class ISTerm implements IPty {
         if (!sameAccents) {
           ansiLine.push(this._getAnsiAccents(cell));
         }
-        ansiLine.push(chars == "" ? " " : chars);
+        ansiLine.push(chars == "" ? ansi.cursorForward() : chars);
         prevCell = cell;
       }
       return ansiLine.join("");
