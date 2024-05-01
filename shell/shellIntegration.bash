@@ -59,7 +59,11 @@ __is_update_cwd() {
 }
 
 __is_report_prompt() {
-	__is_prompt=${__is_original_PS1@P}
+	if ((BASH_VERSINFO[0] >= 4)); then
+		__is_prompt=${__is_original_PS1@P}
+	else
+		__is_prompt=${__is_original_PS1}
+	fi
 	__is_prompt="$(builtin printf "%s" "${__is_prompt//[$'\001'$'\002']}")"
 	builtin printf "\e]6973;PROMPT;%s\a" "$(__is_escape_value "${__is_prompt}")"
 }
