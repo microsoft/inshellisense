@@ -111,7 +111,6 @@ export class ISTerm implements IPty {
   }
 
   private _sanitizedPrompt(prompt: string): string {
-    // eslint-disable-next-line no-control-regex
     return stripAnsi(prompt);
   }
 
