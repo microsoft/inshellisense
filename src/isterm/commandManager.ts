@@ -2,11 +2,10 @@
 // Licensed under the MIT License.
 
 import convert from "color-convert";
-import { IBufferCell, IMarker, Terminal } from "@xterm/headless";
+import { IBufferCell, IBufferLine, IMarker, Terminal } from "@xterm/headless";
 import os from "node:os";
 import { getShellPromptRewrites, Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
-import { getConfig, PromptPattern } from "../utils/config.js";
 
 const maxPromptPollDistance = 10;
 
@@ -73,16 +72,6 @@ export class CommandManager {
     this.handlePromptStart();
     this.#maxCursorY = 0;
     this.#previousCommandLines = new Set();
-  }
-
-  private _extractPrompt(lineText: string, patterns: PromptPattern[]): string | undefined {
-    for (const { regex, postfix } of patterns) {
-      const customPrompt = lineText.match(new RegExp(regex))?.groups?.prompt;
-      const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, postfix);
-      if (adjustedPrompt) {
-        return adjustedPrompt;
-      }
-    }
   }
 
   private _getWindowsPrompt(y: number) {
@@ -221,6 +210,75 @@ export class CommandManager {
     this.#activeCommand = {};
   }
 
+  private _getCommandLines(): IBufferLine[] {
+    const lines = [];
+    let lineY = this.#activeCommand.promptEndMarker!.line;
+    let line = this.#terminal.buffer.active.getLine(this.#activeCommand.promptEndMarker!.line);
+    const absoluteY = this.#terminal.buffer.active.baseY + this.#terminal.buffer.active.cursorY;
+    for (; lineY < this.#terminal.buffer.active.baseY + this.#terminal.rows; ) {
+      if (line) lines.push(line);
+
+      lineY += 1;
+      line = this.#terminal.buffer.active.getLine(lineY);
+
+      const lineWrapped = line?.isWrapped;
+      const cursorWrapped = absoluteY > lineY - 1;
+      const wrapped = lineWrapped || cursorWrapped;
+
+      if (!wrapped) break;
+    }
+
+    return lines;
+  }
+
+  private _getCommandText(commandLines: IBufferLine[]): { suggestion: string; preCursorCommand: string; postCursorCommand: string } {
+    const absoluteY = this.#terminal.buffer.active.baseY + this.#terminal.buffer.active.cursorY;
+    const cursorLine = Math.max(absoluteY - this.#activeCommand.promptEndMarker!.line, 0);
+
+    let preCursorCommand = "";
+    let postCursorCommand = "";
+    let suggestion = "";
+    for (const [y, line] of commandLines.entries()) {
+      const startX = y == 0 ? this.#activeCommand.promptText?.length ?? 0 : 0;
+      for (let x = startX; x < this.#terminal.cols; x++) {
+        if (postCursorCommand.endsWith("    ")) break; // assume that a command that ends with 4 spaces is terminated, avoids capturing right prompts
+
+        const cell = line.getCell(x);
+        if (cell == null) continue;
+        const chars = cell.getChars() == "" ? " " : cell.getChars();
+
+        const beforeCursor = y < cursorLine || (y == cursorLine && x < this.#terminal.buffer.active.cursorX);
+        const isCommand = !this._isSuggestion(cell) && suggestion.length == 0;
+        if (isCommand && beforeCursor) {
+          preCursorCommand += chars;
+        } else if (isCommand) {
+          postCursorCommand += chars;
+        } else {
+          suggestion += chars;
+        }
+      }
+    }
+
+    log.debug({ msg: "command text", preCursorCommand, postCursorCommand, suggestion });
+    return { suggestion, preCursorCommand, postCursorCommand };
+  }
+
+  private _getCommandOutputStatus(commandLines: number): boolean {
+    const outputLineY = this.#activeCommand.promptEndMarker!.line + commandLines;
+    const maxLineY = this.#terminal.buffer.active.baseY + this.#terminal.rows;
+    if (outputLineY >= maxLineY) return false;
+
+    const line = this.#terminal.buffer.active.getLine(outputLineY);
+    let cell = undefined;
+    for (let i = 0; i < this.#terminal.cols; i++) {
+      cell = line?.getCell(i, cell);
+      if (cell?.getChars() != "") {
+        return true;
+      }
+    }
+    return false;
+  }
+
   termSync() {
     if (this.#activeCommand.promptEndMarker == null || this.#activeCommand.promptStartMarker == null) {
       return;
@@ -255,63 +313,17 @@ export class CommandManager {
 
     // if the prompt is set, now parse out the values from the terminal
     if (this.#activeCommand.promptText != null) {
-      let lineY = this.#activeCommand.promptEndMarker!.line;
-      let line = this.#terminal.buffer.active.getLine(this.#activeCommand.promptEndMarker!.line);
-      let command = "";
-      let wrappedCommand = "";
-      let suggestions = "";
-      let isWrapped = false;
-      for (; lineY < this.#terminal.buffer.active.baseY + this.#terminal.rows; ) {
-        for (let i = lineY == this.#activeCommand.promptEndMarker!.line ? this.#activeCommand.promptText.length : 0; i < this.#terminal.cols; i++) {
-          if (command.endsWith("    ")) break; // assume that a command that ends with 4 spaces is terminated, avoids capturing right prompts
-          const cell = line?.getCell(i);
-          if (cell == null) continue;
-          const chars = cell.getChars();
-          const cleanedChars = chars == "" ? " " : chars;
-          if (!this._isSuggestion(cell) && suggestions.length == 0) {
-            command += cleanedChars;
-            wrappedCommand += cleanedChars;
-          } else {
-            suggestions += cleanedChars;
-          }
-        }
-        lineY += 1;
-        line = this.#terminal.buffer.active.getLine(lineY);
+      const commandLines = this._getCommandLines();
+      const { suggestion, preCursorCommand, postCursorCommand } = this._getCommandText(commandLines);
+      const command = preCursorCommand + postCursorCommand.trim();
 
-        const wrapped = line?.isWrapped || this.#terminal.buffer.active.cursorY + this.#terminal.buffer.active.baseY != lineY - 1;
-        isWrapped = isWrapped || wrapped;
+      const cursorAtEndOfInput = postCursorCommand.trim() == "";
+      const hasOutput = this._getCommandOutputStatus(commandLines.length);
 
-        if (!wrapped) {
-          break;
-        }
-        wrappedCommand = "";
-      }
-
-      const cursorAtEndOfInput = isWrapped
-        ? wrappedCommand.trim().length % this.#terminal.cols <= this.#terminal.buffer.active.cursorX
-        : (this.#activeCommand.promptText.length + command.trimEnd().length) % this.#terminal.cols <= this.#terminal.buffer.active.cursorX;
-
-      let hasOutput = false;
-
-      let cell = undefined;
-      for (let i = 0; i < this.#terminal.cols; i++) {
-        cell = line?.getCell(i, cell);
-        if (cell == null) continue;
-        hasOutput = cell.getChars() != "";
-        if (hasOutput) {
-          break;
-        }
-      }
-
-      const postfixActive = isWrapped
-        ? wrappedCommand.trim().length < this.#terminal.buffer.active.cursorX
-        : this.#activeCommand.promptText.length + command.trimEnd().length < this.#terminal.buffer.active.cursorX;
-
-      const commandPostfix = postfixActive ? " " : "";
       this.#activeCommand.persistentOutput = this.#activeCommand.hasOutput && hasOutput;
       this.#activeCommand.hasOutput = hasOutput;
-      this.#activeCommand.suggestionsText = suggestions.trim();
-      this.#activeCommand.commandText = command.trim() + commandPostfix;
+      this.#activeCommand.suggestionsText = suggestion;
+      this.#activeCommand.commandText = command;
       this.#activeCommand.cursorTerminated = cursorAtEndOfInput;
     }
 
@@ -320,6 +332,8 @@ export class CommandManager {
       ...this.#activeCommand,
       promptEndMarker: this.#activeCommand.promptEndMarker?.line,
       promptStartMarker: this.#activeCommand.promptStartMarker?.line,
+      cursorX: this.#terminal.buffer.active.cursorX,
+      cursorY: globalCursorPosition,
     });
   }
 }

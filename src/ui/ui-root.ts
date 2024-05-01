@@ -41,23 +41,15 @@ export const render = async (shell: Shell, underTest: boolean, login: boolean) =
         if (term.getCursorState().remainingLines != 0) {
           writeOutput(ansi.cursorHide + ansi.cursorSavePosition + eraseLinesBelow(linesOfInterest + 1) + ansi.cursorRestorePosition);
         }
-        writeOutput(data);
-        writeOutput(ansi.cursorHide);
-        writeOutput(ansi.cursorSavePosition);
-        writeOutput(ansi.cursorPrevLine.repeat(linesOfInterest));
-        writeOutput(term.getCells(linesOfInterest, "above"));
-        writeOutput(ansi.cursorRestorePosition);
-        writeOutput(ansi.cursorShow);
-
-        // writeOutput(
-        //   data +
-        //     ansi.cursorHide +
-        //     ansi.cursorSavePosition +
-        //     ansi.cursorPrevLine.repeat(linesOfInterest) +
-        //     term.getCells(linesOfInterest, "above") +
-        //     ansi.cursorRestorePosition +
-        //     ansi.cursorShow,
-        // );
+        writeOutput(
+          data +
+            ansi.cursorHide +
+            ansi.cursorSavePosition +
+            ansi.cursorPrevLine.repeat(linesOfInterest) +
+            term.getCells(linesOfInterest, "above") +
+            ansi.cursorRestorePosition +
+            ansi.cursorShow,
+        );
       } else {
         writeOutput(ansi.cursorHide + ansi.cursorSavePosition + eraseLinesBelow(linesOfInterest + 1) + ansi.cursorRestorePosition + ansi.cursorShow + data);
       }

@@ -16,8 +16,9 @@ import type { ICellData } from "@xterm/xterm/src/common/Types.js";
 import { CommandManager, CommandState } from "./commandManager.js";
 import log from "../utils/log.js";
 import { gitBashPath } from "../utils/shell.js";
-import ansi from "ansi-escapes";
 import styles from "ansi-styles";
+import wcwidth from "wcwidth";
+import * as ansi from "../utils/ansi.js";
 
 const ISTermOnDataEvent = "data";
 
@@ -273,7 +274,8 @@ export class ISTerm implements IPty {
     const currentCursorPosition = this.#term.buffer.active.cursorY + this.#term.buffer.active.baseY;
     const writeLine = (y: number) => {
       const line = this.#term.buffer.active.getLine(y);
-      const ansiLine = ["\x1b[0m"];
+      const ansiLine = [ansi.resetColor];
+      let ansiLineWidth = 0;
       if (line == null) return "";
       let prevCell: ICellData | undefined;
       for (let x = 0; x < line.length; x++) {
@@ -283,7 +285,7 @@ export class ISTerm implements IPty {
         const sameColor = this._sameColor(prevCell, cell);
         const sameAccents = this._sameAccent(prevCell, cell);
         if (!sameColor || !sameAccents) {
-          ansiLine.push("\x1b[0m");
+          ansiLine.push(ansi.resetColor);
         }
         if (!sameColor) {
           ansiLine.push(this._getAnsiColors(cell));
@@ -291,10 +293,12 @@ export class ISTerm implements IPty {
         if (!sameAccents) {
           ansiLine.push(this._getAnsiAccents(cell));
         }
-        ansiLine.push(chars == "" ? " " : chars);
+        ansiLine.push(chars);
+        ansiLineWidth += wcwidth(chars);
         prevCell = cell;
       }
-      return ansiLine.join("");
+      const padding = " ".repeat(Math.max(line.length - ansiLineWidth, 0));
+      return ansiLine.join("") + padding;
     };
 
     const lines = [];
