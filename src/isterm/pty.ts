@@ -7,6 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import url from "node:url";
 import fs from "node:fs";
+import stripAnsi from "strip-ansi";
 
 import pty, { IPty, IEvent } from "@homebridge/node-pty-prebuilt-multiarch";
 import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
@@ -17,7 +18,6 @@ import { CommandManager, CommandState } from "./commandManager.js";
 import log from "../utils/log.js";
 import { gitBashPath } from "../utils/shell.js";
 import styles from "ansi-styles";
-import wcwidth from "wcwidth";
 import * as ansi from "../utils/ansi.js";
 
 const ISTermOnDataEvent = "data";
@@ -112,7 +112,7 @@ export class ISTerm implements IPty {
 
   private _sanitizedPrompt(prompt: string): string {
     // eslint-disable-next-line no-control-regex
-    return prompt.replace(/\x1b\[[0-9;]*m/g, "");
+    return stripAnsi(prompt);
   }
 
   private _handleIsSequence(data: string): boolean {
@@ -274,8 +274,7 @@ export class ISTerm implements IPty {
     const currentCursorPosition = this.#term.buffer.active.cursorY + this.#term.buffer.active.baseY;
     const writeLine = (y: number) => {
       const line = this.#term.buffer.active.getLine(y);
-      const ansiLine = [ansi.resetColor];
-      let ansiLineWidth = 0;
+      const ansiLine = [ansi.resetColor, ansi.resetLine];
       if (line == null) return "";
       let prevCell: ICellData | undefined;
       for (let x = 0; x < line.length; x++) {
@@ -293,12 +292,10 @@ export class ISTerm implements IPty {
         if (!sameAccents) {
           ansiLine.push(this._getAnsiAccents(cell));
         }
-        ansiLine.push(chars);
-        ansiLineWidth += wcwidth(chars);
+        ansiLine.push(chars == "" ? ansi.cursorForward() : chars);
         prevCell = cell;
       }
-      const padding = " ".repeat(Math.max(line.length - ansiLineWidth, 0));
-      return ansiLine.join("") + padding;
+      return ansiLine.join("");
     };
 
     const lines = [];
