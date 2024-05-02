@@ -187,11 +187,11 @@ export class CommandManager {
     const dim = (cell?.isDim() ?? 0) > 0;
     const italic = (cell?.isItalic() ?? 0) > 0;
     const dullColor = color == 8 || color == 7 || (color ?? 0) > 235 || (color == 15 && dim);
-    const dullItalic = (color ?? 0) > 235 || (dullColor && italic);
+    const dimItalic = dim || italic;
     if (this.#shell == Shell.Powershell) {
       return false;
     } else if (this.#shell == Shell.Pwsh) {
-      return dullItalic;
+      return dimItalic;
     }
     return dullColor;
   }
