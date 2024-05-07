@@ -47,6 +47,8 @@ is init xonsh >> ~/.xonshrc
 is init nu >> $nu.env-path
 ```
 
+When updating your shell configuration in the future, make sure the inshellisense plugin is the last command in the file.
+
 ### Usage
 
 | Action                                | Command | Description                                      |
