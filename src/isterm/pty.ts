@@ -111,7 +111,9 @@ export class ISTerm implements IPty {
   }
 
   private _sanitizedPrompt(prompt: string): string {
-    return stripAnsi(prompt);
+    // eslint-disable-next-line no-control-regex -- strip OSC control sequences
+    const oscStrippedPrompt = prompt.replace(/\x1b\][0-9]+;.*\x07/g, "");
+    return stripAnsi(oscStrippedPrompt);
   }
 
   private _handleIsSequence(data: string): boolean {

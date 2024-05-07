@@ -8,7 +8,7 @@ if ($env:ISTERM_TESTING -eq "1") {
 }
 
 function Global:__IS-Escape-Value([string]$value) {
-    [regex]::Replace($value, "[$([char]0x1b)\\\n;]", { param($match)
+    [regex]::Replace($value, "[$([char]0x1b)$([char]0x07)\\\n;]", { param($match)
             -Join (
                 [System.Text.Encoding]::UTF8.GetBytes($match.Value) | ForEach-Object { '\x{0:x2}' -f $_ }
             )

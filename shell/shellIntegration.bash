@@ -44,6 +44,8 @@ __is_escape_value() {
 			token="\x0a"
 		elif [ "$byte" = $'\e' ]; then
 			token="\\x1b"
+		elif [ "$byte" = $'\a' ]; then
+			token="\\x07"
 		else
 			token="$byte"
 		fi

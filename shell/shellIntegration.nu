@@ -1,4 +1,4 @@
-let __is_escape_value = {|x| $x | str replace --all "\\" "\\\\" | str replace --all ";" "\\x3b" | str replace --all "\n" '\x0a' | str replace --all "\e" "\\x1b" }
+let __is_escape_value = {|x| $x | str replace --all "\\" "\\\\" | str replace --all ";" "\\x3b" | str replace --all "\n" '\x0a' | str replace --all "\e" "\\x1b" | str replace --all "\a" "\\x07" }
 let __is_original_PROMPT_COMMAND = if 'PROMPT_COMMAND' in $env { $env.PROMPT_COMMAND } else { "" }
 let __is_original_PROMPT_INDICATOR = if 'PROMPT_INDICATOR' in $env { $env.PROMPT_INDICATOR } else { "" }
 

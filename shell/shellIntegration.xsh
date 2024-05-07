@@ -12,7 +12,7 @@ def __is_escape_value(value: str) -> str:
     byte_list = [bytes([byte]).decode("utf-8") for byte in list(value.encode("utf-8"))]
     return "".join(
         [
-            "\\x3b" if byte == ";" else "\\\\" if byte == "\\" else "\\x1b" if byte == "\x1b" else "\x0a" if byte == "\n" else byte
+            "\\x3b" if byte == ";" else "\\\\" if byte == "\\" else "\\x1b" if byte == "\x1b" else "\x0a" if byte == "\n"else "\\x07" if byte == "\x07" else byte
             for byte in byte_list
         ]
     )
