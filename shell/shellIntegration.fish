@@ -9,6 +9,7 @@ function __is_escape_value
 	| string replace -a '\\' '\\\\' \
 	| string replace -a ';' '\\x3b' \
 	| string replace -a \e '\\x1b' \
+	| string replace -a \a '\\x07' \
 	| string split \n | string join '\x0a' \
 	;
 end
