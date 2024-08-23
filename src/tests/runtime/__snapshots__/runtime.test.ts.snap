@@ -457,7 +457,7 @@ exports[`parseCommand generatorUsingPartialInput 1`] = `
       "allNames": [
         "Microsoft.Azure.WebJobs.Core",
       ],
-      "description": "This library simplifies the task of adding background processing to your Microsoft Azure Web Sites. The SDK uses Microsoft Azure Storage, triggering a function in your program when items are added to Queues and Blobs. A dashboard provides rich monitoring and diagnostics for the programs that you write by using the SDK. For more information, please visit http://go.microsoft.com/fwlink/?LinkID=320971",
+      "description": "This package provides the core Types and Attribute definitions for the WebJobs SDK. For more information, please visit https://go.microsoft.com/fwlink/?linkid=2279708.",
       "icon": "📀",
       "insertValue": "Microsoft.Azure.WebJobs.Core",
       "name": "Microsoft.Azure.WebJobs.Core",
