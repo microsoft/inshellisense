@@ -8,6 +8,7 @@ import path from "node:path";
 import url from "node:url";
 import fs from "node:fs";
 import stripAnsi from "strip-ansi";
+import { Unicode11Addon } from "@xterm/addon-unicode11";
 
 import pty, { IPty, IEvent } from "@homebridge/node-pty-prebuilt-multiarch";
 import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
@@ -62,7 +63,11 @@ export class ISTerm implements IPty {
     this.rows = this.#pty.rows;
     this.process = this.#pty.process;
 
+    const unicode11Addon = new Unicode11Addon();
     this.#term = new xterm.Terminal({ allowProposedApi: true, rows, cols });
+    this.#term.loadAddon(unicode11Addon);
+    this.#term.unicode.activeVersion = "11";
+
     this.#term.parser.registerOscHandler(IsTermOscPs, (data) => this._handleIsSequence(data));
     this.#commandManager = new CommandManager(this.#term, shell);
     this.#shell = shell;
