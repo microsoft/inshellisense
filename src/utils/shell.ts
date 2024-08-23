@@ -62,9 +62,9 @@ const findPareentProcess = async () => {
   try {
     return (await find("pid", process.ppid)).at(0);
   } catch (e) {
-    log.debug({msg: `error finding parent process: ${e}`});
+    log.debug({ msg: `error finding parent process: ${e}` });
   }
-}
+};
 
 export const inferShell = async () => {
   // try getting shell from shell specific env variables
