@@ -10,6 +10,7 @@ import url from "node:url";
 import os from "node:os";
 import fsAsync from "node:fs/promises";
 import { KeyPressEvent } from "../ui/suggestionManager.js";
+import log from "./log.js";
 
 export enum Shell {
   Bash = "bash",
@@ -57,6 +58,14 @@ export const setupZshDotfiles = async () => {
   await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-login.zsh"), path.join(zdotdir, ".zlogin"));
 };
 
+const findPareentProcess = async () => {
+  try {
+    return (await find("pid", process.ppid)).at(0);
+  } catch (e) {
+    log.debug({ msg: `error finding parent process: ${e}` });
+  }
+};
+
 export const inferShell = async () => {
   // try getting shell from shell specific env variables
   if (process.env.NU_VERSION != null) {
@@ -81,7 +90,7 @@ export const inferShell = async () => {
   }
 
   // try getting shell from parent process
-  const processResult = (await find("pid", process.ppid)).at(0);
+  const processResult = await findPareentProcess();
   const name = processResult?.name;
   return name != null ? supportedShells.find((shell) => name.includes(shell)) : undefined;
 };
