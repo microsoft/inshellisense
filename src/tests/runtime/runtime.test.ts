@@ -38,3 +38,21 @@ describe(`parseCommand`, () => {
     });
   });
 });
+
+const platformTestData = [
+  { name: "macosSpawnCommand", command: "brew install mullvad-brow", platform: "darwin", maxSuggestions: 1, expectedNames: ["mullvad-browser"] },
+];
+
+describe(`parsePlatformCommand`, () => {
+  platformTestData.forEach(({ command, name, maxSuggestions, expectedNames, platform }) => {
+    if (platform != null && process.platform != platform) return;
+    test(name, async () => {
+      const suggestions = await getSuggestions(command, process.cwd(), Shell.Cmd);
+      if (suggestions != null && suggestions.suggestions != null) {
+        suggestions.suggestions = suggestions?.suggestions.slice(0, maxSuggestions);
+      }
+      const names = suggestions?.suggestions.map((s) => s.allNames).flat() ?? [];
+      expect(names).toEqual(expect.arrayContaining(expectedNames));
+    });
+  });
+});
