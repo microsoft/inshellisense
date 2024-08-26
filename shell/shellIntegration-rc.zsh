@@ -1,3 +1,5 @@
+autoload -U add-zsh-hook
+
 if [[ -f $USER_ZDOTDIR/.zshrc ]]; then
 	ZDOTDIR=$USER_ZDOTDIR
 	. $USER_ZDOTDIR/.zshrc
