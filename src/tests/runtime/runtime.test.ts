@@ -41,7 +41,7 @@ describe(`parseCommand`, () => {
 
 const platformTestData = [
   { name: "macosSpawnCommand", command: "brew install mullvad-brow", platform: "darwin", maxSuggestions: 1, expectedNames: ["mullvad-browser"] },
-]
+];
 
 describe(`parsePlatformCommand`, () => {
   platformTestData.forEach(({ command, name, maxSuggestions, expectedNames, platform }) => {
