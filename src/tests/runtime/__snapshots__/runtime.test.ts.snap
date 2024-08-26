@@ -487,6 +487,25 @@ exports[`parseCommand loadSpec 1`] = `
 }
 `;
 
+exports[`parseCommand macosSpawnCommand 1`] = `
+{
+  "charactersToDrop": 12,
+  "suggestions": [
+    {
+      "allNames": [
+        "mullvad-browser",
+      ],
+      "description": "Cask",
+      "icon": "🍺",
+      "insertValue": undefined,
+      "name": "mullvad-browser",
+      "pathy": false,
+      "priority": 52,
+    },
+  ],
+}
+`;
+
 exports[`parseCommand noArgsArgumentGiven 1`] = `
 {
   "charactersToDrop": 0,

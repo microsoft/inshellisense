@@ -16,14 +16,14 @@ export type ExecuteShellCommandTTYResult = {
 export const buildExecuteShellCommand =
   (timeout: number): Fig.ExecuteCommandFunction =>
   async ({ command, env, args, cwd }: Fig.ExecuteCommandInput): Promise<Fig.ExecuteCommandOutput> => {
-    const child = spawn(command, args, { cwd, env: { ...env, ISTERM: "1" } });
+    const child = spawn(command, args, { cwd, env: { ...process.env, ...env, ISTERM: "1" } });
     setTimeout(() => child.kill("SIGKILL"), timeout);
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (data) => (stdout += data));
     child.stderr.on("data", (data) => (stderr += data));
     child.on("error", (err) => {
-      log.debug({ msg: "shell command failed", e: err.message });
+      log.debug({ msg: "shell command failed", command, args, e: err.message });
     });
     return new Promise((resolve) => {
       child.on("close", (code) => {

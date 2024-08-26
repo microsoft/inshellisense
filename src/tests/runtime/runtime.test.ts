@@ -24,11 +24,12 @@ const testData = [
   { name: "loadSpec", command: "aws acm add" },
   { name: "noArgsArgumentGiven", command: "gcc lab ", maxSuggestions: 3 },
   { name: "generatorUsingPartialInput", command: "dotnet add package Microsoft.Azure.WebJobs.Cor", maxSuggestions: 1 },
+  { name: "macosSpawnCommand", command: "brew install mullvad-brow", platform: "darwin" },
 ];
 
 describe(`parseCommand`, () => {
-  testData.forEach(({ command, name, skip, maxSuggestions }) => {
-    if (skip) return;
+  testData.forEach(({ command, name, skip, maxSuggestions, platform }) => {
+    if (skip || (platform != null && process.platform == platform)) return;
     test(name, async () => {
       const suggestions = await getSuggestions(command, process.cwd(), Shell.Cmd);
       if (suggestions != null && suggestions.suggestions != null) {
