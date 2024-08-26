@@ -29,7 +29,7 @@ const testData = [
 
 describe(`parseCommand`, () => {
   testData.forEach(({ command, name, skip, maxSuggestions, platform }) => {
-    if (skip || (platform != null && process.platform == platform)) return;
+    if (skip || (platform != null && process.platform != platform)) return;
     test(name, async () => {
       const suggestions = await getSuggestions(command, process.cwd(), Shell.Cmd);
       if (suggestions != null && suggestions.suggestions != null) {
