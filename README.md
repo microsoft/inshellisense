@@ -44,7 +44,7 @@ is init powershell >> $profile
 is init xonsh >> ~/.xonshrc
 
 # nushell
-is init nu >> $nu.env-path
+is init nu | save $nu.env-path --append
 ```
 
 > [!NOTE]  
