@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import os from "node:os";
 import path from "node:path";
 import fs from "node:fs";
@@ -28,7 +30,7 @@ const debug = (content: object) => {
   });
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 const getLogFunction =
   (level: "error" | "log") =>
   (...data: any[]) =>
