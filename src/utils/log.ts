@@ -30,7 +30,6 @@ const debug = (content: object) => {
   });
 };
 
-
 const getLogFunction =
   (level: "error" | "log") =>
   (...data: any[]) =>
