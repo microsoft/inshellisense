@@ -28,9 +28,21 @@ const debug = (content: object) => {
   });
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getLogFunction = (level: "error" | "log") => (...data: any[]) => debug({msg: `console.${level}`, data: data.toString()});
+
+const logConsole = {
+  ...console,
+  log: getLogFunction("log"),
+  error: getLogFunction("error"),
+}
+
+// eslint-disable-next-line no-global-assign
+const overrideConsole = () => console = logConsole
+
 export const enable = async () => {
   await reset();
   logEnabled = true;
 };
 
-export default { reset, debug, enable };
+export default { reset, debug, enable, overrideConsole };

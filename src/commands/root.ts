@@ -33,6 +33,8 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
 
   await loadLocalSpecsSet();
 
+  log.overrideConsole();
+
   const shell = options.shell ?? ((await inferShell()) as unknown as Shell | undefined);
   if (shell == null) {
     program.error(`Unable to identify shell, use the -s/--shell option to provide your shell`, { exitCode: 1 });
