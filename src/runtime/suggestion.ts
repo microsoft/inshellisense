@@ -9,7 +9,7 @@ import { runTemplates } from "./template.js";
 import { Suggestion, SuggestionBlob } from "./model.js";
 import log from "../utils/log.js";
 
-enum SuggestionIcons {
+export enum SuggestionIcons {
   File = "📄",
   Folder = "📁",
   Subcommand = "📦",
