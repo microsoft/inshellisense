@@ -20,4 +20,4 @@ if [ "$ISTERM_TESTING" = "1" ]
 	function is_user_prompt; printf '> '; end
 end
 
-function fish_prompt; printf (__is_prompt_start); printf (is_user_prompt); printf (__is_prompt_end); end
+function fish_prompt; __is_prompt_start; is_user_prompt; __is_prompt_end; end
