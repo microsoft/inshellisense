@@ -21,7 +21,7 @@ export const runGenerator = async (generator: Fig.Generator, tokens: string[], c
   // TODO: support trigger
   const { script, postProcess, scriptTimeout, splitOn, custom, template, filterTemplateSuggestions } = generator;
 
-  const executeShellCommand = buildExecuteShellCommand(scriptTimeout ?? 5000);
+  const executeShellCommand = await buildExecuteShellCommand(scriptTimeout ?? 5000);
   const suggestions = [];
   try {
     if (script) {

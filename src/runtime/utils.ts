@@ -6,17 +6,26 @@ import { spawn } from "node:child_process";
 import fsAsync from "node:fs/promises";
 
 import { CommandToken } from "./parser.js";
-import { getPathSeperator, Shell } from "../utils/shell.js";
+import { getPathSeperator, gitBashPath, Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
 
 export type ExecuteShellCommandTTYResult = {
   code: number | null;
 };
 
+const getExecutionShell = async (): Promise<undefined | string> => {
+  if (process.platform !== "win32") return;
+  try {
+    return await gitBashPath();
+  } catch (e) {
+    log.debug({ msg: "failed to load posix shell for windows child_process.spawn, some generators might fail", error: e });
+  }
+};
+
 export const buildExecuteShellCommand =
-  (timeout: number): Fig.ExecuteCommandFunction =>
+  async (timeout: number): Promise<Fig.ExecuteCommandFunction> =>
   async ({ command, env, args, cwd }: Fig.ExecuteCommandInput): Promise<Fig.ExecuteCommandOutput> => {
-    const child = spawn(command, args, { cwd, env: { ...process.env, ...env, ISTERM: "1" } });
+    const child = spawn(command, args, { cwd, env: { ...process.env, ...env, ISTERM: "1" }, shell: await getExecutionShell() });
     setTimeout(() => child.kill("SIGKILL"), timeout);
     let stdout = "";
     let stderr = "";
