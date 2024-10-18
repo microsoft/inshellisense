@@ -1,28 +1,63 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import wcwidth from "wcwidth";
+import { Shell } from "../utils/shell.js";
+import { getShellWhitespaceEscapeChar } from "./utils.js";
+
 export type CommandToken = {
   token: string;
+  tokenLength: number;
   complete: boolean;
   isOption: boolean;
   isPersistent?: boolean;
   isPath?: boolean;
   isPathComplete?: boolean;
   isQuoted?: boolean; // used for any token starting with quotes
+};
+
+type InternalCommandToken = CommandToken & {
   isQuoteContinued?: boolean; // used for strings that are fully wrapped in quotes with content after the quotes
-  isQuoteComplete?: boolean; // used for strings fully wrapped in quotes
 };
 
 const cmdDelim = /(\|\|)|(&&)|(;)|(\|)/;
 const spaceRegex = /\s/;
 
-export const parseCommand = (command: string): CommandToken[] => {
+export const parseCommand = (command: string, shell: Shell): CommandToken[] => {
   const lastCommand = command.split(cmdDelim).at(-1)?.trimStart();
-  return lastCommand ? lex(lastCommand) : [];
+  const tokens = lastCommand ? lex(lastCommand, shell) : [];
+  return sanitizeTokens(tokens, shell);
 };
 
-const lex = (command: string): CommandToken[] => {
-  const tokens: CommandToken[] = [];
+const sanitizeTokens = (cmdTokens: InternalCommandToken[], shell: Shell): CommandToken[] => unwrapQuotedTokens(unescapeSpaceTokens(cmdTokens, shell));
+
+const unescapeSpaceTokens = (cmdTokens: InternalCommandToken[], shell: Shell): CommandToken[] => {
+  const escapeChar = getShellWhitespaceEscapeChar(shell);
+  return cmdTokens.map((cmdToken) => {
+    const { token, isQuoted } = cmdToken;
+    if (!isQuoted && token.includes(`${escapeChar} `)) {
+      return { ...cmdToken, token: token.replaceAll(`${escapeChar} `, " ") };
+    }
+    return cmdToken;
+  });
+};
+
+// need to unwrap tokens that are quoted with content after the quotes like `"hello"world`
+const unwrapQuotedTokens = (cmdTokens: InternalCommandToken[]): CommandToken[] => {
+  return cmdTokens.map((cmdToken) => {
+    const { token, isQuoteContinued } = cmdToken;
+    if (isQuoteContinued) {
+      const quoteChar = token[0];
+      const unquotedToken = token.replaceAll(`\\${quoteChar}`, "\u001B").replaceAll(quoteChar, "").replaceAll("\u001B", quoteChar);
+      return { ...cmdToken, token: unquotedToken };
+    }
+    return cmdToken;
+  });
+};
+
+const lex = (command: string, shell: Shell): InternalCommandToken[] => {
+  const tokens: InternalCommandToken[] = [];
+  const escapeChar = getShellWhitespaceEscapeChar(shell);
   let [readingQuotedString, readingQuoteContinuedString, readingFlag, readingCmd] = [false, false, false, false];
   let readingIdx = 0;
   let readingQuoteChar = "";
@@ -40,22 +75,24 @@ const lex = (command: string): CommandToken[] => {
       return;
     }
 
-    if (readingQuotedString && char === readingQuoteChar && command.at(idx - 1) !== "\\" && !spaceRegex.test(command.at(idx + 1) ?? " ")) {
+    if (readingQuotedString && char === readingQuoteChar && command.at(idx - 1) !== escapeChar && !spaceRegex.test(command.at(idx + 1) ?? " ")) {
       readingQuotedString = false;
       readingQuoteContinuedString = true;
-    } else if (readingQuotedString && char === readingQuoteChar && command.at(idx - 1) !== "\\") {
+    } else if (readingQuotedString && char === readingQuoteChar && command.at(idx - 1) !== escapeChar) {
       readingQuotedString = false;
       const complete = idx + 1 < command.length && spaceRegex.test(command[idx + 1]);
       tokens.push({
         token: command.slice(readingIdx + 1, idx),
+        tokenLength: wcwidth(command.slice(readingIdx + 1, idx)) + 2, // +2 for both quotes
         complete,
         isOption: false,
         isQuoted: true,
       });
-    } else if (readingQuoteContinuedString && spaceRegex.test(char) && command.at(idx - 1) !== "\\") {
+    } else if (readingQuoteContinuedString && spaceRegex.test(char) && command.at(idx - 1) !== escapeChar) {
       readingQuoteContinuedString = false;
       tokens.push({
         token: command.slice(readingIdx, idx),
+        tokenLength: wcwidth(command.slice(readingIdx, idx)),
         complete: true,
         isOption: false,
         isQuoted: true,
@@ -65,13 +102,15 @@ const lex = (command: string): CommandToken[] => {
       readingFlag = false;
       tokens.push({
         token: command.slice(readingIdx, idx),
+        tokenLength: wcwidth(command.slice(readingIdx, idx)),
         complete: true,
         isOption: true,
       });
-    } else if (readingCmd && spaceRegex.test(char) && command.at(idx - 1) !== "\\") {
+    } else if (readingCmd && spaceRegex.test(char) && command.at(idx - 1) !== escapeChar) {
       readingCmd = false;
       tokens.push({
         token: command.slice(readingIdx, idx),
+        tokenLength: wcwidth(command.slice(readingIdx, idx)),
         complete: true,
         isOption: false,
       });
@@ -83,6 +122,7 @@ const lex = (command: string): CommandToken[] => {
     if (readingQuotedString) {
       tokens.push({
         token: command.slice(readingIdx + 1),
+        tokenLength: wcwidth(command.slice(readingIdx + 1)) + 1, // +1 for the leading quote
         complete: false,
         isOption: false,
         isQuoted: true,
@@ -90,6 +130,7 @@ const lex = (command: string): CommandToken[] => {
     } else if (readingQuoteContinuedString) {
       tokens.push({
         token: command.slice(readingIdx),
+        tokenLength: wcwidth(command.slice(readingIdx)),
         complete: false,
         isOption: false,
         isQuoted: true,
@@ -98,6 +139,7 @@ const lex = (command: string): CommandToken[] => {
     } else {
       tokens.push({
         token: command.slice(readingIdx),
+        tokenLength: wcwidth(command.slice(readingIdx)),
         complete: false,
         isOption: readingFlag,
       });

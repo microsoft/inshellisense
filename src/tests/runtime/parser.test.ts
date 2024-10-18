@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import { parseCommand } from "../../runtime/parser.js";
+import { Shell } from "../../utils/shell.js";
 
 const testData = [
   { command: `cmd --flag value` },
@@ -30,12 +31,13 @@ const testData = [
   { command: `cmd1 "item1"item2 item3` },
   { command: `cmd1 "item1"item2 "item3"` },
   { command: "`cmd1`" },
+  { command: "😁" },
 ];
 
 describe(`parseCommand`, () => {
   testData.forEach(({ command }) => {
     test(command, () => {
-      expect(parseCommand(command)).toMatchSnapshot();
+      expect(parseCommand(command, Shell.Bash)).toMatchSnapshot();
     });
   });
 });
