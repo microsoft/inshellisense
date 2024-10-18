@@ -1,5 +1,16 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`parseCommand \`cmd1\` 1`] = `
+[
+  {
+    "complete": false,
+    "isOption": false,
+    "isQuoted": true,
+    "token": "cmd1",
+  },
+]
+`;
+
 exports[`parseCommand cmd  1`] = `
 [
   {
@@ -339,6 +350,68 @@ exports[`parseCommand cmd value  1`] = `
     "complete": true,
     "isOption": false,
     "token": "value",
+  },
+]
+`;
+
+exports[`parseCommand cmd1 "item1"item2 "item3" 1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd1",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "isQuoteContinued": true,
+    "isQuoted": true,
+    "token": ""item1"item2",
+  },
+  {
+    "complete": false,
+    "isOption": false,
+    "isQuoted": true,
+    "token": "item3",
+  },
+]
+`;
+
+exports[`parseCommand cmd1 "item1"item2 1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd1",
+  },
+  {
+    "complete": false,
+    "isOption": false,
+    "isQuoteContinued": true,
+    "isQuoted": true,
+    "token": ""item1"item2",
+  },
+]
+`;
+
+exports[`parseCommand cmd1 "item1"item2 item3 1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd1",
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "isQuoteContinued": true,
+    "isQuoted": true,
+    "token": ""item1"item2",
+  },
+  {
+    "complete": false,
+    "isOption": false,
+    "token": "item3",
   },
 ]
 `;

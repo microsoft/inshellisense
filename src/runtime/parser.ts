@@ -8,7 +8,9 @@ export type CommandToken = {
   isPersistent?: boolean;
   isPath?: boolean;
   isPathComplete?: boolean;
-  isQuoted?: boolean;
+  isQuoted?: boolean; // used for any token starting with quotes
+  isQuoteContinued?: boolean; // used for strings that are fully wrapped in quotes with content after the quotes
+  isQuoteComplete?: boolean; // used for strings fully wrapped in quotes
 };
 
 const cmdDelim = /(\|\|)|(&&)|(;)|(\|)/;
@@ -21,13 +23,13 @@ export const parseCommand = (command: string): CommandToken[] => {
 
 const lex = (command: string): CommandToken[] => {
   const tokens: CommandToken[] = [];
-  let [readingQuotedString, readingFlag, readingCmd] = [false, false, false];
+  let [readingQuotedString, readingQuoteContinuedString, readingFlag, readingCmd] = [false, false, false, false];
   let readingIdx = 0;
   let readingQuoteChar = "";
 
   [...command].forEach((char, idx) => {
-    const reading = readingQuotedString || readingFlag || readingCmd;
-    if (!reading && (char === `'` || char === `"`)) {
+    const reading = readingQuotedString || readingQuoteContinuedString || readingFlag || readingCmd;
+    if (!reading && (char === `'` || char === `"` || char == "`")) {
       [readingQuotedString, readingIdx, readingQuoteChar] = [true, idx, char];
       return;
     } else if (!reading && char === `-`) {
@@ -38,7 +40,10 @@ const lex = (command: string): CommandToken[] => {
       return;
     }
 
-    if (readingQuotedString && char === readingQuoteChar && command.at(idx - 1) !== "\\") {
+    if (readingQuotedString && char === readingQuoteChar && command.at(idx - 1) !== "\\" && !spaceRegex.test(command.at(idx + 1) ?? " ")) {
+      readingQuotedString = false;
+      readingQuoteContinuedString = true;
+    } else if (readingQuotedString && char === readingQuoteChar && command.at(idx - 1) !== "\\") {
       readingQuotedString = false;
       const complete = idx + 1 < command.length && spaceRegex.test(command[idx + 1]);
       tokens.push({
@@ -46,6 +51,15 @@ const lex = (command: string): CommandToken[] => {
         complete,
         isOption: false,
         isQuoted: true,
+      });
+    } else if (readingQuoteContinuedString && spaceRegex.test(char) && command.at(idx - 1) !== "\\") {
+      readingQuoteContinuedString = false;
+      tokens.push({
+        token: command.slice(readingIdx, idx),
+        complete: true,
+        isOption: false,
+        isQuoted: true,
+        isQuoteContinued: true,
       });
     } else if ((readingFlag && spaceRegex.test(char)) || char === "=") {
       readingFlag = false;
@@ -64,7 +78,7 @@ const lex = (command: string): CommandToken[] => {
     }
   });
 
-  const reading = readingQuotedString || readingFlag || readingCmd;
+  const reading = readingQuotedString || readingQuoteContinuedString || readingFlag || readingCmd;
   if (reading) {
     if (readingQuotedString) {
       tokens.push({
@@ -72,6 +86,14 @@ const lex = (command: string): CommandToken[] => {
         complete: false,
         isOption: false,
         isQuoted: true,
+      });
+    } else if (readingQuoteContinuedString) {
+      tokens.push({
+        token: command.slice(readingIdx),
+        complete: false,
+        isOption: false,
+        isQuoted: true,
+        isQuoteContinued: true,
       });
     } else {
       tokens.push({
