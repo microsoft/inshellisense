@@ -145,6 +145,16 @@ export const getBackspaceSequence = (press: KeyPressEvent, shell: Shell) =>
 
 export const getPathSeparator = (shell: Shell) => (shell == Shell.Bash || shell == Shell.Xonsh || shell == Shell.Nushell ? "/" : path.sep);
 
+export const addPathSeparator = (dir: string, shell: Shell) => {
+  const pathSep = getPathSeparator(shell);
+  return dir.endsWith(pathSep) ? dir : dir + pathSep;
+};
+
+export const getPathDirname = (dir: string, shell: Shell) => {
+  const pathSep = getPathSeparator(shell);
+  return dir.endsWith(pathSep) || path.dirname(dir) == "." ? dir : addPathSeparator(path.dirname(dir), shell);
+};
+
 // nu fully re-writes the prompt every keystroke resulting in duplicate start/end sequences on the same line
 export const getShellPromptRewrites = (shell: Shell) => shell == Shell.Nushell;
 

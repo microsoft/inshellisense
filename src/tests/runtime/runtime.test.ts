@@ -27,6 +27,10 @@ const testData = [
   { name: "loadSpec", command: "aws acm add" },
   { name: "noArgsArgumentGiven", command: "gcc lab ", maxSuggestions: 3 },
   { name: "generatorUsingPartialInput", command: "dotnet add package Microsoft.Azure.WebJobs.Cor", maxSuggestions: 1 },
+  { name: "pathSuggestion", command: "source she" },
+  { name: "pathNestedSuggestion", command: "source .github\\work" },
+  { name: "pathWithFileSuggestion", command: "source shell\\", maxSuggestions: 1 },
+  { name: "pathWithFileFilteredSuggestion", command: "source shell\\shellIntegration.", maxSuggestions: 1 },
 ];
 
 describe(`parseCommand`, () => {

@@ -8,7 +8,7 @@ export type Suggestion = {
   icon: string;
   priority: number;
   insertValue?: string;
-  pathy?: boolean;
+  type?: Fig.SuggestionType;
 };
 
 export type SuggestionBlob = {
