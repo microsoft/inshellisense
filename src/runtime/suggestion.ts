@@ -8,6 +8,8 @@ import { runGenerator } from "./generator.js";
 import { runTemplates } from "./template.js";
 import { Suggestion, SuggestionBlob } from "./model.js";
 import log from "../utils/log.js";
+import { escapePath } from "./utils.js";
+import { getPathSeparator, Shell } from "../utils/shell.js";
 
 export enum SuggestionIcons {
   File = "📄",
@@ -200,15 +202,14 @@ const optionSuggestions = (
   return filter<Fig.Option>(validOptions ?? [], filterStrategy, partialCmd, "option");
 };
 
-const getEscapedPath = (value?: string): string | undefined => {
-  return value?.replaceAll(" ", "\\ ");
-};
+function adjustPathSuggestions(suggestions: Suggestion[], partialToken: CommandToken | undefined, shell: Shell): Suggestion[] {
+  if (partialToken == null) return suggestions;
 
-function adjustPathSuggestions(suggestions: Suggestion[], partialToken?: CommandToken): Suggestion[] {
-  if (partialToken == null || partialToken.isQuoted) return suggestions;
-  return suggestions.map((s) =>
-    s.pathy ? { ...s, insertValue: getEscapedPath(s.insertValue), name: s.insertValue == null ? getEscapedPath(s.name)! : s.name } : s,
-  );
+  const sep = getPathSeparator(shell);
+  return suggestions.map((s) => {
+    const fullPath = partialToken.isPath ? `${path.dirname(partialToken.token)}${sep}${s.insertValue}` : s.insertValue;
+    return s.pathy ? { ...s, insertValue: escapePath(fullPath, shell) } : s;
+  });
 }
 
 const removeAcceptedSuggestions = (suggestions: Suggestion[], acceptedTokens: CommandToken[]): Suggestion[] => {
@@ -239,6 +240,7 @@ export const getSubcommandDrivenRecommendation = async (
   argsFromSubcommand: boolean,
   acceptedTokens: CommandToken[],
   cwd: string,
+  shell: Shell,
 ): Promise<SuggestionBlob | undefined> => {
   log.debug({ msg: "suggestion point", subcommand, persistentOptions, partialToken, argsDepleted, argsFromSubcommand, acceptedTokens, cwd });
   if (argsDepleted && argsFromSubcommand) {
@@ -271,6 +273,7 @@ export const getSubcommandDrivenRecommendation = async (
           adjustPathSuggestions(
             suggestions.sort((a, b) => b.priority - a.priority),
             partialToken,
+            shell,
           ),
           acceptedTokens,
         ),
@@ -287,6 +290,7 @@ export const getArgDrivenRecommendation = async (
   acceptedTokens: CommandToken[],
   variadicArgBound: boolean,
   cwd: string,
+  shell: Shell,
 ): Promise<SuggestionBlob | undefined> => {
   let partialCmd = partialToken?.token;
   if (partialToken?.isPath) {
@@ -313,6 +317,7 @@ export const getArgDrivenRecommendation = async (
           adjustPathSuggestions(
             suggestions.sort((a, b) => b.priority - a.priority),
             partialToken,
+            shell,
           ),
           acceptedTokens,
         ),

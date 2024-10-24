@@ -1,11 +1,42 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`parseCommand \`cmd1\` 1`] = `
+[
+  {
+    "complete": false,
+    "isOption": false,
+    "isQuoted": true,
+    "token": "cmd1",
+    "tokenLength": 6,
+  },
+]
+`;
+
 exports[`parseCommand cmd  1`] = `
 [
   {
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
+  },
+]
+`;
+
+exports[`parseCommand cmd "value"  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+    "tokenLength": 3,
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "isQuoted": true,
+    "token": "value",
+    "tokenLength": 7,
   },
 ]
 `;
@@ -16,12 +47,14 @@ exports[`parseCommand cmd "value'  1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": false,
     "isOption": false,
     "isQuoted": true,
     "token": "value' ",
+    "tokenLength": 8,
   },
 ]
 `;
@@ -32,12 +65,14 @@ exports[`parseCommand cmd "value'\\"\\""  1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": true,
     "isOption": false,
     "isQuoted": true,
     "token": "value'\\"\\"",
+    "tokenLength": 12,
   },
 ]
 `;
@@ -48,12 +83,14 @@ exports[`parseCommand cmd 'value'  1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": true,
     "isOption": false,
     "isQuoted": true,
     "token": "value",
+    "tokenLength": 7,
   },
 ]
 `;
@@ -64,16 +101,19 @@ exports[`parseCommand cmd --flag value 1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": true,
     "isOption": true,
     "token": "--flag",
+    "tokenLength": 6,
   },
   {
     "complete": false,
     "isOption": false,
     "token": "value",
+    "tokenLength": 5,
   },
 ]
 `;
@@ -84,17 +124,20 @@ exports[`parseCommand cmd --flag="value"  1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": true,
     "isOption": true,
     "token": "--flag",
+    "tokenLength": 6,
   },
   {
     "complete": true,
     "isOption": false,
     "isQuoted": true,
     "token": "value",
+    "tokenLength": 7,
   },
 ]
 `;
@@ -105,17 +148,20 @@ exports[`parseCommand cmd --flag='value'  1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": true,
     "isOption": true,
     "token": "--flag",
+    "tokenLength": 6,
   },
   {
     "complete": true,
     "isOption": false,
     "isQuoted": true,
     "token": "value",
+    "tokenLength": 7,
   },
 ]
 `;
@@ -126,16 +172,19 @@ exports[`parseCommand cmd --flag=value 1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": true,
     "isOption": true,
     "token": "--flag",
+    "tokenLength": 6,
   },
   {
     "complete": false,
     "isOption": false,
     "token": "value",
+    "tokenLength": 5,
   },
 ]
 `;
@@ -146,11 +195,13 @@ exports[`parseCommand cmd -f  1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": true,
     "isOption": true,
     "token": "-f",
+    "tokenLength": 2,
   },
 ]
 `;
@@ -161,17 +212,20 @@ exports[`parseCommand cmd -f 'value'  1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": true,
     "isOption": true,
     "token": "-f",
+    "tokenLength": 2,
   },
   {
     "complete": true,
     "isOption": false,
     "isQuoted": true,
     "token": "value",
+    "tokenLength": 7,
   },
 ]
 `;
@@ -182,11 +236,13 @@ exports[`parseCommand cmd -f 1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": false,
     "isOption": true,
     "token": "-f",
+    "tokenLength": 2,
   },
 ]
 `;
@@ -197,11 +253,13 @@ exports[`parseCommand cmd -f 2`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": false,
     "isOption": true,
     "token": "-f",
+    "tokenLength": 2,
   },
 ]
 `;
@@ -212,16 +270,19 @@ exports[`parseCommand cmd -f value  1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": true,
     "isOption": true,
     "token": "-f",
+    "tokenLength": 2,
   },
   {
     "complete": true,
     "isOption": false,
     "token": "value",
+    "tokenLength": 5,
   },
 ]
 `;
@@ -232,11 +293,13 @@ exports[`parseCommand cmd -f= 1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": true,
     "isOption": true,
     "token": "-f",
+    "tokenLength": 2,
   },
 ]
 `;
@@ -247,17 +310,20 @@ exports[`parseCommand cmd -f="value"  1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": true,
     "isOption": true,
     "token": "-f",
+    "tokenLength": 2,
   },
   {
     "complete": true,
     "isOption": false,
     "isQuoted": true,
     "token": "value",
+    "tokenLength": 7,
   },
 ]
 `;
@@ -268,17 +334,20 @@ exports[`parseCommand cmd -f='val 1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": true,
     "isOption": true,
     "token": "-f",
+    "tokenLength": 2,
   },
   {
     "complete": false,
     "isOption": false,
     "isQuoted": true,
     "token": "val",
+    "tokenLength": 4,
   },
 ]
 `;
@@ -289,16 +358,19 @@ exports[`parseCommand cmd -f=value  1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": true,
     "isOption": true,
     "token": "-f",
+    "tokenLength": 2,
   },
   {
     "complete": true,
     "isOption": false,
     "token": "value",
+    "tokenLength": 5,
   },
 ]
 `;
@@ -309,6 +381,7 @@ exports[`parseCommand cmd 1`] = `
     "complete": false,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
 ]
 `;
@@ -319,11 +392,13 @@ exports[`parseCommand cmd dir\\ 1/dir\\ 2/item1 1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": false,
     "isOption": false,
-    "token": "dir\\ 1/dir\\ 2/item1",
+    "token": "dir 1/dir 2/item1",
+    "tokenLength": 19,
   },
 ]
 `;
@@ -334,11 +409,83 @@ exports[`parseCommand cmd value  1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd",
+    "tokenLength": 3,
   },
   {
     "complete": true,
     "isOption": false,
     "token": "value",
+    "tokenLength": 5,
+  },
+]
+`;
+
+exports[`parseCommand cmd1 "item1"item2 "item3" 1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd1",
+    "tokenLength": 4,
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "isQuoteContinued": true,
+    "isQuoted": true,
+    "token": "item1item2",
+    "tokenLength": 12,
+  },
+  {
+    "complete": false,
+    "isOption": false,
+    "isQuoted": true,
+    "token": "item3",
+    "tokenLength": 7,
+  },
+]
+`;
+
+exports[`parseCommand cmd1 "item1"item2 1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd1",
+    "tokenLength": 4,
+  },
+  {
+    "complete": false,
+    "isOption": false,
+    "isQuoteContinued": true,
+    "isQuoted": true,
+    "token": "item1item2",
+    "tokenLength": 12,
+  },
+]
+`;
+
+exports[`parseCommand cmd1 "item1"item2 item3 1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd1",
+    "tokenLength": 4,
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "isQuoteContinued": true,
+    "isQuoted": true,
+    "token": "item1item2",
+    "tokenLength": 12,
+  },
+  {
+    "complete": false,
+    "isOption": false,
+    "token": "item3",
+    "tokenLength": 5,
   },
 ]
 `;
@@ -349,6 +496,7 @@ exports[`parseCommand cmd1 | cmd2  1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd2",
+    "tokenLength": 4,
   },
 ]
 `;
@@ -359,11 +507,24 @@ exports[`parseCommand cmd1 - 1`] = `
     "complete": true,
     "isOption": false,
     "token": "cmd1",
+    "tokenLength": 4,
   },
   {
     "complete": false,
     "isOption": true,
     "token": "-",
+    "tokenLength": 1,
+  },
+]
+`;
+
+exports[`parseCommand 😁 1`] = `
+[
+  {
+    "complete": false,
+    "isOption": false,
+    "token": "😁",
+    "tokenLength": 2,
   },
 ]
 `;
