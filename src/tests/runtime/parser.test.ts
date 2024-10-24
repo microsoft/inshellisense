@@ -32,13 +32,15 @@ const testData = [
   { command: `cmd1 "item1"item2 item3` },
   { command: `cmd1 "item1"item2 "item3"` },
   { command: "`cmd1`" },
+  { command: "cmd 'item1\\item2\\'item3 ", shell: Shell.Powershell },
+  { command: "cmd 'item1\\item2\\'item3", shell: Shell.Powershell },
   { command: "😁" },
 ];
 
 describe(`parseCommand`, () => {
-  testData.forEach(({ command }) => {
+  testData.forEach(({ command, shell }) => {
     test(command, () => {
-      expect(parseCommand(command, Shell.Bash)).toMatchSnapshot();
+      expect(parseCommand(command, shell ?? Shell.Bash)).toMatchSnapshot();
     });
   });
 });

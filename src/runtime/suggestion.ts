@@ -9,7 +9,7 @@ import { runTemplates } from "./template.js";
 import { Suggestion, SuggestionBlob } from "./model.js";
 import log from "../utils/log.js";
 import { escapePath } from "./utils.js";
-import { addPathSeparator, getPathDirname, Shell } from "../utils/shell.js";
+import { addPathSeparator, getPathDirname, removePathSeparator, Shell } from "../utils/shell.js";
 
 export enum SuggestionIcons {
   File = "📄",
@@ -203,15 +203,13 @@ const optionSuggestions = (
 };
 
 function adjustPathSuggestions(suggestions: Suggestion[], partialToken: CommandToken | undefined, shell: Shell): Suggestion[] {
-  if (partialToken == null) return suggestions;
-
   return suggestions.map((s) => {
     const pathy = getPathy(s.type);
-    const rawInsertValue = s.insertValue ?? s.name ?? "";
+    const rawInsertValue = removePathSeparator(s.insertValue ?? s.name ?? "");
     const insertValue = s.type == "folder" ? addPathSeparator(rawInsertValue, shell) : rawInsertValue;
-    const partialDir = getPathDirname(partialToken.token, shell);
-    const fullPath = partialToken.isPath ? `${partialDir}${insertValue}` : insertValue;
-    return pathy ? { ...s, insertValue: escapePath(fullPath, shell) } : s;
+    const partialDir = getPathDirname(partialToken?.token ?? "", shell);
+    const fullPath = partialToken?.isPath ? `${partialDir}${insertValue}` : insertValue;
+    return pathy ? { ...s, insertValue: escapePath(fullPath, shell), name: removePathSeparator(s.name) } : s;
   });
 }
 

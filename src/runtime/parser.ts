@@ -26,7 +26,7 @@ export const parseCommand = (command: string, shell: Shell): CommandToken[] => {
   return sanitizeTokens(tokens, shell);
 };
 
-const sanitizeTokens = (cmdTokens: CommandToken[], shell: Shell): CommandToken[] => unwrapQuotedTokens(unescapeSpaceTokens(cmdTokens, shell));
+const sanitizeTokens = (cmdTokens: CommandToken[], shell: Shell): CommandToken[] => unwrapQuotedTokens(unescapeSpaceTokens(cmdTokens, shell), shell);
 
 // remove escapes around spaces
 const unescapeSpaceTokens = (cmdTokens: CommandToken[], shell: Shell): CommandToken[] => {
@@ -41,12 +41,13 @@ const unescapeSpaceTokens = (cmdTokens: CommandToken[], shell: Shell): CommandTo
 };
 
 // need to unwrap tokens that are quoted with content after the quotes like `"hello"world`
-const unwrapQuotedTokens = (cmdTokens: CommandToken[]): CommandToken[] => {
+const unwrapQuotedTokens = (cmdTokens: CommandToken[], shell: Shell): CommandToken[] => {
+  const escapeChar = getShellWhitespaceEscapeChar(shell);
   return cmdTokens.map((cmdToken) => {
     const { token, isQuoteContinued } = cmdToken;
     if (isQuoteContinued) {
       const quoteChar = token[0];
-      const unquotedToken = token.replaceAll(`\\${quoteChar}`, "\u001B").replaceAll(quoteChar, "").replaceAll("\u001B", quoteChar);
+      const unquotedToken = token.replaceAll(`${escapeChar}${quoteChar}`, "\u001B").replaceAll(quoteChar, "").replaceAll("\u001B", quoteChar);
       return { ...cmdToken, token: unquotedToken };
     }
     return cmdToken;

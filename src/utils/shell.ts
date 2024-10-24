@@ -145,6 +145,10 @@ export const getBackspaceSequence = (press: KeyPressEvent, shell: Shell) =>
 
 export const getPathSeparator = (shell: Shell) => (shell == Shell.Bash || shell == Shell.Xonsh || shell == Shell.Nushell ? "/" : path.sep);
 
+export const removePathSeparator = (dir: string) => {
+  return dir.endsWith("/") || dir.endsWith("\\") ? dir.slice(0, -1) : dir;
+};
+
 export const addPathSeparator = (dir: string, shell: Shell) => {
   const pathSep = getPathSeparator(shell);
   return dir.endsWith(pathSep) ? dir : dir + pathSep;
