@@ -6,7 +6,7 @@ import { spawn } from "node:child_process";
 import fsAsync from "node:fs/promises";
 
 import { CommandToken } from "./parser.js";
-import { getPathSeperator, gitBashPath, Shell } from "../utils/shell.js";
+import { getPathSeparator, gitBashPath, Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
 
 export type ExecuteShellCommandTTYResult = {
@@ -27,8 +27,7 @@ const bashSpecialCharacters = /[&|<>\s]/g;
 const shouldEscapeArg = (arg: string) => {
   const hasSpecialCharacter = bashSpecialCharacters.test(arg);
   const isSingleCharacter = arg.length === 1;
-  const isQuoted = (arg.startsWith(`"`) && arg.endsWith(`"`)) || (arg.startsWith(`'`) && arg.endsWith(`'`));
-  return hasSpecialCharacter && !isSingleCharacter && !isQuoted;
+  return hasSpecialCharacter && !isSingleCharacter && !isQuoted(arg, `"`);
 };
 
 /* based on libuv process.c used by nodejs, only quotes are escaped for shells. if using git bash need to escape whitespace & special characters in an argument */
@@ -37,6 +36,55 @@ const escapeArgs = (shell: string | undefined, args: string[]) => {
   if (process.platform !== "win32" || shell == undefined) return args;
   return args.map((arg) => (shouldEscapeArg(arg) ? `"${arg.replaceAll('"', '\\"')}"` : arg));
 };
+
+type QuoteChar = `"` | `'` | "`";
+
+const isQuoted = (value: string | undefined, quoteChar: QuoteChar): boolean => (value?.startsWith(quoteChar) && value?.endsWith(quoteChar)) ?? false;
+
+const quoteString = (value: string, quoteChar: QuoteChar): string => {
+  if (isQuoted(value, quoteChar)) return value;
+  const escapedValue = value.replaceAll(`\\${quoteChar}`, quoteChar).replaceAll(quoteChar, `\\${quoteChar}`);
+  return `${quoteChar}${escapedValue}${quoteChar}`;
+};
+
+const needsQuoted = (value: string, quoteChar: QuoteChar): boolean => isQuoted(value, quoteChar) || value.includes(" ");
+
+const getShellQuoteChar = (shell: Shell): QuoteChar => {
+  switch (shell) {
+    case Shell.Zsh:
+    case Shell.Bash:
+    case Shell.Fish:
+      return `"`;
+    case Shell.Xonsh:
+      return `'`;
+    case Shell.Nushell:
+      return "`";
+    case Shell.Pwsh:
+    case Shell.Powershell:
+      return `'`;
+    case Shell.Cmd:
+      return `"`;
+  }
+};
+
+export const getShellWhitespaceEscapeChar = (shell: Shell): string => {
+  switch (shell) {
+    case Shell.Zsh:
+    case Shell.Bash:
+    case Shell.Fish:
+    case Shell.Xonsh:
+    case Shell.Nushell:
+      return "\\";
+    case Shell.Pwsh:
+    case Shell.Powershell:
+      return "`";
+    case Shell.Cmd:
+      return "^";
+  }
+};
+
+export const escapePath = (value: string | undefined, shell: Shell): string | undefined =>
+  value != null && needsQuoted(value, getShellQuoteChar(shell)) ? quoteString(value, getShellQuoteChar(shell)) : value;
 
 export const buildExecuteShellCommand =
   async (timeout: number): Promise<Fig.ExecuteCommandFunction> =>
@@ -70,8 +118,9 @@ export const resolveCwd = async (
 ): Promise<{ cwd: string; pathy: boolean; complete: boolean }> => {
   if (cmdToken == null) return { cwd, pathy: false, complete: false };
   const { token: rawToken, isQuoted } = cmdToken;
-  const token = !isQuoted ? rawToken.replaceAll("\\ ", " ") : rawToken;
-  const sep = getPathSeperator(shell);
+  const escapedToken = !isQuoted ? rawToken.replaceAll(" ", "\\ ") : rawToken;
+  const token = escapedToken;
+  const sep = getPathSeparator(shell);
   if (!token.includes(sep)) return { cwd, pathy: false, complete: false };
   const resolvedCwd = path.isAbsolute(token) ? token : path.join(cwd, token);
   try {

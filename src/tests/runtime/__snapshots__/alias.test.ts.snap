@@ -6,6 +6,7 @@ exports[`aliasExpand expand on bash aliases 1`] = `
     "complete": false,
     "isOption": false,
     "token": "glo",
+    "tokenLength": 3,
   },
 ]
 `;
@@ -16,18 +17,21 @@ exports[`aliasExpand expand on bash aliases 2`] = `
     "complete": true,
     "isOption": false,
     "token": "echo",
+    "tokenLength": 4,
   },
   {
     "complete": true,
     "isOption": false,
     "isQuoted": true,
     "token": "lo",
+    "tokenLength": 4,
   },
   {
     "complete": true,
     "isOption": false,
     "isQuoted": true,
     "token": "la",
+    "tokenLength": 4,
   },
 ]
 `;
@@ -38,6 +42,7 @@ exports[`aliasExpand expand on bash aliases 3`] = `
     "complete": true,
     "isOption": false,
     "token": "git",
+    "tokenLength": 3,
   },
 ]
 `;
@@ -48,16 +53,19 @@ exports[`aliasExpand expand on bash aliases 4`] = `
     "complete": true,
     "isOption": false,
     "token": "ls",
+    "tokenLength": 2,
   },
   {
     "complete": true,
     "isOption": true,
     "token": "--color",
+    "tokenLength": 7,
   },
   {
     "complete": true,
     "isOption": false,
     "token": "auto",
+    "tokenLength": 4,
   },
 ]
 `;
@@ -68,6 +76,7 @@ exports[`aliasExpand expand on zsh aliases 1`] = `
     "complete": false,
     "isOption": false,
     "token": "glo",
+    "tokenLength": 3,
   },
 ]
 `;
@@ -78,18 +87,21 @@ exports[`aliasExpand expand on zsh aliases 2`] = `
     "complete": true,
     "isOption": false,
     "token": "echo",
+    "tokenLength": 4,
   },
   {
     "complete": true,
     "isOption": false,
     "isQuoted": true,
     "token": "lo",
+    "tokenLength": 4,
   },
   {
     "complete": true,
     "isOption": false,
     "isQuoted": true,
     "token": "la",
+    "tokenLength": 4,
   },
 ]
 `;
@@ -100,6 +112,7 @@ exports[`aliasExpand expand on zsh aliases 3`] = `
     "complete": true,
     "isOption": false,
     "token": "git",
+    "tokenLength": 3,
   },
 ]
 `;
@@ -110,16 +123,19 @@ exports[`aliasExpand expand on zsh aliases 4`] = `
     "complete": true,
     "isOption": false,
     "token": "ls",
+    "tokenLength": 2,
   },
   {
     "complete": true,
     "isOption": true,
     "token": "--color",
+    "tokenLength": 7,
   },
   {
     "complete": true,
     "isOption": false,
     "token": "auto",
+    "tokenLength": 4,
   },
 ]
 `;

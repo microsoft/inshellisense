@@ -8,6 +8,7 @@ const mockExecuteShellCommand = jest.fn();
 
 jest.unstable_mockModule("../../runtime/utils.js", () => ({
   buildExecuteShellCommand: () => mockExecuteShellCommand,
+  getShellWhitespaceEscapeChar: () => "\\",
 }));
 
 const { aliasExpand, loadAliases } = await import("../../runtime/alias.js");
@@ -27,10 +28,10 @@ alias ls='ls --color=auto'`,
     });
 
     await loadAliases(Shell.Bash);
-    expect(aliasExpand([{ token: "glo", complete: false, isOption: false }])).toMatchSnapshot();
-    expect(aliasExpand([{ token: "la", complete: true, isOption: false }])).toMatchSnapshot();
-    expect(aliasExpand([{ token: "git", complete: true, isOption: false }])).toMatchSnapshot();
-    expect(aliasExpand([{ token: "ls", complete: true, isOption: false }])).toMatchSnapshot();
+    expect(aliasExpand([{ token: "glo", complete: false, isOption: false, tokenLength: 3 }])).toMatchSnapshot();
+    expect(aliasExpand([{ token: "la", complete: true, isOption: false, tokenLength: 2 }])).toMatchSnapshot();
+    expect(aliasExpand([{ token: "git", complete: true, isOption: false, tokenLength: 3 }])).toMatchSnapshot();
+    expect(aliasExpand([{ token: "ls", complete: true, isOption: false, tokenLength: 2 }])).toMatchSnapshot();
   });
 
   test("expand on zsh aliases", async () => {
@@ -43,9 +44,9 @@ ls='ls --color=auto'`,
     });
 
     await loadAliases(Shell.Zsh);
-    expect(aliasExpand([{ token: "glo", complete: false, isOption: false }])).toMatchSnapshot();
-    expect(aliasExpand([{ token: "la", complete: true, isOption: false }])).toMatchSnapshot();
-    expect(aliasExpand([{ token: "git", complete: true, isOption: false }])).toMatchSnapshot();
-    expect(aliasExpand([{ token: "ls", complete: true, isOption: false }])).toMatchSnapshot();
+    expect(aliasExpand([{ token: "glo", complete: false, isOption: false, tokenLength: 3 }])).toMatchSnapshot();
+    expect(aliasExpand([{ token: "la", complete: true, isOption: false, tokenLength: 2 }])).toMatchSnapshot();
+    expect(aliasExpand([{ token: "git", complete: true, isOption: false, tokenLength: 3 }])).toMatchSnapshot();
+    expect(aliasExpand([{ token: "ls", complete: true, isOption: false, tokenLength: 2 }])).toMatchSnapshot();
   });
 });

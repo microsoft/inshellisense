@@ -14,9 +14,6 @@ export type CommandToken = {
   isPath?: boolean;
   isPathComplete?: boolean;
   isQuoted?: boolean; // used for any token starting with quotes
-};
-
-type InternalCommandToken = CommandToken & {
   isQuoteContinued?: boolean; // used for strings that are fully wrapped in quotes with content after the quotes
 };
 
@@ -29,9 +26,10 @@ export const parseCommand = (command: string, shell: Shell): CommandToken[] => {
   return sanitizeTokens(tokens, shell);
 };
 
-const sanitizeTokens = (cmdTokens: InternalCommandToken[], shell: Shell): CommandToken[] => unwrapQuotedTokens(unescapeSpaceTokens(cmdTokens, shell));
+const sanitizeTokens = (cmdTokens: CommandToken[], shell: Shell): CommandToken[] => unwrapQuotedTokens(unescapeSpaceTokens(cmdTokens, shell));
 
-const unescapeSpaceTokens = (cmdTokens: InternalCommandToken[], shell: Shell): CommandToken[] => {
+// remove escapes around spaces
+const unescapeSpaceTokens = (cmdTokens: CommandToken[], shell: Shell): CommandToken[] => {
   const escapeChar = getShellWhitespaceEscapeChar(shell);
   return cmdTokens.map((cmdToken) => {
     const { token, isQuoted } = cmdToken;
@@ -43,7 +41,7 @@ const unescapeSpaceTokens = (cmdTokens: InternalCommandToken[], shell: Shell): C
 };
 
 // need to unwrap tokens that are quoted with content after the quotes like `"hello"world`
-const unwrapQuotedTokens = (cmdTokens: InternalCommandToken[]): CommandToken[] => {
+const unwrapQuotedTokens = (cmdTokens: CommandToken[]): CommandToken[] => {
   return cmdTokens.map((cmdToken) => {
     const { token, isQuoteContinued } = cmdToken;
     if (isQuoteContinued) {
@@ -55,8 +53,8 @@ const unwrapQuotedTokens = (cmdTokens: InternalCommandToken[]): CommandToken[] =
   });
 };
 
-const lex = (command: string, shell: Shell): InternalCommandToken[] => {
-  const tokens: InternalCommandToken[] = [];
+const lex = (command: string, shell: Shell): CommandToken[] => {
+  const tokens: CommandToken[] = [];
   const escapeChar = getShellWhitespaceEscapeChar(shell);
   let [readingQuotedString, readingQuoteContinuedString, readingFlag, readingCmd] = [false, false, false, false];
   let readingIdx = 0;

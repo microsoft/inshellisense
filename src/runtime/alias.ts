@@ -24,7 +24,7 @@ const loadBashAliases = async () => {
     .split("\n")
     .forEach((line) => {
       const [alias, ...commandSegments] = line.replace("alias ", "").replaceAll("'\\''", "'").split("=");
-      loadedAliases[alias] = parseCommand(commandSegments.join("=").slice(1, -1) + " ");
+      loadedAliases[alias] = parseCommand(commandSegments.join("=").slice(1, -1) + " ", Shell.Bash);
     });
 };
 
@@ -40,7 +40,7 @@ const loadZshAliases = async () => {
     .split("\n")
     .forEach((line) => {
       const [alias, ...commandSegments] = line.replaceAll("'\\''", "'").split("=");
-      loadedAliases[alias] = parseCommand(commandSegments.join("=").slice(1, -1) + " ");
+      loadedAliases[alias] = parseCommand(commandSegments.join("=").slice(1, -1) + " ", Shell.Zsh);
     });
 };
 

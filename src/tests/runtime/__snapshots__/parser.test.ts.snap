@@ -23,6 +23,24 @@ exports[`parseCommand cmd  1`] = `
 ]
 `;
 
+exports[`parseCommand cmd "value"  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+    "tokenLength": 3,
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "isQuoted": true,
+    "token": "value",
+    "tokenLength": 7,
+  },
+]
+`;
+
 exports[`parseCommand cmd "value'  1`] = `
 [
   {

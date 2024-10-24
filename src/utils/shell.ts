@@ -58,7 +58,7 @@ export const setupZshDotfiles = async () => {
   await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-login.zsh"), path.join(zdotdir, ".zlogin"));
 };
 
-const findPareentProcess = async () => {
+const findParentProcess = async () => {
   try {
     return (await find("pid", process.ppid)).at(0);
   } catch (e) {
@@ -90,7 +90,7 @@ export const inferShell = async () => {
   }
 
   // try getting shell from parent process
-  const processResult = await findPareentProcess();
+  const processResult = await findParentProcess();
   const name = processResult?.name;
   return name != null ? supportedShells.find((shell) => name.includes(shell)) : undefined;
 };
@@ -143,7 +143,7 @@ const getGitBashPaths = async (): Promise<string[]> => {
 export const getBackspaceSequence = (press: KeyPressEvent, shell: Shell) =>
   shell === Shell.Pwsh || shell === Shell.Powershell || shell === Shell.Cmd || shell === Shell.Nushell ? "\u007F" : press[1].sequence;
 
-export const getPathSeperator = (shell: Shell) => (shell == Shell.Bash || shell == Shell.Xonsh || shell == Shell.Nushell ? "/" : path.sep);
+export const getPathSeparator = (shell: Shell) => (shell == Shell.Bash || shell == Shell.Xonsh || shell == Shell.Nushell ? "/" : path.sep);
 
 // nu fully re-writes the prompt every keystroke resulting in duplicate start/end sequences on the same line
 export const getShellPromptRewrites = (shell: Shell) => shell == Shell.Nushell;
