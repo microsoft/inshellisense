@@ -9,7 +9,7 @@ import { runTemplates } from "./template.js";
 import { Suggestion, SuggestionBlob } from "./model.js";
 import log from "../utils/log.js";
 import { escapePath } from "./utils.js";
-import { getPathSeparator, Shell } from "../utils/shell.js";
+import { addPathSeparator, getPathDirname, removePathSeparator, Shell } from "../utils/shell.js";
 
 export enum SuggestionIcons {
   File = "📄",
@@ -66,7 +66,7 @@ const toSuggestion = (suggestion: Fig.Suggestion, name?: string, type?: Fig.Sugg
     allNames: suggestion.name instanceof Array ? suggestion.name : [suggestion.name],
     priority: suggestion.priority ?? 50,
     insertValue: suggestion.insertValue,
-    pathy: getPathy(suggestion.type),
+    type: suggestion.type,
   };
 };
 
@@ -93,7 +93,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
                   allNames: s.name,
                   priority: s.priority ?? 50,
                   insertValue: s.insertValue,
-                  pathy: getPathy(s.type),
+                  type: s.type,
                 }
               : undefined;
           }
@@ -105,7 +105,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
                 allNames: [s.name],
                 priority: s.priority ?? 50,
                 insertValue: s.insertValue,
-                pathy: getPathy(s.type),
+                type: s.type,
               }
             : undefined;
         })
@@ -124,7 +124,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
                   allNames: s.name,
                   insertValue: s.insertValue,
                   priority: s.priority ?? 50,
-                  pathy: getPathy(s.type),
+                  type: s.type,
                 }
               : undefined;
           }
@@ -136,7 +136,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
                 allNames: [s.name],
                 insertValue: s.insertValue,
                 priority: s.priority ?? 50,
-                pathy: getPathy(s.type),
+                type: s.type,
               }
             : undefined;
         })
@@ -203,12 +203,13 @@ const optionSuggestions = (
 };
 
 function adjustPathSuggestions(suggestions: Suggestion[], partialToken: CommandToken | undefined, shell: Shell): Suggestion[] {
-  if (partialToken == null) return suggestions;
-
-  const sep = getPathSeparator(shell);
   return suggestions.map((s) => {
-    const fullPath = partialToken.isPath ? `${path.dirname(partialToken.token)}${sep}${s.insertValue}` : s.insertValue;
-    return s.pathy ? { ...s, insertValue: escapePath(fullPath, shell) } : s;
+    const pathy = getPathy(s.type);
+    const rawInsertValue = removePathSeparator(s.insertValue ?? s.name ?? "");
+    const insertValue = s.type == "folder" ? addPathSeparator(rawInsertValue, shell) : rawInsertValue;
+    const partialDir = getPathDirname(partialToken?.token ?? "", shell);
+    const fullPath = partialToken?.isPath ? `${partialDir}${insertValue}` : insertValue;
+    return pathy ? { ...s, insertValue: escapePath(fullPath, shell), name: removePathSeparator(s.name) } : s;
   });
 }
 

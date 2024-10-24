@@ -77,6 +77,44 @@ exports[`parseCommand cmd "value'\\"\\""  1`] = `
 ]
 `;
 
+exports[`parseCommand cmd 'item1\\item2\\'item3  1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+    "tokenLength": 3,
+  },
+  {
+    "complete": true,
+    "isOption": false,
+    "isQuoteContinued": true,
+    "isQuoted": true,
+    "token": "item1\\item2\\item3",
+    "tokenLength": 19,
+  },
+]
+`;
+
+exports[`parseCommand cmd 'item1\\item2\\'item3 1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "cmd",
+    "tokenLength": 3,
+  },
+  {
+    "complete": false,
+    "isOption": false,
+    "isQuoteContinued": true,
+    "isQuoted": true,
+    "token": "item1\\item2\\item3",
+    "tokenLength": 19,
+  },
+]
+`;
+
 exports[`parseCommand cmd 'value'  1`] = `
 [
   {
