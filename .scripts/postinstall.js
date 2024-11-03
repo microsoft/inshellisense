@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 import fs from "node:fs";
 
 if (fs.existsSync("./build/commands/init.js")) {
