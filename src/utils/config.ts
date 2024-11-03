@@ -167,9 +167,8 @@ export const loadConfig = async (program: Command) => {
   globalConfig.specs = { path: [`${os.homedir()}/.fig/autocomplete/build`, ...(globalConfig.specs?.path ?? [])] };
 };
 
-export const deleteCacheFolder = async (): Promise<void> => {
-  const cliConfigPath = path.join(os.homedir(), cachePath);
-  if (fs.existsSync(cliConfigPath)) {
-    fs.rmSync(cliConfigPath, { recursive: true });
+export const deleteCacheFolder = (): void => {
+  if (fs.existsSync(cachePath)) {
+    fs.rmSync(cachePath, { recursive: true });
   }
 };
