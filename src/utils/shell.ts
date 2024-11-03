@@ -9,8 +9,12 @@ import fs from "node:fs";
 import url from "node:url";
 import os from "node:os";
 import fsAsync from "node:fs/promises";
+import util from "node:util";
+import childProcess from "node:child_process";
 import { KeyPressEvent } from "../ui/suggestionManager.js";
 import log from "./log.js";
+
+const exec = util.promisify(childProcess.exec);
 
 export enum Shell {
   Bash = "bash",
@@ -40,6 +44,82 @@ export const aliasSupportedShells = [Shell.Bash, Shell.Zsh];
 export const userZdotdir = process.env?.ZDOTDIR ?? os.homedir() ?? `~`;
 export const zdotdir = path.join(os.tmpdir(), `is-zsh`);
 const configFolder = ".inshellisense";
+
+export const checkShellConfigs = (): Shell[] => {
+  const shellsWithoutConfigs: Shell[] = [];
+  const configFolderPath = path.join(os.homedir(), configFolder);
+  for (const shell of supportedShells) {
+    const shellConfigName = getShellConfigName(shell);
+    if (shellConfigName == null) continue;
+    if (!fs.existsSync(path.join(configFolderPath, shell, shellConfigName))) {
+      shellsWithoutConfigs.push(shell);
+    }
+  }
+  return shellsWithoutConfigs;
+};
+
+export const checkLegacyConfigs = async (): Promise<Shell[]> => {
+  const shellsWithLegacyConfig: Shell[] = [];
+  for (const shell of supportedShells) {
+    const profilePath = await getProfilePath(shell);
+    if (profilePath != null && fs.existsSync(profilePath)) {
+      const profile = await fsAsync.readFile(profilePath, "utf8");
+      if (profile.includes("inshellisense shell plugin")) {
+        shellsWithLegacyConfig.push(shell);
+      }
+    }
+  }
+  return shellsWithLegacyConfig;
+};
+
+const getProfilePath = async (shell: Shell) => {
+  switch (shell) {
+    case Shell.Bash:
+      return path.join(os.homedir(), ".bashrc");
+    case Shell.Powershell:
+      return (await exec(`echo $profile`, { shell })).stdout.trim();
+    case Shell.Pwsh:
+      return (await exec(`echo $profile`, { shell })).stdout.trim();
+    case Shell.Zsh:
+      return path.join(os.homedir(), ".zshrc");
+    case Shell.Fish:
+      return path.join(os.homedir(), ".config", "fish", "config.fish");
+    case Shell.Xonsh:
+      return path.join(os.homedir(), ".xonshrc");
+    case Shell.Nushell:
+      return (await exec(`echo $nu.env-path`, { shell })).stdout.trim();
+  }
+};
+
+export const createShellConfigs = async () => {
+  const configFolderPath = path.join(os.homedir(), configFolder);
+  for (const shell of supportedShells) {
+    const shellConfigName = getShellConfigName(shell);
+    if (shellConfigName == null) continue;
+    await fsAsync.mkdir(path.join(configFolderPath, shell), { recursive: true });
+    await fsAsync.writeFile(path.join(configFolderPath, shell, shellConfigName), getShellConfig(shell));
+  }
+};
+
+const getShellConfigName = (shell: Shell) => {
+  switch (shell) {
+    case Shell.Bash:
+      return "init.sh";
+    case Shell.Powershell:
+    case Shell.Pwsh:
+      return "init.ps1";
+    case Shell.Zsh:
+      return "init.zsh";
+    case Shell.Fish:
+      return "init.fish";
+    case Shell.Xonsh:
+      return "init.xsh";
+    case Shell.Nushell:
+      return "init.nu";
+    default:
+      return undefined;
+  }
+};
 
 export const setupBashPreExec = async () => {
   const shellFolderPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "..", "..", "shell");
@@ -161,6 +241,25 @@ export const getPathDirname = (dir: string, shell: Shell) => {
 
 // nu fully re-writes the prompt every keystroke resulting in duplicate start/end sequences on the same line
 export const getShellPromptRewrites = (shell: Shell) => shell == Shell.Nushell;
+
+export const getShellSourceCommand = (shell: Shell): string => {
+  switch (shell) {
+    case Shell.Bash:
+      return `[ -f ~/.inshellisense/bash/init.sh ] && source ~/.inshellisense/bash/init.sh`;
+    case Shell.Powershell:
+    case Shell.Pwsh:
+      return `if ( Test-Path '~/.inshellisense/pwsh/init.ps1' -PathType Leaf ) { . ~/.inshellisense/pwsh/init.ps1 } `;
+    case Shell.Zsh:
+      return `[[ -f ~/.inshellisense/zsh/init.zsh ]] && source ~/.inshellisense/zsh/init.zsh`;
+    case Shell.Fish:
+      return `test -f ~/.inshellisense/fish/init.fish && source ~/.inshellisense/fish/init.fish`;
+    case Shell.Xonsh:
+      return `p"~/.inshellisense/xonsh/init.xsh".exists() && source "~/.inshellisense/xonsh/init.xsh"`;
+    case Shell.Nushell:
+      return `if ( '~/.inshellisense/nu/init.nu' | path exists ) { source ~/.inshellisense/nu/init.nu } `;
+  }
+  return "";
+};
 
 export const getShellConfig = (shell: Shell): string => {
   switch (shell) {

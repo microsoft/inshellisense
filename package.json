@@ -24,7 +24,8 @@
     "lint": "eslint src/ --ext .ts,.tsx && prettier src/ --check",
     "lint:fix": "eslint src/ --ext .ts,.tsx --fix && prettier src/ --write",
     "debug": "node --inspect --import=tsx src/index.ts -V",
-    "pre-commit": "lint-staged"
+    "pre-commit": "lint-staged",
+    "postinstall": "node ./build/index.js init --generate-full-configs"
   },
   "repository": {
     "type": "git",

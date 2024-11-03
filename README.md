@@ -18,7 +18,7 @@ npm install -g @microsoft/inshellisense
 
 ### Quickstart
 
-After completing the installation, you can run `is` to start the autocomplete session for your desired shell. Additionally, inshellisense is also aliased under `inshellisense` after installation.
+After completing the installation, run `is doctor` to verify your installation was successful. You can run `is` to start the autocomplete session for your desired shell. Additionally, inshellisense is also aliased under `inshellisense` after installation.
 
 ### Shell Plugin
 

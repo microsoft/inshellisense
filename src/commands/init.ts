@@ -2,22 +2,32 @@
 // Licensed under the MIT License.
 
 import { Command } from "commander";
-import { Shell, initSupportedShells as shells, getShellConfig } from "../utils/shell.js";
+import { createShellConfigs, initSupportedShells as shells, getShellSourceCommand, Shell } from "../utils/shell.js";
 
 const supportedShells = shells.join(", ");
 
-const action = (program: Command) => async (shell: string) => {
+type InitCommandOptions = {
+  generateFullConfigs: boolean | undefined;
+  checkLegacyConfigs: boolean | undefined;
+};
+
+const action = (program: Command) => async (shell: string | undefined, options: InitCommandOptions) => {
+  if (options.generateFullConfigs) {
+    await createShellConfigs();
+    return;
+  }
+  if (shell == null) program.error(`Shell is required, supported shells: ${supportedShells}`, { exitCode: 1 });
   if (!shells.map((s) => s.valueOf()).includes(shell)) {
     program.error(`Unsupported shell: '${shell}', supported shells: ${supportedShells}`, { exitCode: 1 });
   }
-  const config = getShellConfig(shell as Shell);
-  process.stdout.write(`\n\n# ---------------- inshellisense shell plugin ----------------\n${config}`);
-  process.exit(0);
+  const config = getShellSourceCommand(shell as Shell);
+  process.stdout.write(`\n\n${config}`);
 };
 
 const cmd = new Command("init");
-cmd.description(`generates shell configurations for the provided shell`);
-cmd.argument("<shell>", `shell to generate configuration for, supported shells: ${supportedShells}`);
+cmd.description(`generates shell configurations and prints the source command for the specified shell`);
+cmd.argument("[shell]", `shell to generate for, supported shells: ${supportedShells}`);
+cmd.option("--generate-full-configs");
 cmd.action(action(cmd));
 
 export default cmd;
