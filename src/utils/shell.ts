@@ -247,6 +247,7 @@ export const getShellSourceCommand = (shell: Shell): string => {
     case Shell.Bash:
       return `[ -f ~/.inshellisense/bash/init.sh ] && source ~/.inshellisense/bash/init.sh`;
     case Shell.Powershell:
+      return `if ( Test-Path '~/.inshellisense/powershell/init.ps1' -PathType Leaf ) { . ~/.inshellisense/powershell/init.ps1 } `;
     case Shell.Pwsh:
       return `if ( Test-Path '~/.inshellisense/pwsh/init.ps1' -PathType Leaf ) { . ~/.inshellisense/pwsh/init.ps1 } `;
     case Shell.Zsh:
@@ -264,7 +265,7 @@ export const getShellSourceCommand = (shell: Shell): string => {
 export const getShellConfig = (shell: Shell): string => {
   switch (shell) {
     case Shell.Zsh:
-      return `if [[ -z "\${ISTERM}" && $- = *i* && $- != *c* ]]; then
+      return `if [[ -z "\${ISTERM}" && $- = *i* && $- != *c* && -z "\${VSCODE_RESOLVING_ENVIRONMENT}" ]]; then
   if [[ -o login ]]; then
     is -s zsh --login ; exit
   else
@@ -272,7 +273,7 @@ export const getShellConfig = (shell: Shell): string => {
   fi
 fi`;
     case Shell.Bash:
-      return `if [[ -z "\${ISTERM}" && $- = *i* && $- != *c* ]]; then
+      return `if [[ -z "\${ISTERM}" && $- = *i* && $- != *c* && -z "\${VSCODE_RESOLVING_ENVIRONMENT}" ]]; then
   shopt -q login_shell
   login_shell=$?
   if [ $login_shell -eq 0 ]; then
@@ -286,12 +287,12 @@ fi`;
       return `$__IsCommandFlag = ([Environment]::GetCommandLineArgs() | ForEach-Object { $_.contains("-Command") }) -contains $true
 $__IsNoExitFlag = ([Environment]::GetCommandLineArgs() | ForEach-Object { $_.contains("-NoExit") }) -contains $true
 $__IsInteractive = -not $__IsCommandFlag -or ($__IsCommandFlag -and $__IsNoExitFlag)
-if ([string]::IsNullOrEmpty($env:ISTERM) -and [Environment]::UserInteractive -and $__IsInteractive) {
+if ([string]::IsNullOrEmpty($env:ISTERM) -and [Environment]::UserInteractive -and $__IsInteractive -and [string]::IsNullOrEmpty($env:VSCODE_RESOLVING_ENVIRONMENT)) {
   is -s ${shell}
   Stop-Process -Id $pid
 }`;
     case Shell.Fish:
-      return `if test -z "$ISTERM" && status --is-interactive
+      return `if test -z "$ISTERM" && status --is-interactive && test -z "$VSCODE_RESOLVING_ENVIRONMENT"
   if status --is-login
     is -s fish --login ; kill %self
   else
@@ -299,13 +300,13 @@ if ([string]::IsNullOrEmpty($env:ISTERM) -and [Environment]::UserInteractive -an
   end 
 end`;
     case Shell.Xonsh:
-      return `if 'ISTERM' not in \${...} and $XONSH_INTERACTIVE:
+      return `if 'ISTERM' not in \${...} and $XONSH_INTERACTIVE and 'VSCODE_RESOLVING_ENVIRONMENT' not in \${...}:
     if $XONSH_LOGIN:
         is -s xonsh --login ; exit
     else:
         is -s xonsh ; exit`;
     case Shell.Nushell:
-      return `if "ISTERM" not-in $env and $nu.is-interactive {
+      return `if "ISTERM" not-in $env and $nu.is-interactive and "VSCODE_RESOLVING_ENVIRONMENT" not-in $env {
     if $nu.is-login { is -s nu --login ; exit } else { is -s nu ; exit }
 }`;
   }
