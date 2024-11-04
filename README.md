@@ -35,10 +35,10 @@ is init zsh >> ~/.zshrc
 is init fish >> ~/.config/fish/config.fish
 
 # pwsh
-is init pwsh >> $profile
+is init pwsh | Add-Content $profile
 
 # powershell
-is init powershell >> $profile
+is init powershell | Add-Content $profile
 
 # xonsh
 is init xonsh >> ~/.xonshrc
