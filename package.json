@@ -13,6 +13,7 @@
   "files": [
     "build/**",
     "shell/**",
+    "scripts/**",
     "*.md",
     "LICENSE"
   ],
@@ -25,7 +26,7 @@
     "lint:fix": "eslint src/ --ext .ts,.tsx --fix && prettier src/ --write",
     "debug": "node --inspect --import=tsx src/index.ts -V",
     "pre-commit": "lint-staged",
-    "postinstall": "node ./.scripts/postinstall.js"
+    "postinstall": "node ./scripts/postinstall.js"
   },
   "repository": {
     "type": "git",
