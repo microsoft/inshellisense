@@ -20,4 +20,9 @@ if [ "$ISTERM_TESTING" = "1" ]
 	function is_user_prompt; printf '> '; end
 end
 
-function fish_prompt; __is_prompt_start; is_user_prompt; __is_prompt_end; end
+function fish_prompt;
+    set --local __user_prompt_lines (is_user_prompt)
+    set --local __user_prompt (string join '\n' $__user_prompt_lines)
+	set --local __prompt (string join '' (__is_prompt_start) $__user_prompt (__is_prompt_end))
+    printf $__prompt
+end
