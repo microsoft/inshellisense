@@ -298,7 +298,9 @@ export class ISTerm implements IPty {
         if (!sameAccents) {
           ansiLine.push(this._getAnsiAccents(cell));
         }
-        ansiLine.push(chars == "" ? ansi.cursorForward() : chars);
+        const isWide = prevCell?.getWidth() == 2 && cell?.getWidth() == 0;
+        const cursorForward = isWide ? "" : ansi.cursorForward();
+        ansiLine.push(chars == "" ? cursorForward : chars);
         prevCell = cell;
       }
       return ansiLine.join("");
