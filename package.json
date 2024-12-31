@@ -4,7 +4,7 @@
   "description": "IDE style command line auto complete",
   "type": "module",
   "engines": {
-    "node": ">=16.6.0 <21.0.0"
+    "node": ">=16.6.0 <23.0.0"
   },
   "bin": {
     "inshellisense": "./build/index.js",
@@ -25,6 +25,7 @@
     "lint": "eslint src/ --ext .ts,.tsx && prettier src/ --check",
     "lint:fix": "eslint src/ --ext .ts,.tsx --fix && prettier src/ --write",
     "debug": "node --inspect --import=tsx src/index.ts -V",
+    "reinstall": "rm -rf node_modules && npm install",
     "pre-commit": "lint-staged",
     "postinstall": "node ./scripts/postinstall.js"
   },
@@ -41,7 +42,7 @@
   },
   "homepage": "https://github.com/microsoft/inshellisense#readme",
   "dependencies": {
-    "@homebridge/node-pty-prebuilt-multiarch": "^0.11.12",
+    "@homebridge/node-pty-prebuilt-multiarch": "^0.11.14",
     "@withfig/autocomplete": "2.675.0",
     "@xterm/addon-unicode11": "^0.8.0",
     "@xterm/headless": "^5.5.0",
