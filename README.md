@@ -8,7 +8,7 @@
 
 ### Requirements
 
-- Node.js 20.X, 18.X, 16.X (16.6.0 >=)
+- Node.js 22.X, 20.X, 18.X, 16.X (16.6.0 >=)
 
 ### Installation
 
