@@ -72,6 +72,28 @@ export const checkLegacyConfigs = async (): Promise<Shell[]> => {
   return shellsWithLegacyConfig;
 };
 
+
+export const checkShellConfigPlugin = async () => {
+  const shellsWithoutPlugin: Shell[] = [];
+  const shellsWithBadPlugin: Shell[] = [];
+  for (const shell of supportedShells) {
+    const profilePath = await getProfilePath(shell);
+    if (profilePath != null && fs.existsSync(profilePath)) {
+      const profile = await fsAsync.readFile(profilePath, "utf8");
+
+      const profileContainsSource = profile.includes(getShellSourceCommand(shell));
+      const profileEndsWithSource = profile.trimEnd().endsWith(getShellSourceCommand(shell));
+
+      if (!profileContainsSource) {
+        shellsWithoutPlugin.push(shell);
+      } else if (!profileEndsWithSource) {
+        shellsWithBadPlugin.push(shell);
+      }
+    }
+  }
+  return {shellsWithoutPlugin, shellsWithBadPlugin};
+}
+
 const getProfilePath = async (shell: Shell) => {
   switch (shell) {
     case Shell.Bash:
