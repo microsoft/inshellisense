@@ -4,6 +4,7 @@
 import readline from "node:readline";
 import ansi from "ansi-escapes";
 import chalk from "chalk";
+import { Command } from "commander";
 
 import log from "../utils/log.js";
 import { getBackspaceSequence, Shell } from "../utils/shell.js";
@@ -16,8 +17,8 @@ export const renderConfirmation = (live: boolean): string => {
   return `inshellisense session [${statusMessage}]\n`;
 };
 
-export const render = async (shell: Shell, underTest: boolean, login: boolean) => {
-  const term = await isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns, underTest, login });
+export const render = async (program: Command, shell: Shell, underTest: boolean, login: boolean) => {
+  const term = await isterm.spawn(program, { shell, rows: process.stdout.rows, cols: process.stdout.columns, underTest, login });
   const suggestionManager = new SuggestionManager(term, shell);
   let hasActiveSuggestions = false;
   let previousSuggestionsRows = 0;

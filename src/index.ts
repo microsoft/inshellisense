@@ -33,7 +33,6 @@ program
   .option("-c, --check", `check if shell is in an inshellisense session`)
   .addOption(hiddenOption("-T, --test", "used to make e2e tests reproducible across machines"))
   .option("-V, --verbose", `enable verbose logging`)
-  .showHelpAfterError("(add --help for additional information)")
   .passThroughOptions();
 
 program.addCommand(complete);

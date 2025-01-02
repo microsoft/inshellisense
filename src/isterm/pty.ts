@@ -20,6 +20,8 @@ import log from "../utils/log.js";
 import { gitBashPath } from "../utils/shell.js";
 import styles from "ansi-styles";
 import * as ansi from "../utils/ansi.js";
+import { Command } from "commander";
+import which from "which";
 
 const ISTermOnDataEvent = "data";
 
@@ -324,9 +326,18 @@ export class ISTerm implements IPty {
   }
 }
 
-export const spawn = async (options: ISTermOptions): Promise<ISTerm> => {
+export const spawn = async (program: Command, options: ISTermOptions): Promise<ISTerm> => {
   const { shellTarget, shellArgs } = await convertToPtyTarget(options.shell, options.underTest, options.login);
+  if (!await shellExists(shellTarget)) {
+    program.error(`shell not found on PATH: ${shellTarget}`, { exitCode: 1 });
+  }
   return new ISTerm({ ...options, shellTarget, shellArgs });
+};
+
+const shellExists = async (shellTarget: string): Promise<boolean> => {
+  const fileExists = fs.existsSync(shellTarget);
+  const fileOnPath = await which(shellTarget, { nothrow: true });
+  return fileExists || fileOnPath != null;
 };
 
 const convertToPtyTarget = async (shell: Shell, underTest: boolean, login: boolean) => {
