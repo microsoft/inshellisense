@@ -110,7 +110,7 @@ const getProfilePath = async (shell: Shell): Promise<string | undefined> => {
     case Shell.Powershell:
       return (await safeExec(`echo $profile`, { shell })).stdout?.trim();
     case Shell.Pwsh:
-      return (await safeExec(`echo $profile`, { shell, timeout: 500, env: { ISTERM: "1" } })).stdout?.trim();
+      return (await safeExec(`echo $profile`, { shell })).stdout?.trim();
     case Shell.Zsh:
       return path.join(os.homedir(), ".zshrc");
     case Shell.Fish:
@@ -118,7 +118,7 @@ const getProfilePath = async (shell: Shell): Promise<string | undefined> => {
     case Shell.Xonsh:
       return path.join(os.homedir(), ".xonshrc");
     case Shell.Nushell:
-      return (await safeExec(`echo $nu.env-path`, { shell, timeout: 500, env: { ISTERM: "1" } })).stdout?.trim();
+      return (await safeExec(`echo $nu.env-path`, { shell })).stdout?.trim();
   }
 };
 
