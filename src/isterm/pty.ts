@@ -328,7 +328,7 @@ export class ISTerm implements IPty {
 
 export const spawn = async (program: Command, options: ISTermOptions): Promise<ISTerm> => {
   const { shellTarget, shellArgs } = await convertToPtyTarget(options.shell, options.underTest, options.login);
-  if (!await shellExists(shellTarget)) {
+  if (!(await shellExists(shellTarget))) {
     program.error(`shell not found on PATH: ${shellTarget}`, { exitCode: 1 });
   }
   return new ISTerm({ ...options, shellTarget, shellArgs });
