@@ -48,5 +48,5 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
     await setupBashPreExec();
   }
   await loadAliases(shell);
-  await render(shell, options.test ?? false, options.login ?? false);
+  await render(program, shell, options.test ?? false, options.login ?? false);
 };
