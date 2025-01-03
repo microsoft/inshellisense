@@ -84,7 +84,6 @@ export const checkLegacyConfigs = async (): Promise<Shell[]> => {
   return shellsWithLegacyConfig;
 };
 
-
 export const checkShellConfigPlugin = async () => {
   const shellsWithoutPlugin: Shell[] = [];
   const shellsWithBadPlugin: Shell[] = [];
@@ -103,8 +102,8 @@ export const checkShellConfigPlugin = async () => {
       }
     }
   }
-  return {shellsWithoutPlugin, shellsWithBadPlugin};
-}
+  return { shellsWithoutPlugin, shellsWithBadPlugin };
+};
 
 const getProfilePath = async (shell: Shell): Promise<string | undefined> => {
   switch (shell) {

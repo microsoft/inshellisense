@@ -47,7 +47,7 @@ const renderShellConfigIssues = (): number => {
 };
 
 const renderShellPluginIssues = async (): Promise<number> => {
-  const {shellsWithoutPlugin, shellsWithBadPlugin} = await checkShellConfigPlugin();
+  const { shellsWithoutPlugin, shellsWithBadPlugin } = await checkShellConfigPlugin();
   if (shellsWithoutPlugin.length == 0) {
     process.stdout.write(chalk.green("✓") + " all shells have plugins\n");
   } else {
@@ -57,7 +57,6 @@ const renderShellPluginIssues = async (): Promise<number> => {
     });
     process.stderr.write(chalk.yellow("  review the README to generate the missing shell plugins, this warning can be ignored if you prefer manual startup\n"));
   }
-
 
   if (shellsWithBadPlugin.length == 0) {
     process.stdout.write(chalk.green("✓") + " all shells have correct plugins\n");
