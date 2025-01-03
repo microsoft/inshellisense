@@ -16,12 +16,10 @@ import log from "./log.js";
 
 const exec = util.promisify(childProcess.exec);
 const safeExec = async (command: string, options?: childProcess.ExecOptions) => {
+  const defaultOptions: childProcess.ExecOptions = { timeout: 500, env: { ISTERM: "1" } };
   try {
-    const { stdout, stderr } = await exec(command, options);
-    return {
-      stdout: typeof stdout === "string" ? stdout : stdout.toString(),
-      stderr: typeof stderr === "string" ? stderr : stderr.toString(),
-    };
+    const { stdout, stderr } = await exec(command, { ...defaultOptions, ...options });
+    return { stdout, stderr };
   } catch (e) {
     log.debug({ msg: `error executing exec command: ${e}` });
     return { stdout: undefined, stderr: undefined };
@@ -112,7 +110,7 @@ const getProfilePath = async (shell: Shell): Promise<string | undefined> => {
     case Shell.Powershell:
       return (await safeExec(`echo $profile`, { shell })).stdout?.trim();
     case Shell.Pwsh:
-      return (await safeExec(`echo $profile`, { shell })).stdout?.trim();
+      return (await safeExec(`echo $profile`, { shell, timeout: 500, env: { ISTERM: "1" } })).stdout?.trim();
     case Shell.Zsh:
       return path.join(os.homedir(), ".zshrc");
     case Shell.Fish:
@@ -120,7 +118,7 @@ const getProfilePath = async (shell: Shell): Promise<string | undefined> => {
     case Shell.Xonsh:
       return path.join(os.homedir(), ".xonshrc");
     case Shell.Nushell:
-      return (await safeExec(`echo $nu.env-path`, { shell })).stdout?.trim();
+      return (await safeExec(`echo $nu.env-path`, { shell, timeout: 500, env: { ISTERM: "1" } })).stdout?.trim();
   }
 };
 

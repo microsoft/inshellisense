@@ -13,7 +13,7 @@ const executeShellCommand = await buildExecuteShellCommand(5_000);
 
 const loadBashAliases = async () => {
   const shellTarget = platform == "win32" ? await gitBashPath() : Shell.Bash;
-  const { stdout, stderr, status } = await executeShellCommand({ command: shellTarget, args: ["-i", "-c", "alias"], cwd: process.cwd() });
+  const { stdout, stderr, status } = await executeShellCommand({ command: shellTarget, args: ["-i", "-c", "alias"], cwd: process.cwd(), env: { ISTERM: "1" } });
   if (status !== 0) {
     log.debug({ msg: "failed to load bash aliases", stderr, status });
     return;
@@ -29,7 +29,7 @@ const loadBashAliases = async () => {
 };
 
 const loadZshAliases = async () => {
-  const { stdout, stderr, status } = await executeShellCommand({ command: Shell.Zsh, args: ["-i", "-c", "alias"], cwd: process.cwd() });
+  const { stdout, stderr, status } = await executeShellCommand({ command: Shell.Zsh, args: ["-i", "-c", "alias"], cwd: process.cwd(), env: { ISTERM: "1" } });
   if (status !== 0) {
     log.debug({ msg: "failed to load zsh aliases", stderr, status });
     return;
