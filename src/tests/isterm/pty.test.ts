@@ -6,11 +6,14 @@ import isterm from "../../isterm";
 import { cursorBackward } from "../../utils/ansi";
 import { Shell } from "../../utils/shell";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockProgram: any = { error: () => {} };
+
 const windowsTest = os.platform() == "win32" ? test.skip : test.skip;
 const unixTest = os.platform() == "darwin" || os.platform() == "linux" ? test.skip : test.skip;
 
 const runTerm = async (shell: Shell, input: string[], env?: { [key: string]: string | undefined }) => {
-  const ptyProcess = await isterm.spawn({ shell, rows: process.stdout.rows, cols: process.stdout.columns, env, underTest: true, login: false });
+  const ptyProcess = await isterm.spawn(mockProgram, { shell, rows: process.stdout.rows, cols: process.stdout.columns, env, underTest: true, login: false });
   await new Promise((r) => setTimeout(r, 1_000));
   for (const data of input) {
     ptyProcess.write(data);
