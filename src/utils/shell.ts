@@ -15,6 +15,18 @@ import { KeyPressEvent } from "../ui/suggestionManager.js";
 import log from "./log.js";
 
 const exec = util.promisify(childProcess.exec);
+const safeExec = async (command: string, options?: childProcess.ExecOptions) => {
+  try {
+    const { stdout, stderr } = await exec(command, options);
+    return {
+      stdout: typeof stdout === "string" ? stdout : stdout.toString(),
+      stderr: typeof stderr === "string" ? stderr : stderr.toString(),
+    };
+  } catch (e) {
+    log.debug({ msg: `error executing exec command: ${e}` });
+    return { stdout: undefined, stderr: undefined };
+  }
+};
 
 export enum Shell {
   Bash = "bash",
@@ -94,14 +106,14 @@ export const checkShellConfigPlugin = async () => {
   return {shellsWithoutPlugin, shellsWithBadPlugin};
 }
 
-const getProfilePath = async (shell: Shell) => {
+const getProfilePath = async (shell: Shell): Promise<string | undefined> => {
   switch (shell) {
     case Shell.Bash:
       return path.join(os.homedir(), ".bashrc");
     case Shell.Powershell:
-      return (await exec(`echo $profile`, { shell })).stdout.trim();
+      return (await safeExec(`echo $profile`, { shell })).stdout?.trim();
     case Shell.Pwsh:
-      return (await exec(`echo $profile`, { shell })).stdout.trim();
+      return (await safeExec(`echo $profile`, { shell })).stdout?.trim();
     case Shell.Zsh:
       return path.join(os.homedir(), ".zshrc");
     case Shell.Fish:
@@ -109,7 +121,7 @@ const getProfilePath = async (shell: Shell) => {
     case Shell.Xonsh:
       return path.join(os.homedir(), ".xonshrc");
     case Shell.Nushell:
-      return (await exec(`echo $nu.env-path`, { shell })).stdout.trim();
+      return (await safeExec(`echo $nu.env-path`, { shell })).stdout?.trim();
   }
 };
 
