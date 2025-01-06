@@ -90,8 +90,9 @@ export const checkShellConfigPlugin = async () => {
     if (profilePath != null && fs.existsSync(profilePath)) {
       const profile = await fsAsync.readFile(profilePath, "utf8");
 
-      const profileContainsSource = profile.includes(getShellSourceCommand(shell));
-      const profileEndsWithSource = profile.trimEnd().endsWith(getShellSourceCommand(shell));
+      const shellSourceCommand = getShellSourceCommand(shell).trim();
+      const profileContainsSource = profile.includes(shellSourceCommand);
+      const profileEndsWithSource = profile.trimEnd().endsWith(shellSourceCommand);
 
       if (!profileContainsSource) {
         shellsWithoutPlugin.push(shell);
@@ -278,9 +279,9 @@ export const getShellSourceCommand = (shell: Shell): string => {
     case Shell.Bash:
       return `[ -f ~/.inshellisense/bash/init.sh ] && source ~/.inshellisense/bash/init.sh`;
     case Shell.Powershell:
-      return `if ( Test-Path '~/.inshellisense/powershell/init.ps1' -PathType Leaf ) { . ~/.inshellisense/powershell/init.ps1 } `;
+      return `if ( Test-Path '~/.inshellisense/powershell/init.ps1' -PathType Leaf ) { . ~/.inshellisense/powershell/init.ps1 }`;
     case Shell.Pwsh:
-      return `if ( Test-Path '~/.inshellisense/pwsh/init.ps1' -PathType Leaf ) { . ~/.inshellisense/pwsh/init.ps1 } `;
+      return `if ( Test-Path '~/.inshellisense/pwsh/init.ps1' -PathType Leaf ) { . ~/.inshellisense/pwsh/init.ps1 }`;
     case Shell.Zsh:
       return `[[ -f ~/.inshellisense/zsh/init.zsh ]] && source ~/.inshellisense/zsh/init.zsh`;
     case Shell.Fish:
@@ -288,7 +289,7 @@ export const getShellSourceCommand = (shell: Shell): string => {
     case Shell.Xonsh:
       return `p"~/.inshellisense/xonsh/init.xsh".exists() && source "~/.inshellisense/xonsh/init.xsh"`;
     case Shell.Nushell:
-      return `if ( '~/.inshellisense/nu/init.nu' | path exists ) { source ~/.inshellisense/nu/init.nu } `;
+      return `if ( '~/.inshellisense/nu/init.nu' | path exists ) { source ~/.inshellisense/nu/init.nu }`;
   }
   return "";
 };
