@@ -3,11 +3,8 @@
 
 import convert from "color-convert";
 import { IBufferCell, IBufferLine, IMarker, Terminal } from "@xterm/headless";
-import os from "node:os";
 import { getShellPromptRewrites, Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
-
-const maxPromptPollDistance = 10;
 
 type TerminalCommand = {
   promptStartMarker?: IMarker;
@@ -27,29 +24,25 @@ export type CommandState = {
 export class CommandManager {
   #activeCommand: TerminalCommand;
   #terminal: Terminal;
-  #previousCommandLines: Set<number>;
+  #acceptedCommandLines: Set<number>;
   #maxCursorY: number;
   #shell: Shell;
   #promptRewrites: boolean;
-  readonly #supportsProperOscPlacements = os.platform() !== "win32";
-  promptTerminator: string = "";
 
   constructor(terminal: Terminal, shell: Shell) {
     this.#terminal = terminal;
     this.#shell = shell;
     this.#activeCommand = {};
     this.#maxCursorY = 0;
-    this.#previousCommandLines = new Set();
+    this.#acceptedCommandLines = new Set();
     this.#promptRewrites = getShellPromptRewrites(shell);
 
-    if (this.#supportsProperOscPlacements) {
-      this.#terminal.parser.registerCsiHandler({ final: "J" }, (params) => {
-        if (params.at(0) == 3 || params.at(0) == 2) {
-          this.handleClear();
-        }
-        return false;
-      });
-    }
+    this.#terminal.parser.registerCsiHandler({ final: "J" }, (params) => {
+      if (params.at(0) == 3 || params.at(0) == 2) {
+        this.handleClear();
+      }
+      return false;
+    });
   }
   handlePromptStart() {
     this.#activeCommand = { promptStartMarker: this.#terminal.registerMarker(0), hasOutput: false, cursorTerminated: false };
@@ -57,123 +50,29 @@ export class CommandManager {
 
   handlePromptEnd() {
     if (this.#activeCommand.promptEndMarker != null) return;
+    if (this.#hasBeenAccepted()) {
+      this.#activeCommand = {};
+      return;
+    }
 
     this.#activeCommand.promptEndMarker = this.#terminal.registerMarker(0);
     if (this.#activeCommand.promptEndMarker?.line === this.#terminal.buffer.active.cursorY) {
       this.#activeCommand.promptEndX = this.#terminal.buffer.active.cursorX;
     }
-    if (this.#supportsProperOscPlacements) {
-      this.#activeCommand.promptText = this.#terminal.buffer.active.getLine(this.#activeCommand.promptEndMarker?.line ?? 0)?.translateToString(true);
-      this.#previousCommandLines.add(this.#activeCommand.promptEndMarker?.line ?? -1);
-    }
+
+    this.#activeCommand.promptText = this.#terminal.buffer.active.getLine(this.#activeCommand.promptEndMarker?.line ?? 0)?.translateToString(true);
+  }
+
+  #hasBeenAccepted() {
+    const commandLine = this.#activeCommand.promptStartMarker?.line ?? -1;
+    const hasBeenAccepted = this.#acceptedCommandLines.has(commandLine) && commandLine != -1;;
+    return this.#promptRewrites && hasBeenAccepted; // this is a prompt + command that was accepted and is now being re-written by the shell for display purposes (e.g. nu)
   }
 
   handleClear() {
     this.handlePromptStart();
     this.#maxCursorY = 0;
-    this.#previousCommandLines = new Set();
-  }
-
-  private _getWindowsPrompt(y: number) {
-    const line = this.#terminal.buffer.active.getLine(y);
-    if (!line) {
-      return;
-    }
-    const lineText = line.translateToString(true);
-    if (!lineText) {
-      return;
-    }
-
-    // dynamic prompt terminator
-    if (this.promptTerminator && lineText.trim().endsWith(this.promptTerminator)) {
-      const adjustedPrompt = this._adjustPrompt(lineText, lineText, this.promptTerminator);
-      if (adjustedPrompt) {
-        return adjustedPrompt;
-      }
-    }
-
-    // User defined prompt
-    if (this.#shell == Shell.Bash) {
-      const bashPrompt = lineText.match(/^(?<prompt>\$\s?)/)?.groups?.prompt;
-      if (bashPrompt) {
-        const adjustedPrompt = this._adjustPrompt(bashPrompt, lineText, "$");
-        if (adjustedPrompt) {
-          return adjustedPrompt;
-        }
-      }
-    }
-
-    if (this.#shell == Shell.Fish) {
-      const fishPrompt = lineText.match(/(?<prompt>.*>\s?)/)?.groups?.prompt;
-      if (fishPrompt) {
-        const adjustedPrompt = this._adjustPrompt(fishPrompt, lineText, ">");
-        if (adjustedPrompt) {
-          return adjustedPrompt;
-        }
-      }
-    }
-
-    if (this.#shell == Shell.Nushell) {
-      const nushellPrompt = lineText.match(/(?<prompt>.*>\s?)/)?.groups?.prompt;
-      if (nushellPrompt) {
-        const adjustedPrompt = this._adjustPrompt(nushellPrompt, lineText, ">");
-        if (adjustedPrompt) {
-          return adjustedPrompt;
-        }
-      }
-    }
-
-    if (this.#shell == Shell.Xonsh) {
-      let xonshPrompt = lineText.match(/(?<prompt>.*@\s?)/)?.groups?.prompt;
-      if (xonshPrompt) {
-        const adjustedPrompt = this._adjustPrompt(xonshPrompt, lineText, "@");
-        if (adjustedPrompt) {
-          return adjustedPrompt;
-        }
-      }
-
-      xonshPrompt = lineText.match(/(?<prompt>.*>\s?)/)?.groups?.prompt;
-      if (xonshPrompt) {
-        const adjustedPrompt = this._adjustPrompt(xonshPrompt, lineText, ">");
-        if (adjustedPrompt) {
-          return adjustedPrompt;
-        }
-      }
-    }
-
-    if (this.#shell == Shell.Powershell || this.#shell == Shell.Pwsh) {
-      const pwshPrompt = lineText.match(/(?<prompt>(\(.+\)\s)?(?:PS.+>\s?))/)?.groups?.prompt;
-      if (pwshPrompt) {
-        const adjustedPrompt = this._adjustPrompt(pwshPrompt, lineText, ">");
-        if (adjustedPrompt) {
-          return adjustedPrompt;
-        }
-      }
-    }
-
-    if (this.#shell == Shell.Cmd) {
-      return lineText.match(/^(?<prompt>(\(.+\)\s)?(?:[A-Z]:\\.*>)|(> ))/)?.groups?.prompt;
-    }
-
-    // Custom prompts like starship end in the common \u276f character
-    const customPrompt = lineText.match(/.*\u276f(?=[^\u276f]*$)/g)?.[0];
-    if (customPrompt) {
-      const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, "\u276f");
-      if (adjustedPrompt) {
-        return adjustedPrompt;
-      }
-    }
-  }
-
-  private _adjustPrompt(prompt: string | undefined, lineText: string, char: string): string | undefined {
-    if (!prompt) {
-      return;
-    }
-    // Conpty may not 'render' the space at the end of the prompt
-    if (lineText === prompt && prompt.endsWith(char)) {
-      prompt += " ";
-    }
-    return prompt;
+    this.#acceptedCommandLines.clear();
   }
 
   private _getFgPaletteColor(cell: IBufferCell | undefined): number | undefined {
@@ -205,6 +104,7 @@ export class CommandManager {
   }
 
   clearActiveCommand() {
+    this.#acceptedCommandLines.add(this.#activeCommand.promptEndMarker?.line ?? -1)
     this.#activeCommand = {};
   }
 
@@ -283,7 +183,6 @@ export class CommandManager {
     }
 
     const globalCursorPosition = this.#terminal.buffer.active.baseY + this.#terminal.buffer.active.cursorY;
-    const withinPollDistance = globalCursorPosition < this.#activeCommand.promptEndMarker.line + 5;
     this.#maxCursorY = Math.max(this.#maxCursorY, globalCursorPosition);
 
     if (globalCursorPosition < this.#activeCommand.promptStartMarker.line || globalCursorPosition < this.#maxCursorY) {
@@ -293,21 +192,6 @@ export class CommandManager {
     }
 
     if (this.#activeCommand.promptEndMarker == null) return;
-
-    // if we haven't fond the prompt yet, poll over the next 5 lines searching for it
-    if (this.#activeCommand.promptText == null && withinPollDistance) {
-      for (let i = globalCursorPosition; i < this.#activeCommand.promptEndMarker.line + maxPromptPollDistance; i++) {
-        if (this.#previousCommandLines.has(i) && !this.#promptRewrites) continue;
-        const promptResult = this._getWindowsPrompt(i);
-        if (promptResult != null) {
-          this.#activeCommand.promptEndMarker = this.#terminal.registerMarker(i - globalCursorPosition);
-          this.#activeCommand.promptEndX = promptResult.length;
-          this.#activeCommand.promptText = promptResult;
-          this.#previousCommandLines.add(i);
-          break;
-        }
-      }
-    }
 
     // if the prompt is set, now parse out the values from the terminal
     if (this.#activeCommand.promptText != null) {

@@ -42,7 +42,7 @@
   },
   "homepage": "https://github.com/microsoft/inshellisense#readme",
   "dependencies": {
-    "@homebridge/node-pty-prebuilt-multiarch": "^0.11.14",
+    "@homebridge/node-pty-prebuilt-multiarch": "0.12.1-beta.0",
     "@withfig/autocomplete": "2.675.0",
     "@xterm/addon-unicode11": "^0.8.0",
     "@xterm/headless": "^5.5.0",

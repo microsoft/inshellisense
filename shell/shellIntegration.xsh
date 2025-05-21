@@ -18,20 +18,14 @@ def __is_escape_value(value: str) -> str:
     )
 
 def __is_update_cwd() -> str:
-    return f"\x1b]6973;CWD;{__is_escape_value(os.getcwd())}\x07"
+    return f"\x1b]6973;CWD;{__is_escape_value(os.getcwd())}\x07" + "\002"
 
 __is_original_prompt = $PROMPT
-def __is_report_prompt() -> str:
-    prompt = ""
-    formatted_prompt = XSH.shell.prompt_formatter(__is_original_prompt)
-    prompt = "".join([text for  _, text in XSH.shell.format_color(formatted_prompt)])
-    return f"\x1b]6973;PROMPT;{__is_escape_value(prompt)}\x07" + "\002"
 
 $PROMPT_FIELDS['__is_prompt_start'] = __is_prompt_start
 $PROMPT_FIELDS['__is_prompt_end'] = __is_prompt_end
 $PROMPT_FIELDS['__is_update_cwd'] = __is_update_cwd
-$PROMPT_FIELDS['__is_report_prompt'] = __is_report_prompt
 if 'ISTERM_TESTING' in ${...}:
     $PROMPT = "> "
 
-$PROMPT = "{__is_prompt_start}{__is_update_cwd}{__is_report_prompt}" + $PROMPT + "{__is_prompt_end}"
+$PROMPT = "{__is_prompt_start}{__is_update_cwd}" + $PROMPT + "{__is_prompt_end}"

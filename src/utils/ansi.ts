@@ -13,7 +13,6 @@ export enum IstermOscPt {
   PromptStarted = "PS",
   PromptEnded = "PE",
   CurrentWorkingDirectory = "CWD",
-  Prompt = "PROMPT",
 }
 
 export const IstermPromptStart = IS_OSC + IstermOscPt.PromptStarted + BEL;

@@ -12,11 +12,6 @@ import { Command } from "commander";
 const Ajv = _Ajv as unknown as typeof _Ajv.default;
 const ajv = new Ajv();
 
-export type PromptPattern = {
-  regex: string;
-  postfix: string;
-};
-
 type Binding = {
   shift?: boolean;
   control?: boolean;
@@ -29,14 +24,6 @@ type Config = {
     previousSuggestion: Binding;
     dismissSuggestions: Binding;
     acceptSuggestion: Binding;
-  };
-  prompt?: {
-    bash?: PromptPattern[];
-    pwsh?: PromptPattern[];
-    xonsh?: PromptPattern[];
-    nu?: PromptPattern[];
-    powershell?: PromptPattern[];
-    fish?: PromptPattern[];
   };
   specs?: {
     path?: string[];
@@ -52,19 +39,6 @@ const bindingSchema: JSONSchemaType<Binding> = {
     key: { type: "string" },
   },
   required: ["key"],
-};
-
-const promptPatternsSchema: JSONSchemaType<PromptPattern[]> = {
-  type: "array",
-  nullable: true,
-  items: {
-    type: "object",
-    properties: {
-      regex: { type: "string" },
-      postfix: { type: "string" },
-    },
-    required: ["regex", "postfix"],
-  },
 };
 
 const specPathsSchema: JSONSchemaType<string[]> = {
@@ -85,19 +59,6 @@ const configSchema = {
         previousSuggestion: bindingSchema,
         dismissSuggestions: bindingSchema,
         acceptSuggestion: bindingSchema,
-      },
-    },
-    // DEPRECATED: prompt patterns are no longer used
-    prompt: {
-      type: "object",
-      nullable: true,
-      properties: {
-        bash: promptPatternsSchema,
-        pwsh: promptPatternsSchema,
-        powershell: promptPatternsSchema,
-        xonsh: promptPatternsSchema,
-        nu: promptPatternsSchema,
-        fish: promptPatternsSchema,
       },
     },
     specs: {
@@ -149,14 +110,6 @@ export const loadConfig = async (program: Command) => {
           previousSuggestion: config?.bindings?.previousSuggestion ?? globalConfig.bindings.previousSuggestion,
           acceptSuggestion: config?.bindings?.acceptSuggestion ?? globalConfig.bindings.acceptSuggestion,
           dismissSuggestions: config?.bindings?.dismissSuggestions ?? globalConfig.bindings.dismissSuggestions,
-        },
-        prompt: {
-          bash: config.prompt?.bash ?? globalConfig?.prompt?.bash,
-          powershell: config.prompt?.powershell ?? globalConfig?.prompt?.powershell,
-          xonsh: config.prompt?.xonsh ?? globalConfig?.prompt?.xonsh,
-          pwsh: config.prompt?.pwsh ?? globalConfig?.prompt?.pwsh,
-          nu: config.prompt?.nu ?? globalConfig?.prompt?.nu,
-          fish: config.prompt?.fish ?? globalConfig?.prompt?.fish,
         },
         specs: {
           path: [...(config?.specs?.path ?? []), ...(config?.specs?.path ?? [])],
