@@ -65,7 +65,7 @@ export class CommandManager {
 
   #hasBeenAccepted() {
     const commandLine = this.#activeCommand.promptStartMarker?.line ?? -1;
-    const hasBeenAccepted = this.#acceptedCommandLines.has(commandLine) && commandLine != -1;;
+    const hasBeenAccepted = this.#acceptedCommandLines.has(commandLine) && commandLine != -1;
     return this.#promptRewrites && hasBeenAccepted; // this is a prompt + command that was accepted and is now being re-written by the shell for display purposes (e.g. nu)
   }
 
@@ -104,7 +104,7 @@ export class CommandManager {
   }
 
   clearActiveCommand() {
-    this.#acceptedCommandLines.add(this.#activeCommand.promptEndMarker?.line ?? -1)
+    this.#acceptedCommandLines.add(this.#activeCommand.promptEndMarker?.line ?? -1);
     this.#activeCommand = {};
   }
 
