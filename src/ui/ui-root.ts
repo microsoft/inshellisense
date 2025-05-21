@@ -9,7 +9,7 @@ import { Command } from "commander";
 import log from "../utils/log.js";
 import { getBackspaceSequence, Shell } from "../utils/shell.js";
 import isterm from "../isterm/index.js";
-import { eraseLinesBelow } from "../utils/ansi.js";
+import { eraseLinesBelow, resetToInitialState } from "../utils/ansi.js";
 import { SuggestionManager, MAX_LINES, KeyPressEvent } from "./suggestionManager.js";
 
 export const renderConfirmation = (live: boolean): string => {
@@ -22,6 +22,7 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   const suggestionManager = new SuggestionManager(term, shell);
   let hasActiveSuggestions = false;
   let previousSuggestionsRows = 0;
+  const stdinStartedInRawMode = process.stdin.isRaw;
   if (process.stdin.isTTY) process.stdin.setRawMode(true);
   readline.emitKeypressEvents(process.stdin);
 
@@ -141,6 +142,8 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   });
 
   term.onExit(({ exitCode }) => {
+    if (!stdinStartedInRawMode) process.stdin.setRawMode(false);
+    process.stdout.write(resetToInitialState);
     process.exit(exitCode);
   });
   process.stdout.on("resize", () => {
