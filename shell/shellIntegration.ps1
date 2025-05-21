@@ -21,7 +21,6 @@ function Global:Prompt() {
     $Result += $OriginalPrompt
     $Result += "$([char]0x1b)]6973;PE`a"
 
-    $Result += "$([char]0x1b)]6973;PROMPT;$(__IS-Escape-Value $OriginalPrompt)`a"
     $Result += if ($pwd.Provider.Name -eq 'FileSystem') { "$([char]0x1b)]6973;CWD;$(__IS-Escape-Value $pwd.ProviderPath)`a" }
     return $Result
 }

@@ -60,16 +60,6 @@ __is_update_cwd() {
 	builtin printf '\e]6973;CWD;%s\a' "$(__is_escape_value "$PWD")"
 }
 
-__is_report_prompt() {
-	if ((BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 4)); then
-		__is_prompt=${__is_original_PS1@P}
-	else
-		__is_prompt=${__is_original_PS1}
-	fi
-	__is_prompt="$(builtin printf "%s" "${__is_prompt//[$'\001'$'\002']}")"
-	builtin printf "\e]6973;PROMPT;%s\a" "$(__is_escape_value "${__is_prompt}")"
-}
-
 if [[ -n "${bash_preexec_imported:-}" ]]; then
     precmd_functions+=(__is_precmd)
 fi
@@ -77,7 +67,6 @@ fi
 __is_precmd() {
 	__is_update_cwd
 	__is_update_prompt
-	__is_report_prompt
 }
 
 __is_update_prompt() {

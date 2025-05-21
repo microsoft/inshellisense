@@ -271,8 +271,9 @@ export const getPathDirname = (dir: string, shell: Shell) => {
   return dir.endsWith(pathSep) || path.dirname(dir) == "." ? dir : addPathSeparator(path.dirname(dir), shell);
 };
 
-// nu fully re-writes the prompt every keystroke resulting in duplicate start/end sequences on the same line
-export const getShellPromptRewrites = (shell: Shell) => shell == Shell.Nushell;
+// nu fully re-writes the prompt every keystroke resulting in duplicate start/end sequences on the same line & re-writes the prompt after accepting a command
+// xonsh re-writes the prompt after accepting a command
+export const getShellPromptRewrites = (shell: Shell) => shell == Shell.Nushell || shell == Shell.Xonsh;
 
 export const getShellSourceCommand = (shell: Shell): string => {
   switch (shell) {

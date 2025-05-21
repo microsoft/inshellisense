@@ -59,6 +59,8 @@ export class ISTerm implements IPty {
       rows,
       cwd: process.cwd(),
       env: { ...convertToPtyEnv(shell, underTest, login), ...env },
+      useConpty: true,
+      useConptyDll: true,
     });
     this.pid = this.#pty.pid;
     this.cols = this.#pty.cols;
@@ -137,19 +139,6 @@ export class ISTerm implements IPty {
         const cwd = data.split(";").at(1);
         if (cwd != null) {
           this.cwd = path.resolve(this._sanitizedCwd(this._deserializeIsMessage(cwd)));
-        }
-        break;
-      }
-      case IstermOscPt.Prompt: {
-        const prompt = data.split(";").slice(1).join(";");
-        if (prompt != null) {
-          const sanitizedPrompt = this._sanitizedPrompt(this._deserializeIsMessage(prompt));
-          const lastPromptLine = sanitizedPrompt.substring(sanitizedPrompt.lastIndexOf("\n")).trim();
-          const promptTerminator = lastPromptLine.substring(lastPromptLine.lastIndexOf(" ")).trim();
-          if (promptTerminator) {
-            this.#commandManager.promptTerminator = promptTerminator;
-            log.debug({ msg: "prompt terminator", promptTerminator });
-          }
         }
         break;
       }
