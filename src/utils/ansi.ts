@@ -13,7 +13,6 @@ export enum IstermOscPt {
   PromptStarted = "PS",
   PromptEnded = "PE",
   CurrentWorkingDirectory = "CWD",
-  Prompt = "PROMPT",
 }
 
 export const IstermPromptStart = IS_OSC + IstermOscPt.PromptStarted + BEL;
@@ -24,6 +23,7 @@ export const cursorNextLine = CSI + "E";
 export const eraseLine = CSI + "2K";
 export const resetColor = CSI + "0m";
 export const resetLine = CSI + "2K";
+export const resetToInitialState = ESC + "c" // RIS - Reset to Initial State
 export const cursorBackward = (count = 1) => CSI + count + "D";
 export const cursorForward = (count = 1) => CSI + count + "C";
 export const cursorTo = ({ x, y }: { x?: number; y?: number }) => {
