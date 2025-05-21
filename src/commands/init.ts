@@ -21,7 +21,7 @@ const action = (program: Command) => async (shell: string | undefined, options: 
     program.error(`Unsupported shell: '${shell}', supported shells: ${supportedShells}`, { exitCode: 1 });
   }
   const config = getShellSourceCommand(shell as Shell);
-  process.stdout.write(`\n\n${config}`);
+  process.stdout.write(`\n\n${config}\n`);
 };
 
 const cmd = new Command("init");

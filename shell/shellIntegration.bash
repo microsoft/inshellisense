@@ -61,7 +61,7 @@ __is_update_cwd() {
 }
 
 __is_report_prompt() {
-	if ((BASH_VERSINFO[0] >= 4)); then
+	if ((BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 4)); then
 		__is_prompt=${__is_original_PS1@P}
 	else
 		__is_prompt=${__is_original_PS1}
