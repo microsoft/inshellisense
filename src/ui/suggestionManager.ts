@@ -50,6 +50,9 @@ export class SuggestionManager {
 
   private async _loadSuggestions(): Promise<void> {
     const commandText = this.#term.getCommandState().commandText;
+    if (!commandText) {
+      this.#command = "";
+    }
     if (!commandText || this.#hideSuggestions) {
       this.#suggestBlob = undefined;
       this.#activeSuggestionIdx = 0;
