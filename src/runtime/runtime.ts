@@ -112,6 +112,7 @@ export const getSuggestions = async (cmd: string, cwd: string, shell: Shell): Pr
   }
   const result = await runSubcommand(activeCmd.slice(1), subcommand, resolvedCwd, shell);
   if (result == null) return;
+  if (result.suggestions.length == 0 && !result.argumentDescription) return;
 
   const charactersToDrop = lastCommand?.complete ? 0 : lastCommand?.tokenLength;
   return { ...result, charactersToDrop };
