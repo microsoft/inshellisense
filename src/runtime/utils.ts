@@ -118,20 +118,22 @@ export const resolveCwd = async (
 ): Promise<{ cwd: string; pathy: boolean; complete: boolean }> => {
   if (cmdToken == null) return { cwd, pathy: false, complete: false };
   const { token: rawToken, isQuoted } = cmdToken;
-  const escapedToken = !isQuoted ? rawToken.replaceAll(" ", "\\ ") : rawToken;
-  const token = escapedToken;
   const sep = getPathSeparator(shell);
-  if (!token.includes(sep)) return { cwd, pathy: false, complete: false };
+  const escapedToken = !isQuoted ? rawToken.replaceAll(" ", "\\ ") : rawToken;
+  if (!escapedToken.includes(sep)) return { cwd, pathy: false, complete: false };
+  const tokenComplete = escapedToken.endsWith(sep);
+  const trimmedToken = escapedToken.endsWith(sep) ? escapedToken : path.dirname(escapedToken);
+  const token = trimmedToken;
   const resolvedCwd = path.isAbsolute(token) ? token : path.join(cwd, token);
   try {
     await fsAsync.access(resolvedCwd, fsAsync.constants.R_OK);
-    return { cwd: resolvedCwd, pathy: true, complete: token.endsWith(sep) };
+    return { cwd: resolvedCwd, pathy: true, complete: tokenComplete };
   } catch {
     // fallback to the parent folder if possible
     const baselessCwd = resolvedCwd.substring(0, resolvedCwd.length - path.basename(resolvedCwd).length);
     try {
       await fsAsync.access(baselessCwd, fsAsync.constants.R_OK);
-      return { cwd: baselessCwd, pathy: true, complete: token.endsWith(sep) };
+      return { cwd: baselessCwd, pathy: true, complete: tokenComplete };
     } catch {
       /*empty*/
     }
