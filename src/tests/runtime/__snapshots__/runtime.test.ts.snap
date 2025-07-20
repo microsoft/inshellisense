@@ -293,12 +293,7 @@ exports[`parseCommand completedOptionWithArg 1`] = `
 }
 `;
 
-exports[`parseCommand emptySuggestions 1`] = `
-{
-  "charactersToDrop": 2,
-  "suggestions": [],
-}
-`;
+exports[`parseCommand emptySuggestions 1`] = `undefined`;
 
 exports[`parseCommand exclusiveOnOption 1`] = `
 {
@@ -528,12 +523,7 @@ exports[`parseCommand noArgsArgumentGiven 1`] = `
 }
 `;
 
-exports[`parseCommand noOptionsSuggestedDuringVariadicArg 1`] = `
-{
-  "charactersToDrop": 3,
-  "suggestions": [],
-}
-`;
+exports[`parseCommand noOptionsSuggestedDuringVariadicArg 1`] = `undefined`;
 
 exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
 {
