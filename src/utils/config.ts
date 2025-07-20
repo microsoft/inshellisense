@@ -28,6 +28,7 @@ type Config = {
   specs?: {
     path?: string[];
   };
+  useNerdFont: boolean;
 };
 
 const bindingSchema: JSONSchemaType<Binding> = {
@@ -68,6 +69,11 @@ const configSchema = {
         path: specPathsSchema,
       },
     },
+    useNerdFont: {
+      type: "boolean",
+      nullable: true,
+      default: false,
+    },
   },
   additionalProperties: false,
 };
@@ -87,6 +93,7 @@ let globalConfig: Config = {
     acceptSuggestion: { key: "tab" },
     dismissSuggestions: { key: "escape" },
   },
+  useNerdFont: false,
 };
 
 export const getConfig = (): Config => globalConfig;
@@ -114,6 +121,7 @@ export const loadConfig = async (program: Command) => {
         specs: {
           path: [...(config?.specs?.path ?? []), ...(config?.specs?.path ?? [])],
         },
+        useNerdFont: config?.useNerdFont ?? false,
       };
     }
   });

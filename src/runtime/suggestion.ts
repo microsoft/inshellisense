@@ -10,6 +10,7 @@ import { Suggestion, SuggestionBlob } from "./model.js";
 import log from "../utils/log.js";
 import { escapePath } from "./utils.js";
 import { addPathSeparator, getPathDirname, removePathSeparator, Shell } from "../utils/shell.js";
+import { getConfig } from "../utils/config.js";
 
 export enum SuggestionIcons {
   File = "📄",
@@ -22,12 +23,55 @@ export enum SuggestionIcons {
   Special = "⭐",
   Default = "📀",
 }
+export const NerdFontIcons = {
+  alert: "\udb80\udc27",
+  android: "\ue70e",
+  apple: "\ue711",
+  asterisk: "\uf069",
+  aws: "\ue7ad",
+  azure: "\ue754",
+  box: "\uf1b2",
+  carrot: "\uef3b",
+  characters: "\udb82\udf34",
+  commandkey: "\udb81\ude33",
+  commit: "\ue729",
+  cpu: "\uf4bc",
+  database: "\ue706",
+  discord: "\uf1ff",
+  docker: "\ue7b0",
+  firebase: "\ue787",
+  flag: "\udb80\udd4f",
+  gcloud: "\udb84\uddf6",
+  git: "\ue702",
+  github: "\ue709",
+  gitlab: "\ue7eb",
+  gradle: "\ue7f2",
+  heroku: "\ue77b",
+  invite: "\udb83\udebb",
+  kubernetes: "\ue81d",
+  netlify: "\ue83c",
+  node: "\ued0d",
+  npm: "\ued0e",
+  slack: "\ue8a4",
+  string: "\udb84\udc21",
+  twitter: "\uf099",
+  vercel: "\ue8d3",
+  yarn: "\ue8ec",
+};
 
 const getIcon = (icon: string | undefined, suggestionType: Fig.SuggestionType | undefined): string => {
   // eslint-disable-next-line no-control-regex
   if (icon && /[^\u0000-\u00ff]/.test(icon)) {
     return icon;
   }
+  if (icon && icon.startsWith("fig://icon?type=") && getConfig().useNerdFont) {
+    const iconType = icon.split("fig://icon?type=")[1].toLowerCase();
+    const iconUtf = NerdFontIcons[iconType as keyof typeof NerdFontIcons];
+    if (iconUtf != null && iconUtf !== "") {
+      return iconUtf;
+    }
+  }
+
   switch (suggestionType) {
     case "arg":
       return SuggestionIcons.Argument;

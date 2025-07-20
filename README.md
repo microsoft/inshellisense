@@ -109,6 +109,14 @@ key = "escape"
 
 Key names are matched against the Node.js [keypress](https://nodejs.org/api/readline.html#readlineemitkeypresseventsstream-interface) events.
 
+### NerdFonts
+
+If you are using a [NerdFont](https://www.nerdfonts.com/) patched font, you can enable the NerdFonts support in your config file:
+
+```toml
+useNerdFont = true
+```
+
 ## Contributing
 
 This project welcomes contributions and suggestions. Most contributions require you to agree to a
