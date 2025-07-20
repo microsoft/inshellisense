@@ -117,7 +117,7 @@ export const loadConfig = async (program: Command) => {
       };
     }
   });
-  globalConfig.specs = { path: [path.join(os.homedir(), ".fig", "autocomplete", "build"), ...(globalConfig.specs?.path ?? [])].map(p => `file:\\${p}`) };
+  globalConfig.specs = { path: [path.join(os.homedir(), ".fig", "autocomplete", "build"), ...(globalConfig.specs?.path ?? [])].map((p) => `file:\\${p}`) };
 };
 
 export const deleteCacheFolder = (): void => {
