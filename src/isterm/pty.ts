@@ -7,7 +7,6 @@ import os from "node:os";
 import path from "node:path";
 import url from "node:url";
 import fs from "node:fs";
-import stripAnsi from "strip-ansi";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
 
 import pty, { IPty, IEvent } from "@homebridge/node-pty-prebuilt-multiarch";
@@ -35,6 +34,12 @@ type ISTermOptions = {
   login: boolean;
 };
 
+export type ISTermPatch = {
+  startX: number;
+  length: number;
+  data: string;
+};
+
 export class ISTerm implements IPty {
   readonly pid: number;
   cols: number;
@@ -45,6 +50,8 @@ export class ISTerm implements IPty {
   readonly onExit: IEvent<{ exitCode: number; signal?: number }>;
   shellBuffer?: string;
   cwd: string = "";
+  cursorHidden: boolean = false;
+  cursorShift: number = 0;
 
   readonly #pty: IPty;
   readonly #ptyEmitter: EventEmitter;
@@ -78,7 +85,20 @@ export class ISTerm implements IPty {
 
     this.#ptyEmitter = new EventEmitter();
     this.#pty.onData((data) => {
+      const cursorY = this.#term.buffer.active.cursorY;
       this.#term.write(data, () => {
+        if (data.includes(ansi.cursorHide)) {
+          this.cursorHidden = true;
+        }
+        if (data.includes(ansi.cursorShow)) {
+          this.cursorHidden = false;
+        }
+        const newCursorY = this.#term.buffer.active.cursorY;
+        if (newCursorY > cursorY) {
+          this.cursorShift = newCursorY - cursorY;
+        } else {
+          this.cursorShift = 0;
+        }
         log.debug({ msg: "parsing data", data, bytes: Uint8Array.from([...data].map((c) => c.charCodeAt(0))) });
         this.#commandManager.termSync();
         this.#ptyEmitter.emit(ISTermOnDataEvent, data);
@@ -117,12 +137,6 @@ export class ISTerm implements IPty {
       return cwd[0].toUpperCase() + cwd.substring(1);
     }
     return cwd;
-  }
-
-  private _sanitizedPrompt(prompt: string): string {
-    // eslint-disable-next-line no-control-regex -- strip OSC control sequences
-    const oscStrippedPrompt = prompt.replace(/\x1b\][0-9]+;.*\x07/g, "");
-    return stripAnsi(oscStrippedPrompt);
   }
 
   private _handleIsSequence(data: string): boolean {
@@ -191,6 +205,8 @@ export class ISTerm implements IPty {
       remainingLines: Math.max(this.#term.rows - 2 - this.#term.buffer.active.cursorY, 0),
       cursorX: this.#term.buffer.active.cursorX,
       cursorY: this.#term.buffer.active.cursorY,
+      hidden: this.cursorHidden,
+      shift: this.cursorShift,
     };
   }
 
@@ -267,14 +283,27 @@ export class ISTerm implements IPty {
     this.#commandManager.clearActiveCommand();
   }
 
-  getCells(height: number, direction: "below" | "above") {
+  getPatch(height: number, patches: ISTermPatch[], direction: "below" | "above"): string {
     const currentCursorPosition = this.#term.buffer.active.cursorY + this.#term.buffer.active.baseY;
-    const writeLine = (y: number) => {
+    const writeLine = (y: number, patch?: ISTermPatch): string => {
       const line = this.#term.buffer.active.getLine(y);
-      const ansiLine = [ansi.resetColor, ansi.resetLine];
+      const hasPatch = patch != null;
+      const ansiPrePatch = [ansi.resetColor, ansi.resetLine];
+      const ansiPostPatch = hasPatch ? [ansi.resetColor] : [];
       if (line == null) return "";
+
       let prevCell: ICellData | undefined;
+      let ansiLine = ansiPrePatch;
+
+      const patchStartX = patch?.startX ?? 0;
+      const patchEndX = (patch?.startX ?? 0) + (patch?.length ?? 0);
       for (let x = 0; x < line.length; x++) {
+        if (hasPatch && x >= patchStartX && x < patchEndX) {
+          prevCell = undefined;
+          ansiLine = ansiPostPatch;
+          continue;
+        }
+
         const cell = line.getCell(x) as unknown as ICellData | undefined;
         const chars = cell?.getChars() ?? "";
 
@@ -294,24 +323,31 @@ export class ISTerm implements IPty {
         ansiLine.push(chars == "" ? cursorForward : chars);
         prevCell = cell;
       }
-      return ansiLine.join("");
+      return [ansiPrePatch.join(""), patch?.data ?? "", ansiPostPatch.join("")].join("");
     };
 
-    const lines = [];
+    const lines: string[] = [];
     if (direction == "above") {
       const startCursorPosition = currentCursorPosition - 1;
       const endCursorPosition = currentCursorPosition - 1 - height;
+      let patchIdx = patches.length - 1;
       for (let y = startCursorPosition; y > endCursorPosition; y--) {
-        lines.push(writeLine(y));
+        const patch = patches[patchIdx];
+        lines.push(writeLine(y, patch));
+        patchIdx--;
       }
     } else {
       const startCursorPosition = currentCursorPosition + 1;
       const endCursorPosition = currentCursorPosition + 1 + height;
+      let patchIdx = 0;
       for (let y = startCursorPosition; y < endCursorPosition; y++) {
-        lines.push(writeLine(y));
+        const patch = patches[patchIdx];
+        lines.push(writeLine(y, patch));
+        patchIdx++;
       }
     }
-    return lines.reverse().join(ansi.cursorNextLine);
+
+    return (direction == "above" ? lines.reverse() : lines).join(ansi.cursorNextLine);
   }
 }
 

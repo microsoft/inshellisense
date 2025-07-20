@@ -1,27 +1,20 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import ansi from "ansi-escapes";
 import { resetColor } from "../utils/ansi.js";
 import wrapAnsi from "wrap-ansi";
 import chalk from "chalk";
 import wcwidth from "wcwidth";
 
-/**
- * Renders a box around the given rows
- * @param rows the text content to be included in the box, must be <= width - 2
- * @param width the max width of a row
- * @param x the column to start the box at
- */
-export const renderBox = (rows: string[], width: number, x: number, borderColor?: string) => {
+export const renderBox = (rows: string[], width: number, borderColor?: string): string[] => {
   const result = [];
   const setColor = (text: string) => resetColor + (borderColor ? chalk.hex(borderColor).apply(text) : text);
-  result.push(ansi.cursorTo(x) + setColor("┌" + "─".repeat(width - 2) + "┐") + ansi.cursorTo(x));
+  result.push(setColor("┌" + "─".repeat(width - 2) + "┐"));
   rows.forEach((row) => {
-    result.push(ansi.cursorDown() + setColor("│") + row + setColor("│") + ansi.cursorTo(x));
+    result.push(setColor("│") + row + setColor("│"));
   });
-  result.push(ansi.cursorDown() + setColor("└" + "─".repeat(width - 2) + "┘") + ansi.cursorTo(x));
-  return result.join("") + ansi.cursorUp(rows.length + 1);
+  result.push(setColor("└" + "─".repeat(width - 2) + "┘"));
+  return result;
 };
 
 export const truncateMultilineText = (description: string, width: number, maxHeight: number) => {

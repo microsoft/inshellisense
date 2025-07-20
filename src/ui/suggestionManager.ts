@@ -3,9 +3,8 @@
 
 import { Suggestion, SuggestionBlob } from "../runtime/model.js";
 import { getSuggestions } from "../runtime/runtime.js";
-import { ISTerm } from "../isterm/pty.js";
+import { ISTerm, ISTermPatch } from "../isterm/pty.js";
 import { renderBox, truncateText, truncateMultilineText } from "./utils.js";
-import ansi from "ansi-escapes";
 import chalk from "chalk";
 import { Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
@@ -17,11 +16,8 @@ const descriptionWidth = 30;
 const descriptionHeight = 5;
 const borderWidth = 2;
 const activeSuggestionBackgroundColor = "#7D56F4";
-export const MAX_LINES = borderWidth + Math.max(maxSuggestions, descriptionHeight);
-type SuggestionsSequence = {
-  data: string;
-  rows: number;
-};
+export const MAX_LINES = borderWidth + Math.max(maxSuggestions, descriptionHeight) + 1; // accounts when there is a unhandled newline at the end of the command
+export const MIN_WIDTH = borderWidth + descriptionWidth;
 
 export type KeyPressEvent = [string | null | undefined, KeyPress];
 
@@ -67,22 +63,17 @@ export class SuggestionManager {
     this.#activeSuggestionIdx = 0;
   }
 
-  private _renderArgumentDescription(description: string | undefined, x: number) {
+  private _renderArgumentDescription(description: string | undefined) {
+    if (!description) return [];
+    return renderBox([truncateText(description, descriptionWidth - borderWidth)], descriptionWidth);
+  }
+
+  private _renderDescription(description: string | undefined) {
     if (!description) return "";
-    return renderBox([truncateText(description, descriptionWidth - borderWidth)], descriptionWidth, x);
+    return renderBox(truncateMultilineText(description, descriptionWidth - borderWidth, descriptionHeight), descriptionWidth);
   }
 
-  private _renderDescription(description: string | undefined, x: number) {
-    if (!description) return "";
-    return renderBox(truncateMultilineText(description, descriptionWidth - borderWidth, descriptionHeight), descriptionWidth, x);
-  }
-
-  private _descriptionRows(description: string | undefined) {
-    if (!description) return 0;
-    return truncateMultilineText(description, descriptionWidth - borderWidth, descriptionHeight).length;
-  }
-
-  private _renderSuggestions(suggestions: Suggestion[], activeSuggestionIdx: number, x: number) {
+  private _renderSuggestions(suggestions: Suggestion[], activeSuggestionIdx: number) {
     return renderBox(
       suggestions.map((suggestion, idx) => {
         const suggestionText = `${suggestion.icon} ${suggestion.name}`;
@@ -90,19 +81,32 @@ export class SuggestionManager {
         return idx == activeSuggestionIdx ? chalk.bgHex(activeSuggestionBackgroundColor)(truncatedSuggestion) : truncatedSuggestion;
       }),
       suggestionWidth,
-      x,
     );
   }
 
-  validate(suggestion: SuggestionsSequence): SuggestionsSequence {
-    const commandText = this.#term.getCommandState().commandText;
-    return !commandText ? { data: "", rows: 0 } : suggestion;
+  private _calculatePadding(description: string): { padding: number; swapDescription: boolean } {
+    const wrappedPadding = this.#term.getCursorState().cursorX % this.#term.cols;
+    const maxPadding = description.length !== 0 ? this.#term.cols - suggestionWidth - descriptionWidth : this.#term.cols - suggestionWidth;
+    const swapDescription = wrappedPadding > maxPadding && description.length !== 0;
+    const swappedPadding = swapDescription ? Math.max(wrappedPadding - descriptionWidth, 0) : wrappedPadding;
+    const padding = Math.min(Math.min(wrappedPadding, swappedPadding), maxPadding);
+    return { padding, swapDescription };
   }
 
-  async render(remainingLines: number): Promise<SuggestionsSequence> {
-    await this._loadSuggestions();
+  private _calculateRowPadding(padding: number, swapDescription: boolean, suggestionContent?: string, descriptionContent?: string): number {
+    if (swapDescription) {
+      return descriptionContent == null ? padding + descriptionWidth : padding;
+    }
+    return suggestionContent == null ? padding + suggestionWidth : padding;
+  }
+
+  async exec(): Promise<void> {
+    return await this._loadSuggestions();
+  }
+
+  render(direction: "above" | "below"): ISTermPatch[] {
     if (!this.#suggestBlob) {
-      return { data: "", rows: 0 };
+      return [];
     }
     const { suggestions, argumentDescription } = this.#suggestBlob;
 
@@ -110,12 +114,7 @@ export class SuggestionManager {
     const pagedSuggestions = suggestions.filter((_, idx) => idx < page * maxSuggestions && idx >= (page - 1) * maxSuggestions);
     const activePagedSuggestionIndex = this.#activeSuggestionIdx % maxSuggestions;
     const activeDescription = pagedSuggestions.at(activePagedSuggestionIndex)?.description || argumentDescription || "";
-
-    const wrappedPadding = this.#term.getCursorState().cursorX % this.#term.cols;
-    const maxPadding = activeDescription.length !== 0 ? this.#term.cols - suggestionWidth - descriptionWidth : this.#term.cols - suggestionWidth;
-    const swapDescription = wrappedPadding > maxPadding && activeDescription.length !== 0;
-    const swappedPadding = swapDescription ? Math.max(wrappedPadding - descriptionWidth, 0) : wrappedPadding;
-    const clampedLeftPadding = Math.min(Math.min(wrappedPadding, swappedPadding), maxPadding);
+    const { swapDescription, padding } = this._calculatePadding(activeDescription);
 
     if (suggestions.length <= this.#activeSuggestionIdx) {
       this.#activeSuggestionIdx = Math.max(suggestions.length - 1, 0);
@@ -123,44 +122,30 @@ export class SuggestionManager {
 
     if (pagedSuggestions.length == 0) {
       if (argumentDescription != null) {
-        return {
-          data:
-            ansi.cursorHide +
-            ansi.cursorUp(2) +
-            ansi.cursorForward(clampedLeftPadding) +
-            this._renderArgumentDescription(argumentDescription, clampedLeftPadding),
-          rows: 3,
-        };
+        return this._renderArgumentDescription(argumentDescription).map((row) => ({ startX: padding, length: descriptionWidth, data: row }));
       }
-      return { data: "", rows: 0 };
+      return [];
     }
+    const descriptionUI = this._renderDescription(activeDescription);
+    const suggestionUI = this._renderSuggestions(pagedSuggestions, activePagedSuggestionIndex);
+    const ui = [];
+    const maxRows = Math.max(descriptionUI.length, suggestionUI.length);
+    for (let i = 0; i < maxRows; i++) {
+      const [suggestionUIRow, descriptionUIRow] =
+        direction == "above"
+          ? [suggestionUI[i - maxRows + suggestionUI.length], descriptionUI[i - maxRows + descriptionUI.length]]
+          : [suggestionUI[i], descriptionUI[i]];
 
-    const suggestionRowsUsed = pagedSuggestions.length + borderWidth;
-    let descriptionRowsUsed = this._descriptionRows(activeDescription) + borderWidth;
-    let rows = Math.max(descriptionRowsUsed, suggestionRowsUsed);
-    if (rows <= remainingLines) {
-      descriptionRowsUsed = suggestionRowsUsed;
-      rows = suggestionRowsUsed;
+      const data = swapDescription ? (descriptionUIRow ?? "") + (suggestionUIRow ?? "") : (suggestionUIRow ?? "") + (descriptionUIRow ?? "");
+      const rowPadding = this._calculateRowPadding(padding, swapDescription, suggestionUIRow, descriptionUIRow);
+
+      ui.push({
+        startX: rowPadding,
+        length: (suggestionUIRow == null ? 0 : suggestionWidth) + (descriptionUIRow == null ? 0 : descriptionWidth),
+        data: data,
+      });
     }
-
-    const descriptionUI =
-      ansi.cursorUp(descriptionRowsUsed - 1) +
-      (swapDescription
-        ? this._renderDescription(activeDescription, clampedLeftPadding)
-        : this._renderDescription(activeDescription, clampedLeftPadding + suggestionWidth)) +
-      ansi.cursorDown(descriptionRowsUsed - 1);
-    const suggestionUI =
-      ansi.cursorUp(suggestionRowsUsed - 1) +
-      (swapDescription
-        ? this._renderSuggestions(pagedSuggestions, activePagedSuggestionIndex, clampedLeftPadding + descriptionWidth)
-        : this._renderSuggestions(pagedSuggestions, activePagedSuggestionIndex, clampedLeftPadding)) +
-      ansi.cursorDown(suggestionRowsUsed - 1);
-
-    const ui = swapDescription ? descriptionUI + suggestionUI : suggestionUI + descriptionUI;
-    return {
-      data: ansi.cursorHide + ansi.cursorForward(clampedLeftPadding) + ui + ansi.cursorShow,
-      rows,
-    };
+    return ui;
   }
 
   update(keyPress: KeyPress): boolean {
