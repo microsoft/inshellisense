@@ -50,10 +50,10 @@ export const runGenerator = async (generator: Fig.Generator, tokens: string[], c
         suggestions.push(...templateSuggestions);
       }
     }
-    return suggestions;
+    return suggestions.filter((s) => s != null);
   } catch (e) {
     const err = typeof e === "string" ? e : e instanceof Error ? e.message : e;
     log.debug({ msg: "generator failed", err, script, splitOn, template });
   }
-  return suggestions;
+  return suggestions.filter((s) => s != null);
 };
