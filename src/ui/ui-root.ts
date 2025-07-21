@@ -12,7 +12,7 @@ import isterm from "../isterm/index.js";
 import { resetToInitialState } from "../utils/ansi.js";
 import { SuggestionManager, MAX_LINES, KeyPressEvent } from "./suggestionManager.js";
 import { ISTerm } from "../isterm/pty.js";
-import {v4 as uuidV4} from "uuid"
+import { v4 as uuidV4 } from "uuid";
 
 export const renderConfirmation = (live: boolean): string => {
   const statusMessage = live ? chalk.green("live") : chalk.red("not found");
