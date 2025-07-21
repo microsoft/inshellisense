@@ -23,13 +23,20 @@ const writeOutput = (data: string) => {
   process.stdout.write(data);
 };
 
-const _render = (term: ISTerm, suggestionManager: SuggestionManager, data: string, handlingBackspace: boolean): boolean => {
-  const direction = term.getCursorState().remainingLines > MAX_LINES ? "below" : "above";
+const _render = (term: ISTerm, suggestionManager: SuggestionManager, data: string, handlingBackspace: boolean, handlingSuggestion: boolean): boolean => {
+  const direction = _direction(term);
   const { hidden: cursorHidden, shift: cursorShift } = term.getCursorState();
   const linesOfInterest = MAX_LINES;
 
   const suggestion = suggestionManager.render(direction);
   const hasSuggestion = suggestion.length != 0;
+
+  if (!handlingSuggestion && !hasSuggestion) {
+    // there is no rendered suggestion and this will not render a suggestion
+    writeOutput(data);
+    return false;
+  }
+
   const commandState = term.getCommandState();
   const cursorTerminated = handlingBackspace ? true : commandState.cursorTerminated ?? false;
   const showSuggestions = hasSuggestion && cursorTerminated && !commandState.hasOutput && !cursorShift;
@@ -46,10 +53,28 @@ const _render = (term: ISTerm, suggestionManager: SuggestionManager, data: strin
   return showSuggestions;
 };
 
+const _clear = (term: ISTerm): void => {
+  const clearDirection = _direction(term) == "above" ? "below" : "above"; // invert direction to clear what was previously rendered
+  const { hidden: cursorHidden } = term.getCursorState();
+  const patch = term.getPatch(MAX_LINES, [], clearDirection);
+
+  const ansiCursorShow = cursorHidden ? "" : ansi.cursorShow;
+  if (clearDirection == "above") {
+    writeOutput(ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorPrevLine.repeat(MAX_LINES) + patch + ansi.cursorRestorePosition + ansiCursorShow);
+  } else {
+    writeOutput(ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorNextLine + patch + ansi.cursorRestorePosition + ansiCursorShow);
+  }
+};
+
+const _direction = (term: ISTerm): "above" | "below" => {
+  return term.getCursorState().remainingLines > MAX_LINES ? "below" : "above";
+};
+
 export const render = async (program: Command, shell: Shell, underTest: boolean, login: boolean) => {
   const term = await isterm.spawn(program, { shell, rows: process.stdout.rows, cols: process.stdout.columns, underTest, login });
   const suggestionManager = new SuggestionManager(term, shell);
   let hasSuggestion = false;
+  let direction = _direction(term);
   let handlingBackspace = false; // backspace normally consistent of two data points (move back & delete), so on the first data point, we won't enforce the cursor terminated rule. this will help reduce flicker
   const stdinStartedInRawMode = process.stdin.isRaw;
   if (process.stdin.isTTY) process.stdin.setRawMode(true);
@@ -63,11 +88,17 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   writeOutput(ansi.clearTerminal);
 
   term.onData(async (data) => {
-    hasSuggestion = _render(term, suggestionManager, data, handlingBackspace);
+    const handlingDirectionChange = direction != _direction(term);
+    if (handlingDirectionChange) {
+      _clear(term);
+    }
+
+    hasSuggestion = _render(term, suggestionManager, data, handlingBackspace, hasSuggestion);
     await suggestionManager.exec();
-    hasSuggestion = _render(term, suggestionManager, "", handlingBackspace);
+    hasSuggestion = _render(term, suggestionManager, "", handlingBackspace, hasSuggestion);
 
     handlingBackspace = false;
+    direction = _direction(term);
   });
 
   process.stdin.on("keypress", (...keyPress: KeyPressEvent) => {
