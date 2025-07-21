@@ -31,8 +31,8 @@ const _render = (term: ISTerm, suggestionManager: SuggestionManager, data: strin
   const suggestion = suggestionManager.render(direction);
   const hasSuggestion = suggestion.length != 0;
 
+  // there is no rendered suggestion and this will not render a suggestion
   if (!handlingSuggestion && !hasSuggestion) {
-    // there is no rendered suggestion and this will not render a suggestion
     writeOutput(data);
     return false;
   }
@@ -76,6 +76,7 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   let hasSuggestion = false;
   let direction = _direction(term);
   let handlingBackspace = false; // backspace normally consistent of two data points (move back & delete), so on the first data point, we won't enforce the cursor terminated rule. this will help reduce flicker
+  let renderId = crypto.randomUUID();
   const stdinStartedInRawMode = process.stdin.isRaw;
   if (process.stdin.isTTY) process.stdin.setRawMode(true);
   readline.emitKeypressEvents(process.stdin);
@@ -89,13 +90,21 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
 
   term.onData(async (data) => {
     const handlingDirectionChange = direction != _direction(term);
+    // clear the previous suggestion if the direction has changed to avoid leftover suggestions
     if (handlingDirectionChange) {
       _clear(term);
     }
 
     hasSuggestion = _render(term, suggestionManager, data, handlingBackspace, hasSuggestion);
+
+    const currentRenderId = crypto.randomUUID();
+    renderId = currentRenderId;
     await suggestionManager.exec();
-    hasSuggestion = _render(term, suggestionManager, "", handlingBackspace, hasSuggestion);
+
+    // handle race conditions where a earlier render might override a later one
+    if (currentRenderId == renderId) {
+      hasSuggestion = _render(term, suggestionManager, "", handlingBackspace, hasSuggestion);
+    }
 
     handlingBackspace = false;
     direction = _direction(term);
