@@ -12,6 +12,7 @@ import isterm from "../isterm/index.js";
 import { resetToInitialState } from "../utils/ansi.js";
 import { SuggestionManager, MAX_LINES, KeyPressEvent } from "./suggestionManager.js";
 import { ISTerm } from "../isterm/pty.js";
+import {v4 as uuidV4} from "uuid"
 
 export const renderConfirmation = (live: boolean): string => {
   const statusMessage = live ? chalk.green("live") : chalk.red("not found");
@@ -76,7 +77,7 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   let hasSuggestion = false;
   let direction = _direction(term);
   let handlingBackspace = false; // backspace normally consistent of two data points (move back & delete), so on the first data point, we won't enforce the cursor terminated rule. this will help reduce flicker
-  let renderId = crypto.randomUUID();
+  let renderId = uuidV4();
   const stdinStartedInRawMode = process.stdin.isRaw;
   if (process.stdin.isTTY) process.stdin.setRawMode(true);
   readline.emitKeypressEvents(process.stdin);
@@ -97,7 +98,7 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
 
     hasSuggestion = _render(term, suggestionManager, data, handlingBackspace, hasSuggestion);
 
-    const currentRenderId = crypto.randomUUID();
+    const currentRenderId = uuidV4();
     renderId = currentRenderId;
     await suggestionManager.exec();
 
