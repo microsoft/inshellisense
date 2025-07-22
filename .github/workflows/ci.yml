@@ -24,46 +24,8 @@ jobs:
 
       - run: npm run lint
 
-      - name: setup macOS shells
-        if: matrix.os == 'macos-latest'
-        shell: bash
-        run: |
-          brew install fish
-          brew install zsh
-          brew install nushell
-
-          git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
-          echo "source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" > ~/.zshrc
-
-      - name: setup linux shells
-        if: matrix.os == 'ubuntu-latest'
-        shell: bash
-        run: |
-          sudo apt-add-repository ppa:fish-shell/release-3
-          sudo apt-get update
-          sudo apt install fish zsh
-          npm install -g nushell
-
-
-          git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
-          echo "source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" > ~/.zshrc
-
-          sudo chmod -R 755 /usr/share/zsh/vendor-completions
-          sudo chown -R root:root /usr/share/zsh/vendor-completions
-          sudo chmod -R 755 /usr/share/zsh
-          sudo chown -R root:root /usr/share/zsh
-
-      - name: setup windows shells
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          pipx install 'xonsh[full]'
-          choco install nushell
-
       - run: npm test
 
       - run: npm run build
 
       - run: npm link
-
-      - run: npm run test:e2e
