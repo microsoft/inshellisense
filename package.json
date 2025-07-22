@@ -55,6 +55,7 @@
     "find-process": "^1.4.7",
     "strip-ansi": "^7.1.0",
     "toml": "^3.0.0",
+    "uuid": "^11.1.0",
     "wcwidth": "^1.0.1",
     "which": "^4.0.0",
     "wrap-ansi": "^8.1.0"
