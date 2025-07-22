@@ -69,26 +69,19 @@ const lazyLoadSpecLocation = async (location: Fig.SpecLocation): Promise<Fig.Spe
 };
 
 export const loadLocalSpecsSet = async () => {
-  const specsPath = getConfig()?.specs?.path;
-  if (!specsPath) {
-    return;
-  }
-  try {
-    await Promise.allSettled(
-      specsPath.map((specPath) =>
-        import(path.join(specPath, "index.js"))
-          .then((res) => {
-            const { default: speclist, diffVersionedCompletions: versionedSpeclist } = res;
-            loadSpecsSet(speclist, versionedSpeclist, specPath);
-          })
-          .catch((e) => {
-            log.debug({ msg: "load local spec failed", e: (e as Error).message, specPath });
-          }),
-      ),
-    );
-  } catch (e) {
-    log.debug({ msg: "load local specs failed", e: (e as Error).message, specsPath });
-  }
+  const specsPath = getConfig().specs.path;
+  await Promise.allSettled(
+    specsPath.map((specPath) =>
+      import(path.join(specPath, "index.js"))
+        .then((res) => {
+          const { default: speclist, diffVersionedCompletions: versionedSpeclist } = res;
+          loadSpecsSet(speclist, versionedSpeclist, specPath);
+        })
+        .catch((e) => {
+          log.debug({ msg: `no local specs imported from '${specPath}', this will not break the current session`, e: (e as Error).message, specPath });
+        }),
+    ),
+  );
 };
 
 export const getSuggestions = async (cmd: string, cwd: string, shell: Shell): Promise<SuggestionBlob | undefined> => {
