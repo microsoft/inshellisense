@@ -25,8 +25,8 @@ type Config = {
     dismissSuggestions: Binding;
     acceptSuggestion: Binding;
   };
-  specs?: {
-    path?: string[];
+  specs: {
+    path: string[];
   };
   useNerdFont: boolean;
 };
@@ -92,6 +92,9 @@ let globalConfig: Config = {
     previousSuggestion: { key: "up" },
     acceptSuggestion: { key: "tab" },
     dismissSuggestions: { key: "escape" },
+  },
+  specs: {
+    path: [],
   },
   useNerdFont: false,
 };
