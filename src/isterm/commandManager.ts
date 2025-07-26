@@ -6,6 +6,9 @@ import { IBufferCell, IBufferLine, IMarker, Terminal } from "@xterm/headless";
 import { getShellPromptRewrites, Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
 
+const rightPromptLookbackWidth = 5;
+const commandWhitespaceTerminationWidth = 4;
+
 type TerminalCommand = {
   promptStartMarker?: IMarker;
   promptEndMarker?: IMarker;
@@ -60,7 +63,23 @@ export class CommandManager {
       this.#activeCommand.promptEndX = this.#terminal.buffer.active.cursorX;
     }
 
-    this.#activeCommand.promptText = this.#terminal.buffer.active.getLine(this.#activeCommand.promptEndMarker?.line ?? 0)?.translateToString(true);
+    const promptLine = this.#terminal.buffer.active.getLine(this.#activeCommand.promptEndMarker?.line ?? 0);
+
+    if (promptLine == null) return;
+    const promptLineText = promptLine?.translateToString(true);
+    this.#activeCommand.promptText = promptLineText;
+
+    const hasRightPrompt = Array.from({ length: rightPromptLookbackWidth })
+      .map((_, i) => promptLine?.length - 1 - i)
+      .some((x) => promptLine.getCell(x)?.getChars().trim() != "");
+    if (hasRightPrompt) {
+      const whitespace = " ".repeat(commandWhitespaceTerminationWidth);
+      const whitespaceIdx = promptLineText.indexOf(whitespace);
+      if (whitespaceIdx != -1) {
+        this.#activeCommand.promptText = promptLineText.substring(0, whitespaceIdx);
+        this.#activeCommand.promptEndX = whitespaceIdx;
+      }
+    }
   }
 
   #hasBeenAccepted() {
@@ -136,10 +155,11 @@ export class CommandManager {
     let preCursorCommand = "";
     let postCursorCommand = "";
     let suggestion = "";
+    const whitespace = " ".repeat(commandWhitespaceTerminationWidth);
     for (const [y, line] of commandLines.entries()) {
       const startX = y == 0 ? this.#activeCommand.promptText?.length ?? 0 : 0;
       for (let x = startX; x < this.#terminal.cols; x++) {
-        if (postCursorCommand.endsWith("    ")) break; // assume that a command that ends with 4 spaces is terminated, avoids capturing right prompts
+        if (postCursorCommand.endsWith(whitespace)) break; // assume that a command that ends with 4 spaces is terminated, avoids capturing right prompts
 
         const cell = line.getCell(x);
         if (cell == null) continue;
