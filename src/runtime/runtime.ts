@@ -8,11 +8,11 @@ import speclist, {
 } from "@withfig/autocomplete/build/index.js";
 import path from "node:path";
 import { parseCommand, CommandToken } from "./parser.js";
-import { getArgDrivenRecommendation, getSubcommandDrivenRecommendation } from "./suggestion.js";
-import { SuggestionBlob } from "./model.js";
+import { getArgDrivenRecommendation, getSubcommandDrivenRecommendation, SuggestionIcons } from "./suggestion.js";
+import { Suggestion, SuggestionBlob } from "./model.js";
 import { buildExecuteShellCommand, resolveCwd } from "./utils.js";
 import { Shell } from "../utils/shell.js";
-import { aliasExpand } from "./alias.js";
+import { aliasExpand, getAliasNames } from "./alias.js";
 import { getConfig } from "../utils/config.js";
 import log from "../utils/log.js";
 
@@ -87,9 +87,13 @@ export const loadLocalSpecsSet = async () => {
 export const getSuggestions = async (cmd: string, cwd: string, shell: Shell): Promise<SuggestionBlob | undefined> => {
   let activeCmd = parseCommand(cmd, shell);
   const rootToken = activeCmd.at(0);
-  if (activeCmd.length === 0 || !rootToken?.complete) {
+  if (activeCmd.length === 0) {
     return;
   }
+  if (rootToken != null && !rootToken.complete) {
+    return runCommand(rootToken);
+  }
+
   activeCmd = aliasExpand(activeCmd);
 
   const spec = await loadSpec(activeCmd);
@@ -345,4 +349,38 @@ const runSubcommand = async (
   }
   // if the subcommand has no args specified, fallback to the subcommand and ignore this item
   return runSubcommand(tokens.slice(1), subcommand, cwd, shell, persistentOptions, acceptedTokens.concat(activeToken));
+};
+
+const runCommand = async (token: CommandToken): Promise<SuggestionBlob | undefined> => {
+  const specs = Object.keys(specSet)
+    .filter((spec) => spec.startsWith(token.token))
+    .sort();
+  const aliases = getAliasNames()
+    .filter((spec) => spec.startsWith(token.token))
+    .sort();
+  return {
+    suggestions: [
+      ...aliases.map(
+        (alias) =>
+          ({
+            name: alias,
+            type: "shortcut",
+            allNames: [alias],
+            icon: SuggestionIcons.Shortcut,
+            priority: 100,
+          }) as Suggestion,
+      ),
+      ...specs.map(
+        (spec) =>
+          ({
+            name: spec,
+            type: "subcommand",
+            allNames: [spec],
+            icon: SuggestionIcons.Subcommand,
+            priority: 40,
+          }) as Suggestion,
+      ),
+    ],
+    charactersToDrop: token.tokenLength,
+  };
 };
