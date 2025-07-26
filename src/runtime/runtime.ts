@@ -360,7 +360,7 @@ const runCommand = async (token: CommandToken): Promise<SuggestionBlob | undefin
     .sort();
   return {
     suggestions: [
-            ...aliases.map(
+      ...aliases.map(
         (alias) =>
           ({
             name: alias,
