@@ -57,8 +57,8 @@ export class SuggestionManager {
     if (commandText == this.#command) {
       return;
     }
-    this.#command = commandText;
     const suggestionBlob = await getSuggestions(commandText, this.#term.cwd, this.#shell);
+    this.#command = commandText;
     this.#suggestBlob = suggestionBlob;
     this.#activeSuggestionIdx = 0;
   }

@@ -76,7 +76,7 @@ export class CommandManager {
       const whitespace = " ".repeat(commandWhitespaceTerminationWidth);
       const whitespaceIdx = promptLineText.indexOf(whitespace);
       if (whitespaceIdx != -1) {
-        this.#activeCommand.promptText = promptLineText.substring(0, whitespaceIdx);
+        this.#activeCommand.promptText = promptLineText.substring(0, whitespaceIdx) + 1;
         this.#activeCommand.promptEndX = whitespaceIdx;
       }
     }
