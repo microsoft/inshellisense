@@ -46,7 +46,7 @@ describe(`parseCommand`, () => {
   });
 });
 
-const commandSuggestionsData = [
+const subcommandSuggestionsData = [
   {
     name: "brewInstallMullvad",
     command: "brew install mullvad-brow",
@@ -64,10 +64,10 @@ const commandSuggestionsData = [
   { name: "preCommitRun", command: "pre-commit run ", maxSuggestions: 1, expectedIcons: [SuggestionIcons.Option] }, // script + post-process generator w/ console logs
 ];
 
-describe(`getCommandSuggestions`, () => {
+describe(`getSubcommandSuggestions`, () => {
   beforeAll(async () => await getCommandSuggestionsSetup());
 
-  commandSuggestionsData.forEach(({ command, name, maxSuggestions, expectedNames, expectedIcons, platforms }) => {
+  subcommandSuggestionsData.forEach(({ command, name, maxSuggestions, expectedNames, expectedIcons, platforms }) => {
     if (platforms != null && !platforms.includes(process.platform)) return;
     test(name, async () => {
       const suggestions = await getSuggestions(command, process.cwd(), Shell.Bash);
@@ -91,3 +91,23 @@ const getCommandSuggestionsSetup = async () => {
 const getCommandSuggestionsCleanup = async () => {
   fs.rmSync("demo.ts");
 };
+
+
+const commandSuggestionsData = [
+  { name: "gi", command: "gi", maxSuggestions: 2, expectedNames: ["gibo", "git"], expectedIcons: [SuggestionIcons.Subcommand] }, // subcommand generator
+];
+
+describe(`getCommandSuggestions`, () => {
+  commandSuggestionsData.forEach(({ command, name, maxSuggestions, expectedNames, expectedIcons }) => {
+    test(name, async () => {
+      const suggestions = await getSuggestions(command, process.cwd(), Shell.Bash);
+      if (suggestions != null && suggestions.suggestions != null) {
+        suggestions.suggestions = suggestions?.suggestions.slice(0, maxSuggestions);
+      }
+      const names = suggestions?.suggestions.map((s) => s.allNames).flat() ?? [];
+      const icons = suggestions?.suggestions.map((s) => s.icon) ?? [];
+      expect(names).toEqual(expect.arrayContaining(expectedNames ?? []));
+      expect(icons).toEqual(expect.arrayContaining(expectedIcons ?? []));
+    });
+  });
+});
