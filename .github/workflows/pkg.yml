@@ -13,7 +13,7 @@ jobs:
           - os: macos-latest
             arch: arm64
             artifact-name: inshellisense-darwin-arm64
-          - os: macos-13
+          - os: macos-15-intel
             arch: x64
             artifact-name: inshellisense-darwin-x64
           - os: ubuntu-latest
