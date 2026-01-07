@@ -8,6 +8,7 @@ import fsAsync from "node:fs/promises";
 import toml from "toml";
 import _Ajv, { JSONSchemaType } from "ajv";
 import { Command } from "commander";
+import { allResourcesPath } from "./constants.js";
 
 const Ajv = _Ajv as unknown as typeof _Ajv.default;
 const ajv = new Ajv();
@@ -80,7 +81,6 @@ const configSchema = {
 
 const rcFile = ".inshellisenserc";
 const xdgFile = "rc.toml";
-const cachePath = path.join(os.homedir(), ".inshellisense");
 const rcPath = path.join(os.homedir(), rcFile);
 const xdgPath = path.join(os.homedir(), ".config", "inshellisense", xdgFile);
 
@@ -132,7 +132,7 @@ export const loadConfig = async (program: Command) => {
 };
 
 export const deleteCacheFolder = (): void => {
-  if (fs.existsSync(cachePath)) {
-    fs.rmSync(cachePath, { recursive: true });
+  if (fs.existsSync(allResourcesPath)) {
+    fs.rmSync(allResourcesPath, { recursive: true });
   }
 };

@@ -3,18 +3,18 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import os from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import fsAsync from "node:fs/promises";
+import { loggingResourcesPath } from "./constants.js";
 
-const logFolder = path.join(os.homedir(), ".inshellisense");
-const logTarget = path.join(logFolder, "inshellisense.log");
+
+const logTarget = path.join(loggingResourcesPath, "inshellisense.log");
 let logEnabled = false;
 
 const reset = async () => {
   if (!fs.existsSync(logTarget)) {
-    await fsAsync.mkdir(logFolder, { recursive: true });
+    await fsAsync.mkdir(loggingResourcesPath, { recursive: true });
   }
   await fsAsync.writeFile(logTarget, "");
 };

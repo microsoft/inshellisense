@@ -9,7 +9,7 @@ import os from "node:os";
 
 const loadedAliases: { [key: string]: CommandToken[] | undefined } = {};
 const platform = os.platform();
-const executeShellCommand = await buildExecuteShellCommand(5_000);
+const executeShellCommand = buildExecuteShellCommand(5_000);
 
 const loadBashAliases = async () => {
   const shellTarget = platform == "win32" ? await gitBashPath() : Shell.Bash;

@@ -2,13 +2,14 @@
 // Licensed under the MIT License.
 
 import { render, renderConfirmation } from "../ui/ui-root.js";
-import { Shell, supportedShells as shells, setupZshDotfiles, setupBashPreExec } from "../utils/shell.js";
+import { Shell, supportedShells as shells, setupZshDotfiles } from "../utils/shell.js";
 import { inferShell } from "../utils/shell.js";
 import { loadConfig } from "../utils/config.js";
 import { Command } from "commander";
 import log from "../utils/log.js";
 import { loadAliases } from "../runtime/alias.js";
 import { loadLocalSpecsSet } from "../runtime/runtime.js";
+import { unpackNativeModules, unpackShellFiles } from "../utils/node.js";
 
 export const supportedShells = shells.join(", ");
 
@@ -30,8 +31,10 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
   if (options.verbose) await log.enable();
 
   await loadConfig(program);
-
   await loadLocalSpecsSet();
+
+  await unpackNativeModules();
+  await unpackShellFiles();
 
   log.overrideConsole();
 
@@ -44,8 +47,6 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
   }
   if (shell == Shell.Zsh) {
     await setupZshDotfiles();
-  } else if (shell == Shell.Bash) {
-    await setupBashPreExec();
   }
   await loadAliases(shell);
   await render(program, shell, options.test ?? false, options.login ?? false);

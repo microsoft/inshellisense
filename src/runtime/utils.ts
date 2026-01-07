@@ -87,7 +87,7 @@ export const escapePath = (value: string | undefined, shell: Shell): string | un
   value != null && needsQuoted(value, getShellQuoteChar(shell)) ? quoteString(value, getShellQuoteChar(shell)) : value;
 
 export const buildExecuteShellCommand =
-  async (timeout: number): Promise<Fig.ExecuteCommandFunction> =>
+  (timeout: number): Fig.ExecuteCommandFunction =>
   async ({ command, env, args, cwd }: Fig.ExecuteCommandInput): Promise<Fig.ExecuteCommandOutput> => {
     const executionShell = await getExecutionShell();
     const escapedArgs = escapeArgs(executionShell, args);
