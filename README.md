@@ -6,10 +6,6 @@
 
 ## Getting Started
 
-### Requirements
-
-- Node.js 22.X, 20.X, 18.X
-
 ### Installation
 
 ```shell
