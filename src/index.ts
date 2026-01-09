@@ -8,6 +8,7 @@
 import { Command, Option } from "commander";
 
 import complete from "./commands/complete.js";
+import install from "./commands/install.js";
 import uninstall from "./commands/uninstall.js";
 import init from "./commands/init.js";
 import specs from "./commands/specs/root.js";
@@ -36,6 +37,7 @@ program
   .passThroughOptions();
 
 program.addCommand(complete);
+program.addCommand(install);
 program.addCommand(uninstall);
 program.addCommand(init);
 program.addCommand(specs);

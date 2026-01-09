@@ -10,6 +10,15 @@
 
 ```shell
 npm install -g @microsoft/inshellisense
+is install
+```
+
+### Updating
+
+```shell
+is uninstall # this will delete any custom specs / configuration files
+npm install -g @microsoft/inshellisense
+is install
 ```
 
 ### Quickstart
@@ -104,6 +113,14 @@ key = "escape"
 ```
 
 Key names are matched against the Node.js [keypress](https://nodejs.org/api/readline.html#readlineemitkeypresseventsstream-interface) events.
+
+### Alias Expansion
+
+Inshellisense supports expanding aliases for bash/zsh shells. You can enable alias expansion in your config file:
+
+```toml
+useAliases = true
+```
 
 ### NerdFonts
 

@@ -29,6 +29,7 @@ type Config = {
   specs: {
     path: string[];
   };
+  useAliases: boolean;
   useNerdFont: boolean;
 };
 
@@ -70,6 +71,11 @@ const configSchema = {
         path: specPathsSchema,
       },
     },
+    useAliases: {
+      type: "boolean",
+      nullable: true,
+      default: false,
+    },
     useNerdFont: {
       type: "boolean",
       nullable: true,
@@ -96,6 +102,7 @@ let globalConfig: Config = {
   specs: {
     path: [],
   },
+  useAliases: false,
   useNerdFont: false,
 };
 
@@ -124,6 +131,7 @@ export const loadConfig = async (program: Command) => {
         specs: {
           path: [...(config?.specs?.path ?? []), ...(config?.specs?.path ?? [])],
         },
+        useAliases: config.useAliases ?? false,
         useNerdFont: config?.useNerdFont ?? false,
       };
     }

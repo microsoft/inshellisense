@@ -9,7 +9,6 @@ import { Command } from "commander";
 import log from "../utils/log.js";
 import { loadAliases } from "../runtime/alias.js";
 import { loadLocalSpecsSet } from "../runtime/runtime.js";
-import { unpackNativeModules, unpackShellFiles } from "../utils/node.js";
 
 export const supportedShells = shells.join(", ");
 
@@ -30,24 +29,26 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
 
   if (options.verbose) await log.enable();
 
-  await loadConfig(program);
-  await loadLocalSpecsSet();
-
-  await unpackNativeModules();
-  await unpackShellFiles();
+  const [, inferredShell] = await Promise.all([
+    loadConfig(program),
+    options.shell ? Promise.resolve(options.shell) : inferShell(),
+  ]);
 
   log.overrideConsole();
 
-  const shell = options.shell ?? ((await inferShell()) as unknown as Shell | undefined);
+  const shell = (options.shell ?? inferredShell) as Shell | undefined;
   if (shell == null) {
     program.error(`Unable to identify shell, use the -s/--shell option to provide your shell`, { exitCode: 1 });
   }
   if (!shells.map((s) => s.valueOf()).includes(shell)) {
     program.error(`Unsupported shell: '${shell}', supported shells: ${supportedShells}`, { exitCode: 1 });
   }
-  if (shell == Shell.Zsh) {
-    await setupZshDotfiles();
-  }
-  await loadAliases(shell);
+
+  await Promise.all([
+    loadLocalSpecsSet(),
+    loadAliases(shell),
+    shell == Shell.Zsh ? setupZshDotfiles() : Promise.resolve(),
+  ]);
+
   await render(program, shell, options.test ?? false, options.login ?? false);
 };
