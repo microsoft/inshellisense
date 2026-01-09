@@ -48,6 +48,26 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
-          path: 
-            pkg/*.tgz
+          path: pkg/*.tgz
+          if-no-files-found: error
+
+  combine:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Combine artifacts into single zip
+        run: |
+          cd artifacts
+          zip -r ../inshellisense-all.zip .
+
+      - name: Upload combined artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: inshellisense-all
+          path: inshellisense-all.zip
           if-no-files-found: error
