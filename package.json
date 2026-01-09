@@ -20,6 +20,7 @@
   "scripts": {
     "build": "tsc",
     "package": "tsx ./scripts/pkg.ts",
+    "package-base": "tsx ./scripts/pkg-base.ts",
     "dev": "node --import=tsx src/index.ts -V",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "lint": "eslint src/ --ext .ts,.tsx && prettier src/ --check",
