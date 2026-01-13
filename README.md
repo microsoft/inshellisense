@@ -8,17 +8,23 @@
 
 ### Installation
 
+**npm (recommended)**
 ```shell
 npm install -g @microsoft/inshellisense
-is install
+is init
+```
+**homebrew (macOS/linux)**
+```shell
+brew tap microsoft/inshellisense https://github.com/microsoft/inshellisense
+brew install inshellisense
+is init
 ```
 
 ### Updating
 
 ```shell
-is uninstall # this will delete any custom specs / configuration files
-npm install -g @microsoft/inshellisense
-is install
+npm install -g @microsoft/inshellisense # OR brew upgrade inshellisense
+is reinit
 ```
 
 ### Quickstart
