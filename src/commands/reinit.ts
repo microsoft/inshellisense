@@ -4,7 +4,6 @@
 import { Command } from "commander";
 import { render } from "../ui/ui-reinit.js";
 
-
 const action = async () => {
   await render();
 };

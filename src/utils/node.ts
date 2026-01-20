@@ -10,9 +10,7 @@ import { nativeResourcesPath, shellResourcesPath } from "./constants.js";
 export const unpackNativeModules = async (): Promise<void> => {
   if (!sea.isSea()) return;
 
-  const assetKeys = sea.getAssetKeys().filter(
-    (key) => !key.includes("shellIntegration") && !key.includes("preexec")
-  );
+  const assetKeys = sea.getAssetKeys().filter((key) => !key.includes("shellIntegration") && !key.includes("preexec"));
 
   await Promise.all(
     assetKeys.map(async (assetKey) => {
@@ -22,7 +20,7 @@ export const unpackNativeModules = async (): Promise<void> => {
       const assetBlob = sea.getRawAsset(assetKey);
       await fsAsync.mkdir(path.dirname(outputPath), { recursive: true });
       await fsAsync.writeFile(outputPath, Buffer.from(assetBlob));
-    })
+    }),
   );
 };
 
@@ -38,12 +36,10 @@ export const unpackShellFiles = async (): Promise<void> => {
         if (fs.existsSync(destPath)) return;
         await fsAsync.mkdir(path.dirname(destPath), { recursive: true });
         await fsAsync.copyFile(sourcePath, destPath);
-      })
+      }),
     );
   } else {
-    const assetKeys = sea.getAssetKeys().filter(
-      (key) => key.includes("shellIntegration") || key.includes("preexec")
-    );
+    const assetKeys = sea.getAssetKeys().filter((key) => key.includes("shellIntegration") || key.includes("preexec"));
 
     await Promise.all(
       assetKeys.map(async (assetKey) => {
@@ -52,7 +48,7 @@ export const unpackShellFiles = async (): Promise<void> => {
         const assetBlob = sea.getRawAsset(assetKey);
         await fsAsync.mkdir(path.dirname(outputPath), { recursive: true });
         await fsAsync.writeFile(outputPath, Buffer.from(assetBlob));
-      })
+      }),
     );
   }
 };

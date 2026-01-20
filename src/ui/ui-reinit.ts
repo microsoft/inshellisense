@@ -5,7 +5,7 @@ import chalk from "chalk";
 import { unpackNativeModules, unpackShellFiles } from "../utils/node.js";
 import { createShellConfigs } from "../utils/shell.js";
 import { shellResourcesPath, nativeResourcesPath, loggingResourcesPath, initResourcesPath } from "../utils/constants.js";
-import fs from "node:fs"
+import fs from "node:fs";
 
 export const render = async () => {
   fs.rmSync(shellResourcesPath, { recursive: true, force: true });

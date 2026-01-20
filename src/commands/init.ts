@@ -16,7 +16,7 @@ const action = (program: Command) => async (shell: string | undefined) => {
   if (shell == null) {
     await render();
     return;
-  };
+  }
   if (!shells.map((s) => s.valueOf()).includes(shell)) {
     program.error(`Unsupported shell: '${shell}', supported shells: ${supportedShells}`, { exitCode: 1 });
   }

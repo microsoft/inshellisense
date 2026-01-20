@@ -8,7 +8,6 @@ import fs from "node:fs";
 import fsAsync from "node:fs/promises";
 import { loggingResourcesPath } from "./constants.js";
 
-
 const logTarget = path.join(loggingResourcesPath, "inshellisense.log");
 let logEnabled = false;
 
