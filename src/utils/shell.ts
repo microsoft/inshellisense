@@ -75,6 +75,9 @@ export const checkLegacyConfigs = async (): Promise<Shell[]> => {
       if (profile.includes("inshellisense shell plugin")) {
         shellsWithLegacyConfig.push(shell);
       }
+      if (profile.includes(`~/.inshellisense/${shell}/init.`)) {
+        shellsWithLegacyConfig.push(shell);
+      }
     }
   }
   return shellsWithLegacyConfig;
