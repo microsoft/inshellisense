@@ -258,10 +258,12 @@ function adjustPathSuggestions(
   shell: Shell,
 ): Suggestion[] {
   const isInPath = lastToken?.isPath && !lastToken.complete;
+  const isSpecialPathCharacter = (s: Suggestion) => s.name === "~";
   return suggestions.map((s) => {
-    const pathy = isInPath || getPathy(s.type);
+    const specialPathy = isInPath && isSpecialPathCharacter(s);
+    const pathy = getPathy(s.type) || specialPathy;
     const rawInsertValue = removePathSeparator(s.insertValue ?? s.name ?? "");
-    const insertValue = isInPath || s.type == "folder" ? addPathSeparator(rawInsertValue, shell) : rawInsertValue;
+    const insertValue = s.type == "folder" || specialPathy ? addPathSeparator(rawInsertValue, shell) : rawInsertValue;
     const partialDir = getPathDirname(partialToken?.token ?? "", shell);
     const isPartialTokenPath = partialToken?.isPath && endsWithPathSeparator(partialDir, shell);
     const fullPath = isPartialTokenPath ? `${partialDir}${insertValue}` : insertValue;
