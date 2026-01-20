@@ -9,7 +9,7 @@ import { Command } from "commander";
 import log from "../utils/log.js";
 import { getBackspaceSequence, Shell } from "../utils/shell.js";
 import isterm from "../isterm/index.js";
-import { resetToInitialState } from "../utils/ansi.js";
+import { enableWin32InputMode, resetToInitialState } from "../utils/ansi.js";
 import { SuggestionManager, MAX_LINES, KeyPressEvent } from "./suggestionManager.js";
 import { ISTerm } from "../isterm/pty.js";
 import { v4 as uuidV4 } from "uuid";
@@ -90,6 +90,8 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   writeOutput(ansi.clearTerminal);
 
   term.onData(async (data) => {
+    data = data.replace(enableWin32InputMode, ""); // remove win32-input-mode enable sequence if it comes through data
+
     const handlingDirectionChange = direction != _direction(term);
     // clear the previous suggestion if the direction has changed to avoid leftover suggestions
     if (handlingDirectionChange) {

@@ -9,7 +9,7 @@ import { runTemplates } from "./template.js";
 import { Suggestion, SuggestionBlob } from "./model.js";
 import log from "../utils/log.js";
 import { escapePath } from "./utils.js";
-import { addPathSeparator, getPathDirname, removePathSeparator, Shell } from "../utils/shell.js";
+import { addPathSeparator, endsWithPathSeparator, getPathDirname, removePathSeparator, Shell } from "../utils/shell.js";
 import { getConfig } from "../utils/config.js";
 
 export enum SuggestionIcons {
@@ -111,6 +111,7 @@ const toSuggestion = (suggestion: Fig.Suggestion, name?: string, type?: Fig.Sugg
     priority: suggestion.priority ?? 50,
     insertValue: suggestion.insertValue,
     type: suggestion.type,
+    hidden: suggestion.hidden,
   };
 };
 
@@ -138,6 +139,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
                   priority: s.priority ?? 50,
                   insertValue: s.insertValue,
                   type: s.type,
+                  hidden: s.hidden,
                 }
               : undefined;
           }
@@ -150,6 +152,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
                 priority: s.priority ?? 50,
                 insertValue: s.insertValue,
                 type: s.type,
+                hidden: s.hidden,
               }
             : undefined;
         })
@@ -169,6 +172,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
                   insertValue: s.insertValue,
                   priority: s.priority ?? 50,
                   type: s.type,
+                  hidden: s.hidden,
                 }
               : undefined;
           }
@@ -181,6 +185,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
                 insertValue: s.insertValue,
                 priority: s.priority ?? 50,
                 type: s.type,
+                hidden: s.hidden,
               }
             : undefined;
         })
@@ -192,13 +197,13 @@ type FilterStrategy = "fuzzy" | "prefix" | "default";
 
 const generatorSuggestions = async (
   generator: Fig.SingleOrArray<Fig.Generator> | undefined,
-  acceptedTokens: CommandToken[],
+  allTokens: CommandToken[],
   filterStrategy: FilterStrategy | undefined,
   partialCmd: string | undefined,
   cwd: string,
 ): Promise<Suggestion[]> => {
   const generators = generator instanceof Array ? generator : generator ? [generator] : [];
-  const tokens = acceptedTokens.map((t) => t.token);
+  const tokens = allTokens.map((t) => t.token);
   if (partialCmd) tokens.push(partialCmd);
   const suggestions = (await Promise.all(generators.map((gen) => runGenerator(gen, tokens, cwd)))).flat();
   return filter<Fig.Suggestion>(
@@ -246,13 +251,20 @@ const optionSuggestions = (
   return filter<Fig.Option>(validOptions ?? [], filterStrategy, partialCmd, "option");
 };
 
-function adjustPathSuggestions(suggestions: Suggestion[], partialToken: CommandToken | undefined, shell: Shell): Suggestion[] {
+function adjustPathSuggestions(
+  suggestions: Suggestion[],
+  partialToken: CommandToken | undefined,
+  lastToken: CommandToken | undefined,
+  shell: Shell,
+): Suggestion[] {
+  const isInPath = lastToken?.isPath && !lastToken.complete;
   return suggestions.map((s) => {
-    const pathy = getPathy(s.type);
+    const pathy = isInPath || getPathy(s.type);
     const rawInsertValue = removePathSeparator(s.insertValue ?? s.name ?? "");
-    const insertValue = s.type == "folder" ? addPathSeparator(rawInsertValue, shell) : rawInsertValue;
+    const insertValue = isInPath || s.type == "folder" ? addPathSeparator(rawInsertValue, shell) : rawInsertValue;
     const partialDir = getPathDirname(partialToken?.token ?? "", shell);
-    const fullPath = partialToken?.isPath ? `${partialDir}${insertValue}` : insertValue;
+    const isPartialTokenPath = partialToken?.isPath && endsWithPathSeparator(partialDir, shell);
+    const fullPath = isPartialTokenPath ? `${partialDir}${insertValue}` : insertValue;
     return pathy ? { ...s, insertValue: escapePath(fullPath, shell), name: removePathSeparator(s.name) } : s;
   });
 }
@@ -273,6 +285,15 @@ const removeDuplicateSuggestion = (suggestions: Suggestion[]): Suggestion[] => {
     .filter((s): s is Suggestion => s != null);
 };
 
+const removeHiddenSuggestions = (suggestions: Suggestion[], partialToken: CommandToken | undefined): Suggestion[] => {
+  return suggestions.filter((s) => s.hidden !== true || (partialToken != null && s.name === partialToken.token));
+};
+
+const removeHomeDirectorySuggestion = (suggestions: Suggestion[], allTokens: CommandToken[]): Suggestion[] => {
+  const containsHomeDir = allTokens.some((t) => t.token.startsWith("~"));
+  return suggestions.filter((s) => s.type !== "folder" || !containsHomeDir || !s.name.startsWith("~"));
+};
+
 const removeEmptySuggestion = (suggestions: Suggestion[]): Suggestion[] => {
   return suggestions.filter((s) => s.name.length > 0);
 };
@@ -284,6 +305,7 @@ export const getSubcommandDrivenRecommendation = async (
   argsDepleted: boolean,
   argsFromSubcommand: boolean,
   acceptedTokens: CommandToken[],
+  allTokens: CommandToken[],
   cwd: string,
   shell: Shell,
 ): Promise<SuggestionBlob | undefined> => {
@@ -296,6 +318,7 @@ export const getSubcommandDrivenRecommendation = async (
     partialCmd = partialToken.isPathComplete ? "" : path.basename(partialCmd ?? "");
   }
 
+  const lastToken = allTokens.at(-1);
   const suggestions: Suggestion[] = [];
   const argLength = subcommand.args instanceof Array ? subcommand.args.length : subcommand.args ? 1 : 0;
   const allOptions = persistentOptions.concat(subcommand.options ?? []);
@@ -306,7 +329,7 @@ export const getSubcommandDrivenRecommendation = async (
   }
   if (argLength != 0) {
     const activeArg = subcommand.args instanceof Array ? subcommand.args[0] : subcommand.args;
-    suggestions.push(...(await generatorSuggestions(activeArg?.generators, acceptedTokens, activeArg?.filterStrategy, partialCmd, cwd)));
+    suggestions.push(...(await generatorSuggestions(activeArg?.generators, allTokens, activeArg?.filterStrategy, partialCmd, cwd)));
     suggestions.push(...suggestionSuggestions(activeArg?.suggestions, activeArg?.filterStrategy, partialCmd));
     suggestions.push(...(await templateSuggestions(activeArg?.template, activeArg?.filterStrategy, partialCmd, cwd)));
   }
@@ -314,13 +337,20 @@ export const getSubcommandDrivenRecommendation = async (
   return {
     suggestions: removeDuplicateSuggestion(
       removeEmptySuggestion(
-        removeAcceptedSuggestions(
-          adjustPathSuggestions(
-            suggestions.sort((a, b) => b.priority - a.priority),
-            partialToken,
-            shell,
+        removeHiddenSuggestions(
+          removeHomeDirectorySuggestion(
+            removeAcceptedSuggestions(
+              adjustPathSuggestions(
+                suggestions.sort((a, b) => b.priority - a.priority),
+                partialToken,
+                lastToken,
+                shell,
+              ),
+              acceptedTokens,
+            ),
+            allTokens,
           ),
-          acceptedTokens,
+          partialToken,
         ),
       ),
     ),
@@ -333,6 +363,7 @@ export const getArgDrivenRecommendation = async (
   persistentOptions: Fig.Option[],
   partialToken: CommandToken | undefined,
   acceptedTokens: CommandToken[],
+  allTokens: CommandToken[],
   variadicArgBound: boolean,
   cwd: string,
   shell: Shell,
@@ -342,10 +373,11 @@ export const getArgDrivenRecommendation = async (
     partialCmd = partialToken.isPathComplete ? "" : path.basename(partialCmd ?? "");
   }
 
+  const lastToken = allTokens.at(-1);
   const activeArg = args[0];
   const allOptions = persistentOptions.concat(subcommand.options ?? []);
   const suggestions = [
-    ...(await generatorSuggestions(args[0].generators, acceptedTokens, activeArg?.filterStrategy, partialCmd, cwd)),
+    ...(await generatorSuggestions(args[0].generators, allTokens, activeArg?.filterStrategy, partialCmd, cwd)),
     ...suggestionSuggestions(args[0].suggestions, activeArg?.filterStrategy, partialCmd),
     ...(await templateSuggestions(args[0].template, activeArg?.filterStrategy, partialCmd, cwd)),
   ];
@@ -358,13 +390,20 @@ export const getArgDrivenRecommendation = async (
   return {
     suggestions: removeDuplicateSuggestion(
       removeEmptySuggestion(
-        removeAcceptedSuggestions(
-          adjustPathSuggestions(
-            suggestions.sort((a, b) => b.priority - a.priority),
-            partialToken,
-            shell,
+        removeHiddenSuggestions(
+          removeHomeDirectorySuggestion(
+            removeAcceptedSuggestions(
+              adjustPathSuggestions(
+                suggestions.sort((a, b) => b.priority - a.priority),
+                partialToken,
+                lastToken,
+                shell,
+              ),
+              acceptedTokens,
+            ),
+            allTokens,
           ),
-          acceptedTokens,
+          partialToken,
         ),
       ),
     ),
