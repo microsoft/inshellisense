@@ -25,14 +25,12 @@ beforeEach(() => {
 describe("aliasExpand", () => {
   test("don't expand when aliases are disabled", async () => {
     mockGetConfig.mockReturnValue({ useAliases: false });
-
-    const { aliasExpand: aliasExpandDisabled, loadAliases: loadAliasesDisabled } = await import("../../runtime/alias.js");
-
-    //@ts-expect-error - jest.fn() has no implementation
-    mockExecuteShellCommand.mockResolvedValue({
+    mockExecuteShellCommand.mockReturnValue({
       stdout: `alias glo='git log --oneline'`,
       status: 0,
     });
+
+    const { aliasExpand: aliasExpandDisabled, loadAliases: loadAliasesDisabled } = await import("../../runtime/alias.js");
 
     await loadAliasesDisabled(Shell.Bash);
     // Should return the original token unchanged since aliases are disabled
@@ -41,9 +39,7 @@ describe("aliasExpand", () => {
 
   test("expand on bash aliases", async () => {
     mockGetConfig.mockReturnValue({ useAliases: true });
-
-    //@ts-expect-error - jest.fn() has no implementation
-    mockExecuteShellCommand.mockResolvedValue({
+    mockExecuteShellCommand.mockReturnValue({
       stdout: `alias glo='git log --oneline'
 alias la='echo '\\''lo'\\'' '\\''la'\\'''
 alias ls='ls --color=auto'`,
@@ -59,9 +55,7 @@ alias ls='ls --color=auto'`,
 
   test("expand on zsh aliases", async () => {
     mockGetConfig.mockReturnValue({ useAliases: true });
-
-    //@ts-expect-error - jest.fn() has no implementation
-    mockExecuteShellCommand.mockResolvedValue({
+    mockExecuteShellCommand.mockReturnValue({
       stdout: `glo='git log --oneline'
 la='echo '\\''lo'\\'' '\\''la'\\'''
 ls='ls --color=auto'`,
