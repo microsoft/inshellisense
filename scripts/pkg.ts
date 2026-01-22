@@ -159,6 +159,13 @@ const applyBundlePatches = async (): Promise<void> => {
     "native locations",
   );
 
+  // Patch to handle absolute paths correctly (skip relative prefixes for absolute paths)
+  patchBundle(
+    'var dir = r + "/" + d;',
+    'var dir = path_1.isAbsolute(d) ? d : r + "/" + d;',
+    "absolute path handling",
+  );
+
   // Patch worker inline
   const workerCode = await bundleNodePtyWorker();
   patchBundle(
