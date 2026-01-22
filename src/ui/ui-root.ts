@@ -71,10 +71,7 @@ const _direction = (term: ISTerm): "above" | "below" => {
 };
 
 export const render = async (program: Command, shell: Shell, underTest: boolean, login: boolean) => {
-  const [isterm, { SuggestionManager }] = await Promise.all([
-    import("../isterm/index.js"),
-    import("./suggestionManager.js"),
-  ]);
+  const [isterm, { SuggestionManager }] = await Promise.all([import("../isterm/index.js"), import("./suggestionManager.js")]);
   const term = await isterm.default.spawn(program, { shell, rows: process.stdout.rows, cols: process.stdout.columns, underTest, login });
   const suggestionManager = new SuggestionManager(term, shell);
   let hasSuggestion = false;
