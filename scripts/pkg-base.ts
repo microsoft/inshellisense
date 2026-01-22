@@ -13,6 +13,14 @@ const getVersion = (): string => {
   return packageJson.version;
 };
 
+const copyFiles = (): void => {
+  const mdFiles = fs.readdirSync(process.cwd()).filter((file) => file.endsWith(".md"));
+  for (const file of mdFiles) {
+    fs.copyFileSync(file, path.join(PKG_DIR, file));
+  }
+  fs.copyFileSync("LICENSE", path.join(PKG_DIR, "LICENSE"));
+};
+
 const generatePackageJson = (): void => {
   const packageJson = {
     name: `@microsoft/inshellisense`,
@@ -29,7 +37,10 @@ const generatePackageJson = (): void => {
     bugs: {
       url: "https://github.com/microsoft/inshellisense/issues",
     },
-    files: [],
+    files: [
+      "*.md",
+      "LICENSE",
+    ],
     optionalDependencies: {
       "@microsoft/inshellisense-darwin-x64": getVersion(),
       "@microsoft/inshellisense-darwin-arm64": getVersion(),
@@ -47,6 +58,7 @@ const packageBase = (): void => {
 };
 
 const main = async (): Promise<void> => {
+  copyFiles();
   generatePackageJson();
   packageBase();
 };
