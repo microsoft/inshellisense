@@ -50,7 +50,7 @@
     "color-convert": "^2.0.1",
     "commander": "^11.0.0",
     "find-process": "^1.4.7",
-    "node-pty": "1.2.0-beta.1",
+    "node-pty": "1.2.0-beta.2",
     "strip-ansi": "^7.1.0",
     "toml": "^3.0.0",
     "uuid": "^11.1.0",
