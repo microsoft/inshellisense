@@ -4,6 +4,7 @@
 import path from "node:path";
 import { spawn } from "node:child_process";
 import fsAsync from "node:fs/promises";
+import { homedir } from "node:os";
 
 import { CommandToken } from "./parser.js";
 import { getPathSeparator, gitBashPath, Shell } from "../utils/shell.js";
@@ -111,20 +112,24 @@ export const buildExecuteShellCommand =
     });
   };
 
+const isHomedir = (path: string) => path.startsWith("~");
+
 export const resolveCwd = async (
   cmdToken: CommandToken | undefined,
   cwd: string,
   shell: Shell,
 ): Promise<{ cwd: string; pathy: boolean; complete: boolean }> => {
-  if (cmdToken == null) return { cwd, pathy: false, complete: false };
+  if (cmdToken == null || cmdToken.complete) return { cwd, pathy: false, complete: false };
   const { token: rawToken, isQuoted } = cmdToken;
   const sep = getPathSeparator(shell);
   const escapedToken = !isQuoted ? rawToken.replaceAll(" ", "\\ ") : rawToken;
+  if (escapedToken === "~") return { cwd: homedir(), pathy: true, complete: false };
+  if (escapedToken === `~${sep}`) return { cwd: homedir(), pathy: true, complete: true };
   if (!escapedToken.includes(sep)) return { cwd, pathy: false, complete: false };
   const tokenComplete = escapedToken.endsWith(sep);
   const trimmedToken = escapedToken.endsWith(sep) ? escapedToken : path.dirname(escapedToken);
   const token = trimmedToken;
-  const resolvedCwd = path.isAbsolute(token) ? token : path.join(cwd, token);
+  const resolvedCwd = path.isAbsolute(token) ? token : isHomedir(token) ? token.replace("~", homedir()) : path.join(cwd, token);
   try {
     await fsAsync.access(resolvedCwd, fsAsync.constants.R_OK);
     return { cwd: resolvedCwd, pathy: true, complete: tokenComplete };

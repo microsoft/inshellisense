@@ -177,13 +177,13 @@ export class SuggestionManager {
     } else if (name == nextKey && shift == !!nextShift && ctrl == !!nextCtrl) {
       this.#activeSuggestionIdx = Math.min(this.#activeSuggestionIdx + 1, (this.#suggestBlob?.suggestions.length ?? 1) - 1);
     } else if (name == acceptKey && shift == !!acceptShift && ctrl == !!acceptCtrl) {
-      const removals = "\u007F".repeat(this.#suggestBlob?.charactersToDrop ?? 0);
       const suggestion = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx);
-      const chars = suggestion?.insertValue ?? suggestion?.name + " ";
+      const insertChars = suggestion?.insertValue ?? suggestion?.name + " ";
+      const chars = insertChars.substring(this.#suggestBlob?.charactersToDrop ?? 0);
       if (this.#suggestBlob == null || !chars.trim() || this.#suggestBlob?.suggestions.length == 0) {
         return false;
       }
-      this.#term.write(removals + chars);
+      this.#term.write(chars);
     } else {
       return false;
     }
