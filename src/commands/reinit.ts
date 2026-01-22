@@ -2,14 +2,14 @@
 // Licensed under the MIT License.
 
 import { Command } from "commander";
-import { render } from "../ui/ui-uninstall.js";
+import { render } from "../ui/ui-reinit.js";
 
 const action = async () => {
   await render();
 };
 
-const cmd = new Command("uninstall");
-cmd.description(`removes all cache resources and configuration for inshellisense`);
+const cmd = new Command("reinit");
+cmd.description(`regenerates shell configurations`);
 cmd.action(action);
 
 export default cmd;

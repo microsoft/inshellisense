@@ -6,10 +6,10 @@ import find from "find-process";
 import path from "node:path";
 import which from "which";
 import fs from "node:fs";
-import url from "node:url";
 import os from "node:os";
 import fsAsync from "node:fs/promises";
 import util from "node:util";
+import { shellResourcesPath, initResourcesPath } from "./constants.js";
 import childProcess from "node:child_process";
 import { KeyPressEvent } from "../ui/suggestionManager.js";
 import log from "./log.js";
@@ -53,15 +53,13 @@ export const aliasSupportedShells = [Shell.Bash, Shell.Zsh];
 
 export const userZdotdir = process.env?.ZDOTDIR ?? os.homedir() ?? `~`;
 export const zdotdir = path.join(os.tmpdir(), `is-zsh`);
-const configFolder = ".inshellisense";
 
 export const checkShellConfigs = (): Shell[] => {
   const shellsWithoutConfigs: Shell[] = [];
-  const configFolderPath = path.join(os.homedir(), configFolder);
   for (const shell of supportedShells) {
     const shellConfigName = getShellConfigName(shell);
     if (shellConfigName == null) continue;
-    if (!fs.existsSync(path.join(configFolderPath, shell, shellConfigName))) {
+    if (!fs.existsSync(path.join(initResourcesPath, shell, shellConfigName))) {
       shellsWithoutConfigs.push(shell);
     }
   }
@@ -75,6 +73,9 @@ export const checkLegacyConfigs = async (): Promise<Shell[]> => {
     if (profilePath != null && fs.existsSync(profilePath)) {
       const profile = await fsAsync.readFile(profilePath, "utf8");
       if (profile.includes("inshellisense shell plugin")) {
+        shellsWithLegacyConfig.push(shell);
+      }
+      if (profile.includes(`~/.inshellisense/${shell}/init.`)) {
         shellsWithLegacyConfig.push(shell);
       }
     }
@@ -109,9 +110,9 @@ const getProfilePath = async (shell: Shell): Promise<string | undefined> => {
     case Shell.Bash:
       return path.join(os.homedir(), ".bashrc");
     case Shell.Powershell:
-      return (await safeExec(`echo $profile`, { shell })).stdout?.trim();
+      return (await safeExec(`echo $profile`, { shell, timeout: 5_000 })).stdout?.toString()?.trim();
     case Shell.Pwsh:
-      return (await safeExec(`echo $profile`, { shell })).stdout?.trim();
+      return (await safeExec(`echo $profile`, { shell, timeout: 5_000 })).stdout?.toString()?.trim();
     case Shell.Zsh:
       return path.join(os.homedir(), ".zshrc");
     case Shell.Fish:
@@ -119,17 +120,16 @@ const getProfilePath = async (shell: Shell): Promise<string | undefined> => {
     case Shell.Xonsh:
       return path.join(os.homedir(), ".xonshrc");
     case Shell.Nushell:
-      return (await safeExec(`echo $nu.env-path`, { shell })).stdout?.trim();
+      return (await safeExec(`echo $nu.env-path`, { shell, timeout: 5_000 })).stdout?.toString()?.trim();
   }
 };
 
 export const createShellConfigs = async () => {
-  const configFolderPath = path.join(os.homedir(), configFolder);
   for (const shell of supportedShells) {
     const shellConfigName = getShellConfigName(shell);
     if (shellConfigName == null) continue;
-    await fsAsync.mkdir(path.join(configFolderPath, shell), { recursive: true });
-    await fsAsync.writeFile(path.join(configFolderPath, shell, shellConfigName), getShellConfig(shell));
+    await fsAsync.mkdir(path.join(initResourcesPath, shell), { recursive: true });
+    await fsAsync.writeFile(path.join(initResourcesPath, shell, shellConfigName), getShellConfig(shell));
   }
 };
 
@@ -153,21 +153,11 @@ const getShellConfigName = (shell: Shell) => {
   }
 };
 
-export const setupBashPreExec = async () => {
-  const shellFolderPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "..", "..", "shell");
-  const globalConfigPath = path.join(os.homedir(), configFolder);
-  if (!fs.existsSync(globalConfigPath)) {
-    await fsAsync.mkdir(globalConfigPath, { recursive: true });
-  }
-  await fsAsync.cp(path.join(shellFolderPath, "bash-preexec.sh"), path.join(globalConfigPath, "bash-preexec.sh"));
-};
-
 export const setupZshDotfiles = async () => {
-  const shellFolderPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "..", "..", "shell");
-  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-rc.zsh"), path.join(zdotdir, ".zshrc"));
-  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-profile.zsh"), path.join(zdotdir, ".zprofile"));
-  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-env.zsh"), path.join(zdotdir, ".zshenv"));
-  await fsAsync.cp(path.join(shellFolderPath, "shellIntegration-login.zsh"), path.join(zdotdir, ".zlogin"));
+  await fsAsync.cp(path.join(shellResourcesPath, "shellIntegration-rc.zsh"), path.join(zdotdir, ".zshrc"));
+  await fsAsync.cp(path.join(shellResourcesPath, "shellIntegration-profile.zsh"), path.join(zdotdir, ".zprofile"));
+  await fsAsync.cp(path.join(shellResourcesPath, "shellIntegration-env.zsh"), path.join(zdotdir, ".zshenv"));
+  await fsAsync.cp(path.join(shellResourcesPath, "shellIntegration-login.zsh"), path.join(zdotdir, ".zlogin"));
 };
 
 const findParentProcess = async () => {
@@ -283,19 +273,19 @@ export const getShellPromptRewrites = (shell: Shell) => shell == Shell.Nushell |
 export const getShellSourceCommand = (shell: Shell): string => {
   switch (shell) {
     case Shell.Bash:
-      return `[ -f ~/.inshellisense/bash/init.sh ] && source ~/.inshellisense/bash/init.sh`;
+      return `[ -f ~/.inshellisense/init/bash/init.sh ] && source ~/.inshellisense/init/bash/init.sh`;
     case Shell.Powershell:
-      return `if ( Test-Path '~/.inshellisense/powershell/init.ps1' -PathType Leaf ) { . ~/.inshellisense/powershell/init.ps1 }`;
+      return `if ( Test-Path '~/.inshellisense/init/powershell/init.ps1' -PathType Leaf ) { . ~/.inshellisense/init/powershell/init.ps1 }`;
     case Shell.Pwsh:
-      return `if ( Test-Path '~/.inshellisense/pwsh/init.ps1' -PathType Leaf ) { . ~/.inshellisense/pwsh/init.ps1 }`;
+      return `if ( Test-Path '~/.inshellisense/init/pwsh/init.ps1' -PathType Leaf ) { . ~/.inshellisense/init/pwsh/init.ps1 }`;
     case Shell.Zsh:
-      return `[[ -f ~/.inshellisense/zsh/init.zsh ]] && source ~/.inshellisense/zsh/init.zsh`;
+      return `[[ -f ~/.inshellisense/init/zsh/init.zsh ]] && source ~/.inshellisense/init/zsh/init.zsh`;
     case Shell.Fish:
-      return `test -f ~/.inshellisense/fish/init.fish && source ~/.inshellisense/fish/init.fish`;
+      return `test -f ~/.inshellisense/init/fish/init.fish && source ~/.inshellisense/init/fish/init.fish`;
     case Shell.Xonsh:
-      return `p"~/.inshellisense/xonsh/init.xsh".exists() && source "~/.inshellisense/xonsh/init.xsh"`;
+      return `p"~/.inshellisense/init/xonsh/init.xsh".exists() && source "~/.inshellisense/init/xonsh/init.xsh"`;
     case Shell.Nushell:
-      return `if ( '~/.inshellisense/nu/init.nu' | path exists ) { source ~/.inshellisense/nu/init.nu }`;
+      return `if ( '~/.inshellisense/init/nu/init.nu' | path exists ) { source ~/.inshellisense/init/nu/init.nu }`;
   }
   return "";
 };

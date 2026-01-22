@@ -16,8 +16,8 @@ else
 	fi
 fi
 
-if [ -r ~/.inshellisense/bash-preexec.sh ]; then
-    . ~/.inshellisense/bash-preexec.sh
+if [ -r ~/.inshellisense/shell/bash-preexec.sh ]; then
+    . ~/.inshellisense/shell/bash-preexec.sh
 fi
 
 __is_prompt_start() {

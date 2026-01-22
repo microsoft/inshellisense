@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { getConfig } from "../utils/config.js";
 import log from "../utils/log.js";
 import { gitBashPath, Shell } from "../utils/shell.js";
 import { CommandToken, parseCommand } from "./parser.js";
@@ -9,7 +10,7 @@ import os from "node:os";
 
 const loadedAliases: { [key: string]: CommandToken[] | undefined } = {};
 const platform = os.platform();
-const executeShellCommand = await buildExecuteShellCommand(5_000);
+const executeShellCommand = buildExecuteShellCommand(5_000);
 
 const loadBashAliases = async () => {
   const shellTarget = platform == "win32" ? await gitBashPath() : Shell.Bash;
@@ -50,6 +51,7 @@ const loadZshAliases = async () => {
 };
 
 export const loadAliases = async (shell: Shell) => {
+  if (!getConfig().useAliases) return;
   switch (shell) {
     case Shell.Bash:
       await loadBashAliases();

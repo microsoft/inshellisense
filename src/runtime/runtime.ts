@@ -141,7 +141,7 @@ const getSubcommand = (spec?: Fig.Spec): Fig.Subcommand | undefined => {
   return spec;
 };
 
-const executeShellCommand = await buildExecuteShellCommand(5000);
+const executeShellCommand = buildExecuteShellCommand(5000);
 
 const genSubcommand = async (command: string, parentCommand: Fig.Subcommand): Promise<Fig.Subcommand | undefined> => {
   if (!parentCommand.subcommands || parentCommand.subcommands.length === 0) return;

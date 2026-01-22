@@ -8,6 +8,7 @@ import fsAsync from "node:fs/promises";
 import toml from "toml";
 import _Ajv, { JSONSchemaType } from "ajv";
 import { Command } from "commander";
+import { allResourcesPath } from "./constants.js";
 
 const Ajv = _Ajv as unknown as typeof _Ajv.default;
 const ajv = new Ajv();
@@ -28,6 +29,7 @@ type Config = {
   specs: {
     path: string[];
   };
+  useAliases: boolean;
   useNerdFont: boolean;
 };
 
@@ -69,6 +71,11 @@ const configSchema = {
         path: specPathsSchema,
       },
     },
+    useAliases: {
+      type: "boolean",
+      nullable: true,
+      default: false,
+    },
     useNerdFont: {
       type: "boolean",
       nullable: true,
@@ -80,7 +87,6 @@ const configSchema = {
 
 const rcFile = ".inshellisenserc";
 const xdgFile = "rc.toml";
-const cachePath = path.join(os.homedir(), ".inshellisense");
 const rcPath = path.join(os.homedir(), rcFile);
 const xdgPath = path.join(os.homedir(), ".config", "inshellisense", xdgFile);
 
@@ -96,6 +102,7 @@ let globalConfig: Config = {
   specs: {
     path: [],
   },
+  useAliases: false,
   useNerdFont: false,
 };
 
@@ -124,6 +131,7 @@ export const loadConfig = async (program: Command) => {
         specs: {
           path: [...(config?.specs?.path ?? []), ...(config?.specs?.path ?? [])],
         },
+        useAliases: config.useAliases ?? false,
         useNerdFont: config?.useNerdFont ?? false,
       };
     }
@@ -132,7 +140,7 @@ export const loadConfig = async (program: Command) => {
 };
 
 export const deleteCacheFolder = (): void => {
-  if (fs.existsSync(cachePath)) {
-    fs.rmSync(cachePath, { recursive: true });
+  if (fs.existsSync(allResourcesPath)) {
+    fs.rmSync(allResourcesPath, { recursive: true });
   }
 };

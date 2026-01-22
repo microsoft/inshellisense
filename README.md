@@ -6,14 +6,25 @@
 
 ## Getting Started
 
-### Requirements
-
-- Node.js 22.X, 20.X, 18.X
-
 ### Installation
 
+**npm (recommended)**
 ```shell
 npm install -g @microsoft/inshellisense
+is init
+```
+**homebrew (macOS/linux)**
+```shell
+brew tap microsoft/inshellisense https://github.com/microsoft/inshellisense
+brew install inshellisense
+is init
+```
+
+### Updating
+
+```shell
+npm install -g @microsoft/inshellisense # OR brew upgrade inshellisense
+is reinit
 ```
 
 ### Quickstart
@@ -108,6 +119,14 @@ key = "escape"
 ```
 
 Key names are matched against the Node.js [keypress](https://nodejs.org/api/readline.html#readlineemitkeypresseventsstream-interface) events.
+
+### Alias Expansion
+
+Inshellisense supports expanding aliases for bash/zsh shells. You can enable alias expansion in your config file:
+
+```toml
+useAliases = true
+```
 
 ### NerdFonts
 
