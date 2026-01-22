@@ -29,6 +29,7 @@ const generatePackageJson = (): void => {
     bugs: {
       url: "https://github.com/microsoft/inshellisense/issues",
     },
+    files: [],
     optionalDependencies: {
       "@microsoft/inshellisense-darwin-x64": getVersion(),
       "@microsoft/inshellisense-darwin-arm64": getVersion(),
