@@ -3,7 +3,7 @@
 
 import { Suggestion, SuggestionBlob } from "../runtime/model.js";
 import { getSuggestions } from "../runtime/runtime.js";
-import { ISTerm, ISTermPatch } from "../isterm/pty.js";
+import type { ISTerm, ISTermPatch } from "../isterm/pty.js";
 import { renderBox, truncateText, truncateMultilineText } from "./utils.js";
 import chalk from "chalk";
 import { Shell } from "../utils/shell.js";

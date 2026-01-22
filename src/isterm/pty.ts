@@ -8,7 +8,8 @@ import path from "node:path";
 import fs from "node:fs";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
 
-import pty, { IPty, IEvent } from "node-pty";
+import pty from "node-pty";
+import type { IPty, IEvent } from "node-pty";
 import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
 import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
 import xterm from "@xterm/headless";
