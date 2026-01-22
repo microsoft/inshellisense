@@ -7,6 +7,7 @@ import path from "node:path";
 
 // Constants
 const PKG_DIR = "pkg";
+const SCRIPTS_DIR = "scripts";
 
 const getVersion = (): string => {
   const packageJson = JSON.parse(fs.readFileSync("package.json", "utf-8"));
@@ -19,6 +20,7 @@ const copyFiles = (): void => {
     fs.copyFileSync(file, path.join(PKG_DIR, file));
   }
   fs.copyFileSync("LICENSE", path.join(PKG_DIR, "LICENSE"));
+  fs.copyFileSync(path.join(SCRIPTS_DIR, "bin.js"), path.join(PKG_DIR, "bin.js"));
 };
 
 const generatePackageJson = (): void => {
@@ -37,10 +39,11 @@ const generatePackageJson = (): void => {
     bugs: {
       url: "https://github.com/microsoft/inshellisense/issues",
     },
-    files: [
-      "*.md",
-      "LICENSE",
-    ],
+    bin: {
+      is: "bin.js",
+      inshellisense: "bin.js",
+    },
+    files: ["*.md", "LICENSE", "bin.js"],
     optionalDependencies: {
       "@microsoft/inshellisense-darwin-x64": getVersion(),
       "@microsoft/inshellisense-darwin-arm64": getVersion(),

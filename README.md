@@ -8,9 +8,15 @@
 
 ### Installation
 
-**npm**
+**npm (recommended)**
 ```shell
 npm install -g @microsoft/inshellisense
+is init
+```
+**homebrew (macOS/linux)**
+```shell
+brew tap microsoft/inshellisense https://github.com/microsoft/inshellisense
+brew install inshellisense
 is init
 ```
 
