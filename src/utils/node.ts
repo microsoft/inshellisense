@@ -31,7 +31,7 @@ export const permissionNativeModules = async (): Promise<void> => {
   if (fs.existsSync(spawnHelper)) {
     await fsAsync.chmod(spawnHelper, 0o755);
   }
-}
+};
 
 export const unpackShellFiles = async (): Promise<void> => {
   if (!sea.isSea()) {
