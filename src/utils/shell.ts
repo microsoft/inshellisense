@@ -312,8 +312,8 @@ fi`;
 fi`;
     case Shell.Powershell:
     case Shell.Pwsh:
-      return `$__IsCommandFlag = ([Environment]::GetCommandLineArgs() | ForEach-Object { $_.contains("-Command") }) -contains $true
-$__IsNoExitFlag = ([Environment]::GetCommandLineArgs() | ForEach-Object { $_.contains("-NoExit") }) -contains $true
+      return `$__IsCommandFlag = ([Environment]::GetCommandLineArgs() | Where-Object { $_ -ieq "-Command" -or $_ -ieq "-c" }).Count -gt 0
+$__IsNoExitFlag = ([Environment]::GetCommandLineArgs() | Where-Object { $_ -ieq "-NoExit" }).Count -gt 0
 $__IsInteractive = -not $__IsCommandFlag -or ($__IsCommandFlag -and $__IsNoExitFlag)
 if ([string]::IsNullOrEmpty($env:ISTERM) -and [Environment]::UserInteractive -and $__IsInteractive -and [string]::IsNullOrEmpty($env:VSCODE_RESOLVING_ENVIRONMENT)) {
   is -s ${shell}
