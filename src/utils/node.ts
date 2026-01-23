@@ -24,6 +24,15 @@ export const unpackNativeModules = async (): Promise<void> => {
   );
 };
 
+export const permissionNativeModules = async (): Promise<void> => {
+  if (!sea.isSea()) return;
+
+  const spawnHelper = path.join(nativeResourcesPath, "spawn-helper");
+  if (fs.existsSync(spawnHelper)) {
+    await fsAsync.chmod(spawnHelper, 0o755);
+  }
+};
+
 export const unpackShellFiles = async (): Promise<void> => {
   if (!sea.isSea()) {
     const shellFolderPath = path.join(process.cwd(), "shell");
