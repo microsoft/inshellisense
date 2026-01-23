@@ -3,7 +3,7 @@
 
 import { Command } from "commander";
 import { createShellConfigs, initSupportedShells as shells, getShellSourceCommand, Shell } from "../utils/shell.js";
-import { unpackNativeModules, unpackShellFiles } from "../utils/node.js";
+import { permissionNativeModules, unpackNativeModules, unpackShellFiles } from "../utils/node.js";
 import { render } from "../ui/ui-init.js";
 
 const supportedShells = shells.join(", ");
@@ -11,6 +11,7 @@ const supportedShells = shells.join(", ");
 const action = (program: Command) => async (shell: string | undefined) => {
   await createShellConfigs();
   await unpackNativeModules();
+  await permissionNativeModules();
   await unpackShellFiles();
 
   if (shell == null) {
