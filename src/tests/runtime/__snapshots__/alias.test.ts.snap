@@ -1,5 +1,16 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`aliasExpand don't expand when aliases are disabled 1`] = `
+[
+  {
+    "complete": true,
+    "isOption": false,
+    "token": "glo",
+    "tokenLength": 3,
+  },
+]
+`;
+
 exports[`aliasExpand expand on bash aliases 1`] = `
 [
   {

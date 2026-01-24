@@ -4,7 +4,7 @@
 import { resetColor } from "../utils/ansi.js";
 import wrapAnsi from "wrap-ansi";
 import chalk from "chalk";
-import wcwidth from "wcwidth";
+import { wcswidth } from "../utils/unicode.js";
 
 export const renderBox = (rows: string[], width: number, borderColor?: string): string[] => {
   const result = [];
@@ -30,16 +30,16 @@ export const truncateMultilineText = (description: string, width: number, maxHei
   return truncatedLines.map((line) => line.padEnd(width));
 };
 
-const wcPadEnd = (text: string, width: number, char = " "): string => text + char.repeat(Math.max(width - wcwidth(text), 0));
+const wcPadEnd = (text: string, width: number, char = " "): string => text + char.repeat(Math.max(width - wcswidth(text), 0));
 
 const wcPoints = (text: string, length: number): [string, boolean] => {
   const points = [...text];
   const accPoints = [];
   let accWidth = 0;
   for (const point of points) {
-    const width = wcwidth(point);
+    const width = wcswidth(point);
     if (width + accWidth > length) {
-      return wcwidth(accPoints.join("")) < length ? [accPoints.join(""), true] : [accPoints.slice(0, -1).join(""), true];
+      return wcswidth(accPoints.join("")) < length ? [accPoints.join(""), true] : [accPoints.slice(0, -1).join(""), true];
     }
     accPoints.push(point);
     accWidth += width;

@@ -5,3 +5,4 @@ t*.md
 tui-traces/
 .idea/
 .vscode/
+pkg/

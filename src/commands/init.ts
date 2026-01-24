@@ -3,20 +3,21 @@
 
 import { Command } from "commander";
 import { createShellConfigs, initSupportedShells as shells, getShellSourceCommand, Shell } from "../utils/shell.js";
+import { permissionNativeModules, unpackNativeModules, unpackShellFiles } from "../utils/node.js";
+import { render } from "../ui/ui-init.js";
 
 const supportedShells = shells.join(", ");
 
-type InitCommandOptions = {
-  generateFullConfigs: boolean | undefined;
-  checkLegacyConfigs: boolean | undefined;
-};
+const action = (program: Command) => async (shell: string | undefined) => {
+  await createShellConfigs();
+  await unpackNativeModules();
+  await permissionNativeModules();
+  await unpackShellFiles();
 
-const action = (program: Command) => async (shell: string | undefined, options: InitCommandOptions) => {
-  if (options.generateFullConfigs) {
-    await createShellConfigs();
+  if (shell == null) {
+    await render();
     return;
   }
-  if (shell == null) program.error(`Shell is required, supported shells: ${supportedShells}`, { exitCode: 1 });
   if (!shells.map((s) => s.valueOf()).includes(shell)) {
     program.error(`Unsupported shell: '${shell}', supported shells: ${supportedShells}`, { exitCode: 1 });
   }
@@ -25,9 +26,8 @@ const action = (program: Command) => async (shell: string | undefined, options: 
 };
 
 const cmd = new Command("init");
-cmd.description(`generates shell configurations and prints the source command for the specified shell`);
-cmd.argument("[shell]", `shell to generate for, supported shells: ${supportedShells}`);
-cmd.option("--generate-full-configs");
+cmd.description(`generates shell configurations & prints the source command for a specified shell`);
+cmd.argument("[shell]", `shell to generate plugin for, supported shells: ${supportedShells}`);
 cmd.action(action(cmd));
 
 export default cmd;

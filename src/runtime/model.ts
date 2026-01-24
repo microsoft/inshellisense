@@ -9,6 +9,7 @@ export type Suggestion = {
   priority: number;
   insertValue?: string;
   type?: Fig.SuggestionType;
+  hidden?: boolean;
 };
 
 export type SuggestionBlob = {

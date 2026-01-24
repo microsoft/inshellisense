@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/inshellisense",
-  "version": "0.0.1-rc.21",
+  "version": "0.0.1-rc.30",
   "description": "IDE style command line auto complete",
   "type": "module",
   "engines": {
@@ -19,15 +19,13 @@
   ],
   "scripts": {
     "build": "tsc",
+    "package": "tsx ./scripts/pkg.ts",
+    "package:base": "tsx ./scripts/pkg-base.ts",
     "dev": "node --import=tsx src/index.ts -V",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:e2e": "tui-test",
     "lint": "eslint src/ --ext .ts,.tsx && prettier src/ --check",
     "lint:fix": "eslint src/ --ext .ts,.tsx --fix && prettier src/ --write",
-    "debug": "node --inspect --import=tsx src/index.ts -V",
-    "reinstall": "rm -rf node_modules && npm install",
-    "pre-commit": "lint-staged",
-    "postinstall": "node ./scripts/postinstall.js"
+    "debug": "node --inspect --import=tsx src/index.ts -V"
   },
   "repository": {
     "type": "git",
@@ -42,7 +40,6 @@
   },
   "homepage": "https://github.com/microsoft/inshellisense#readme",
   "dependencies": {
-    "@homebridge/node-pty-prebuilt-multiarch": "0.13.1",
     "@withfig/autocomplete": "2.675.0",
     "@xterm/addon-unicode11": "^0.8.0",
     "@xterm/headless": "^5.5.0",
@@ -53,18 +50,18 @@
     "color-convert": "^2.0.1",
     "commander": "^11.0.0",
     "find-process": "^1.4.7",
+    "node-pty": "1.2.0-beta.8",
     "strip-ansi": "^7.1.0",
     "toml": "^3.0.0",
     "uuid": "^11.1.0",
-    "wcwidth": "^1.0.1",
     "which": "^4.0.0",
     "wrap-ansi": "^8.1.0"
   },
   "devDependencies": {
-    "@microsoft/tui-test": "^0.0.1-rc.3",
     "@tsconfig/node18": "^18.2.2",
     "@types/color-convert": "^2.0.3",
     "@types/jest": "^29.5.5",
+    "@types/node": "^25.0.3",
     "@types/react": "^18.2.24",
     "@types/wcwidth": "^1.0.2",
     "@types/which": "^3.0.3",
@@ -72,6 +69,7 @@
     "@typescript-eslint/parser": "^6.7.4",
     "@withfig/autocomplete-types": "^1.28.0",
     "@xterm/xterm": "^5.5.0",
+    "esbuild": "^0.27.2",
     "eslint": "^8.51.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-header": "^3.1.1",
