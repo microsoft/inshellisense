@@ -8,10 +8,9 @@ import { Command } from "commander";
 
 import log from "../utils/log.js";
 import { getBackspaceSequence, Shell } from "../utils/shell.js";
-import isterm from "../isterm/index.js";
-import { resetToInitialState } from "../utils/ansi.js";
-import { SuggestionManager, MAX_LINES, KeyPressEvent } from "./suggestionManager.js";
-import { ISTerm } from "../isterm/pty.js";
+import { enableWin32InputMode, resetToInitialState } from "../utils/ansi.js";
+import { MAX_LINES, type KeyPressEvent, type SuggestionManager } from "./suggestionManager.js";
+import type { ISTerm } from "../isterm/pty.js";
 import { v4 as uuidV4 } from "uuid";
 
 export const renderConfirmation = (live: boolean): string => {
@@ -72,7 +71,8 @@ const _direction = (term: ISTerm): "above" | "below" => {
 };
 
 export const render = async (program: Command, shell: Shell, underTest: boolean, login: boolean) => {
-  const term = await isterm.spawn(program, { shell, rows: process.stdout.rows, cols: process.stdout.columns, underTest, login });
+  const [isterm, { SuggestionManager }] = await Promise.all([import("../isterm/index.js"), import("./suggestionManager.js")]);
+  const term = await isterm.default.spawn(program, { shell, rows: process.stdout.rows, cols: process.stdout.columns, underTest, login });
   const suggestionManager = new SuggestionManager(term, shell);
   let hasSuggestion = false;
   let direction = _direction(term);
@@ -90,6 +90,8 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   writeOutput(ansi.clearTerminal);
 
   term.onData(async (data) => {
+    data = data.replace(enableWin32InputMode, ""); // remove win32-input-mode enable sequence if it comes through data
+
     const handlingDirectionChange = direction != _direction(term);
     // clear the previous suggestion if the direction has changed to avoid leftover suggestions
     if (handlingDirectionChange) {
