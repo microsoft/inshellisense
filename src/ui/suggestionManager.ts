@@ -10,13 +10,13 @@ import { Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
 import { getConfig } from "../utils/config.js";
 
-const maxSuggestions = 5;
 const suggestionWidth = 40;
 const descriptionWidth = 30;
 const descriptionHeight = 5;
 const borderWidth = 2;
 const activeSuggestionBackgroundColor = "#7D56F4";
-export const MAX_LINES = borderWidth + Math.max(maxSuggestions, descriptionHeight) + 1; // accounts when there is a unhandled newline at the end of the command
+const getMaxSuggestions = () => getConfig().maxSuggestions ?? 5;
+export const getMaxLines = () => borderWidth + Math.max(getMaxSuggestions(), descriptionHeight) + 1; // accounts when there is a unhandled newline at the end of the command
 export const MIN_WIDTH = borderWidth + descriptionWidth;
 
 export type KeyPressEvent = [string | null | undefined, KeyPress];
@@ -110,6 +110,7 @@ export class SuggestionManager {
     }
     const { suggestions, argumentDescription } = this.#suggestBlob;
 
+    const maxSuggestions = getMaxSuggestions();
     const page = Math.min(Math.floor(this.#activeSuggestionIdx / maxSuggestions) + 1, Math.floor(suggestions.length / maxSuggestions) + 1);
     const pagedSuggestions = suggestions.filter((_, idx) => idx < page * maxSuggestions && idx >= (page - 1) * maxSuggestions);
     const activePagedSuggestionIndex = this.#activeSuggestionIdx % maxSuggestions;
