@@ -10,7 +10,7 @@ import log from "../utils/log.js";
 import { getBackspaceSequence, Shell } from "../utils/shell.js";
 import isterm from "../isterm/index.js";
 import { resetToInitialState } from "../utils/ansi.js";
-import { SuggestionManager, getMaxLines, KeyPressEvent } from "./suggestionManager.js";
+import { SuggestionManager, MAX_LINES, KeyPressEvent } from "./suggestionManager.js";
 import { ISTerm } from "../isterm/pty.js";
 import { v4 as uuidV4 } from "uuid";
 
@@ -27,7 +27,7 @@ const writeOutput = (data: string) => {
 const _render = (term: ISTerm, suggestionManager: SuggestionManager, data: string, handlingBackspace: boolean, handlingSuggestion: boolean): boolean => {
   const direction = _direction(term);
   const { hidden: cursorHidden, shift: cursorShift } = term.getCursorState();
-  const linesOfInterest = getMaxLines();
+  const linesOfInterest = MAX_LINES;
 
   const suggestion = suggestionManager.render(direction);
   const hasSuggestion = suggestion.length != 0;
@@ -57,18 +57,18 @@ const _render = (term: ISTerm, suggestionManager: SuggestionManager, data: strin
 const _clear = (term: ISTerm): void => {
   const clearDirection = _direction(term) == "above" ? "below" : "above"; // invert direction to clear what was previously rendered
   const { hidden: cursorHidden } = term.getCursorState();
-  const patch = term.getPatch(getMaxLines(), [], clearDirection);
+  const patch = term.getPatch(MAX_LINES, [], clearDirection);
 
   const ansiCursorShow = cursorHidden ? "" : ansi.cursorShow;
   if (clearDirection == "above") {
-    writeOutput(ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorPrevLine.repeat(getMaxLines()) + patch + ansi.cursorRestorePosition + ansiCursorShow);
+    writeOutput(ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorPrevLine.repeat(MAX_LINES) + patch + ansi.cursorRestorePosition + ansiCursorShow);
   } else {
     writeOutput(ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorNextLine + patch + ansi.cursorRestorePosition + ansiCursorShow);
   }
 };
 
 const _direction = (term: ISTerm): "above" | "below" => {
-  return term.getCursorState().remainingLines > getMaxLines() ? "below" : "above";
+  return term.getCursorState().remainingLines > MAX_LINES ? "below" : "above";
 };
 
 export const render = async (program: Command, shell: Shell, underTest: boolean, login: boolean) => {
