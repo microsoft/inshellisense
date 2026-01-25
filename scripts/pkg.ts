@@ -24,6 +24,7 @@ const PLATFORM_ARCH = `${process.platform}-${process.arch}`;
 const BINARY_NAME = process.platform === "win32" ? `inshellisense-${PLATFORM_ARCH}.exe` : `inshellisense-${PLATFORM_ARCH}`;
 const BINARY_PATH = path.join(PKG_DIR, BINARY_NAME);
 const NODE_VERSION = "22.21.1";
+const ASSET_PATH_SEP = "____";
 
 /** SHA-256 checksums for Node.js binaries from https://nodejs.org/dist/vX.X.X/SHASUMS256.txt */
 const NODE_SHASUMS: Record<string, string> = {
@@ -36,6 +37,7 @@ const NODE_SHASUMS: Record<string, string> = {
 };
 
 const getNodePtyPath = (): string => path.dirname(require.resolve("node-pty"));
+const getAutocompletePath = (): string => path.dirname(require.resolve("@withfig/autocomplete"));
 
 const getVersion = (): string => {
   const packageJson = JSON.parse(fs.readFileSync("package.json", "utf-8"));
@@ -189,9 +191,20 @@ const copyNodePtyNatives = (): void => {
   console.log(`Copied natives: ${srcDir} -> ${destDir}`);
 };
 
+const copyAutocompleteSpecs = (): void => {
+  const srcDir = path.join(getAutocompletePath());
+  if (!fs.existsSync(srcDir)) return;
+
+  const destDir = path.join(PKG_DIR, "specs");
+  fs.mkdirSync(path.dirname(destDir), { recursive: true });
+  fs.cpSync(srcDir, destDir, { recursive: true });
+  console.log(`Copied specs: ${srcDir} -> ${destDir}`);
+};
+
 const generateSeaConfig = (): void => {
   const shellAssets = fs.readdirSync("shell");
   const prebuildsDir = path.join(PKG_DIR, "prebuilds", PLATFORM_ARCH);
+  const specsDir = path.join(PKG_DIR, "specs");
 
   const nativeAssets = fs
     .readdirSync(prebuildsDir, { recursive: true })
@@ -199,10 +212,20 @@ const generateSeaConfig = (): void => {
     .filter((file) => !file.endsWith(".pdb"))
     .filter((file) => fs.statSync(path.join(prebuildsDir, file)).isFile());
 
+  const specAssets = fs
+    .readdirSync(specsDir, { recursive: true })
+    .map(String)
+    .filter((file) => file.endsWith(".js"))
+    .filter((file) => fs.statSync(path.join(specsDir, file)).isFile())
+    .filter((file) => !["gcloud", "az", "aws"].some((name) => file.startsWith(name + path.sep)));
+  
   const assets: Record<string, string> = {};
   shellAssets.forEach((file) => (assets[file] = `shell/${file}`));
   nativeAssets.forEach((file) => {
-    assets[path.basename(file)] = `pkg/prebuilds/${PLATFORM_ARCH}/${file}`.replace(path.sep, "/");
+    assets[file.replaceAll(path.sep, ASSET_PATH_SEP)] = `pkg/prebuilds/${PLATFORM_ARCH}/${file}`.replaceAll(path.sep, "/");
+  });
+  specAssets.forEach((file) => {
+    assets[file.replaceAll(path.sep, ASSET_PATH_SEP)] = `pkg/specs/${file}`.replaceAll(path.sep, "/");
   });
 
   const seaConfig = {
@@ -269,6 +292,7 @@ const main = async (): Promise<void> => {
   await buildBundle();
   await applyBundlePatches();
   copyNodePtyNatives();
+  copyAutocompleteSpecs();
   await copyNodeExecutable();
   generateSeaConfig();
   generateSeaBlob();

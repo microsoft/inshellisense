@@ -6,6 +6,7 @@ import fs from "node:fs";
 import { getSuggestions } from "../../runtime/runtime.js";
 import { Shell } from "../../utils/shell.js";
 import { SuggestionIcons } from "../../runtime/suggestion.js";
+import { unpackResources } from "../../utils/node.js";
 
 const testData = [
   { name: "partialPrefixFilter", command: "git sta" },
@@ -32,6 +33,8 @@ const testData = [
   { name: "pathWithFileSuggestion", command: "source shell/", maxSuggestions: 1 },
   { name: "pathWithFileFilteredSuggestion", command: "source shell/shellIntegration.", maxSuggestions: 1 },
 ];
+
+beforeAll(async () => await unpackResources());
 
 describe(`parseCommand`, () => {
   testData.forEach(({ command, name, skip, maxSuggestions }) => {
