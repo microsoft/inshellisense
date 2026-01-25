@@ -3,7 +3,7 @@
 
 import { Command } from "commander";
 import { createShellConfigs, initSupportedShells as shells, getShellSourceCommand, Shell } from "../utils/shell.js";
-import {unpackResources } from "../utils/node.js";
+import { unpackResources } from "../utils/node.js";
 import { render } from "../ui/ui-init.js";
 
 const supportedShells = shells.join(", ");

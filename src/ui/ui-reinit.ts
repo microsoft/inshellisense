@@ -17,6 +17,6 @@ export const render = async () => {
 
   await createShellConfigs();
   await unpackResources();
-  
+
   process.stdout.write(chalk.green("✓") + " successfully installed inshellisense \n");
 };

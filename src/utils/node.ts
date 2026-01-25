@@ -40,16 +40,16 @@ const getAssetFolder = (assetType: AssetType) => {
   }
 };
 
-const copyFiles = async(assetType: AssetType, files: string[], sourceFolder: string) => {
+const copyFiles = async (assetType: AssetType, files: string[], sourceFolder: string) => {
   await Promise.all(
-      files.map(async (file) => {
-        const sourcePath = path.join(sourceFolder, file);
-        const destPath = path.join(getAssetFolder(assetType), file);
-        if (fs.existsSync(destPath)) return;
-        await fsAsync.mkdir(path.dirname(destPath), { recursive: true });
-        await fsAsync.copyFile(sourcePath, destPath);
-      }),
-    );
+    files.map(async (file) => {
+      const sourcePath = path.join(sourceFolder, file);
+      const destPath = path.join(getAssetFolder(assetType), file);
+      if (fs.existsSync(destPath)) return;
+      await fsAsync.mkdir(path.dirname(destPath), { recursive: true });
+      await fsAsync.copyFile(sourcePath, destPath);
+    }),
+  );
 };
 
 const copyAssets = async (assetType: AssetType) => {
@@ -84,14 +84,15 @@ const unpackSpecs = async (): Promise<void> => {
   if (!sea.isSea()) {
     const autocompleteSpecFolderPath = path.join(process.cwd(), "node_modules", "@withfig", "autocomplete", "build");
     const entries = await fsAsync.readdir(autocompleteSpecFolderPath, { recursive: true });
-    const files = entries.filter((f) => {
-      const fullPath = path.join(autocompleteSpecFolderPath, f.toString());
-      return fs.statSync(fullPath).isFile();
-    }).map((f) => f.toString());
+    const files = entries
+      .filter((f) => {
+        const fullPath = path.join(autocompleteSpecFolderPath, f.toString());
+        return fs.statSync(fullPath).isFile();
+      })
+      .map((f) => f.toString());
 
     await copyFiles("spec", files, autocompleteSpecFolderPath);
-  }
-  else {
+  } else {
     await copyAssets("spec");
   }
 };
@@ -112,4 +113,4 @@ export const unpackResources = async (): Promise<void> => {
   await permissionNativeModules();
   await unpackShellFiles();
   await unpackSpecs();
-}
+};

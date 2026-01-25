@@ -18,7 +18,6 @@ import { getConfig } from "../utils/config.js";
 import log from "../utils/log.js";
 import { specResourcesPath } from "../utils/constants.js";
 
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- recursive type, setting as any
 const specSet: any = {};
 const ignoredSpecs = ["gcloud", "az", "aws"];
