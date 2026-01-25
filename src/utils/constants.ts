@@ -11,3 +11,4 @@ export const nativeResourcesPath = path.join(os.homedir(), inshellisenseFolderNa
 export const shellResourcesPath = path.join(os.homedir(), inshellisenseFolderName, "shell");
 export const specResourcesPath = path.join(os.homedir(), inshellisenseFolderName, "spec");
 export const initResourcesPath = path.join(os.homedir(), inshellisenseFolderName, "init");
+export const versionResourcePath = path.join(os.homedir(), inshellisenseFolderName, "version.txt");

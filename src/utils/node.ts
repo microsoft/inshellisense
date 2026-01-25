@@ -5,7 +5,8 @@ import path from "node:path";
 import sea from "node:sea";
 import fsAsync from "node:fs/promises";
 import fs from "node:fs";
-import { nativeResourcesPath, shellResourcesPath, specResourcesPath } from "./constants.js";
+import { nativeResourcesPath, shellResourcesPath, specResourcesPath, versionResourcePath } from "./constants.js";
+import { getVersion } from "./version.js";
 
 const ASSET_PATH_SEP = "____";
 
@@ -95,6 +96,10 @@ const unpackSpecs = async (): Promise<void> => {
   } else {
     await copyAssets("spec");
   }
+
+  const packageJsonPath = path.join(specResourcesPath, "package.json");
+  await fsAsync.mkdir(specResourcesPath, { recursive: true });
+  await fsAsync.writeFile(packageJsonPath, JSON.stringify({ type: "module" }));
 };
 
 const unpackShellFiles = async (): Promise<void> => {
@@ -108,9 +113,24 @@ const unpackShellFiles = async (): Promise<void> => {
   }
 };
 
+const setUnpackedVersion = async (): Promise<void> => {
+  const version = getVersion();
+  await fsAsync.writeFile(versionResourcePath, version, "utf-8");
+};
+
+export const checkUnpackedVersion = async (): Promise<boolean> => {
+  if (!fs.existsSync(versionResourcePath)) {
+    return false;
+  }
+  const unpackedVersion = await fsAsync.readFile(versionResourcePath, "utf-8");
+  const currentVersion = getVersion();
+  return unpackedVersion === currentVersion;
+};
+
 export const unpackResources = async (): Promise<void> => {
   await unpackNativeModules();
   await permissionNativeModules();
   await unpackShellFiles();
   await unpackSpecs();
+  await setUnpackedVersion();
 };

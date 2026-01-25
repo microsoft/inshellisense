@@ -18,6 +18,10 @@ export const renderConfirmation = (live: boolean): string => {
   return `inshellisense session [${statusMessage}]\n`;
 };
 
+export const renderMissingResources = (): string => {
+  return chalk.red(`inshellisense resources out of date, run "is reinit" to refresh\n`);
+};
+
 const writeOutput = (data: string) => {
   log.debug({ msg: "writing data", data });
   process.stdout.write(data);
