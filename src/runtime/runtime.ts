@@ -1,12 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import speclist, {
-  diffVersionedCompletions as versionedSpeclist,
+import figSpecList, {
+  diffVersionedCompletions as figVersionedSpeclist,
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
 } from "@withfig/autocomplete/build/index.js";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { parseCommand, CommandToken } from "./parser.js";
 import { getArgDrivenRecommendation, getSubcommandDrivenRecommendation, SuggestionIcons } from "./suggestion.js";
 import { Suggestion, SuggestionBlob } from "./model.js";
@@ -15,9 +16,14 @@ import { Shell } from "../utils/shell.js";
 import { aliasExpand, getAliasNames } from "./alias.js";
 import { getConfig } from "../utils/config.js";
 import log from "../utils/log.js";
+import { specResourcesPath } from "../utils/constants.js";
+
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- recursive type, setting as any
 const specSet: any = {};
+const ignoredSpecs = ["gcloud", "az", "aws"];
+const speclist = figSpecList.filter((spec: string) => !ignoredSpecs.some((name) => spec.startsWith(name + "/")));
+const versionedSpeclist = figVersionedSpeclist.filter((spec: string) => !ignoredSpecs.some((name) => spec.startsWith(name)));
 
 function loadSpecsSet(speclist: string[], versionedSpeclist: string[], specsPath: string) {
   speclist.forEach((s) => {
@@ -29,7 +35,7 @@ function loadSpecsSet(speclist: string[], versionedSpeclist: string[], specsPath
       }
       if (idx === specRoutes.length - 1) {
         const prefix = versionedSpeclist.includes(s) ? "/index.js" : `.js`;
-        activeSet[route] = `${specsPath}/${s}${prefix}`;
+        activeSet[route] = `${specsPath}${path.sep}${s}${prefix}`;
       } else {
         activeSet[route] = activeSet[route] || {};
         activeSet = activeSet[route];
@@ -38,7 +44,7 @@ function loadSpecsSet(speclist: string[], versionedSpeclist: string[], specsPath
   });
 }
 
-loadSpecsSet(speclist as string[], versionedSpeclist, `@withfig/autocomplete/build`);
+loadSpecsSet(speclist as string[], versionedSpeclist, specResourcesPath);
 
 const loadedSpecs: { [key: string]: Fig.Spec } = {};
 
@@ -52,7 +58,9 @@ const loadSpec = async (cmd: CommandToken[]): Promise<Fig.Spec | undefined> => {
     return loadedSpecs[rootToken.token];
   }
   if (specSet[rootToken.token]) {
-    const spec = (await import(specSet[rootToken.token])).default;
+    const specPath = specSet[rootToken.token];
+    const importPath = path.isAbsolute(specPath) ? pathToFileURL(specPath).href : specPath;
+    const spec = (await import(importPath)).default;
     loadedSpecs[rootToken.token] = spec;
     return spec;
   }
@@ -60,7 +68,9 @@ const loadSpec = async (cmd: CommandToken[]): Promise<Fig.Spec | undefined> => {
 
 // this load spec function should only be used for `loadSpec` on the fly as it is cacheless
 const lazyLoadSpec = async (key: string): Promise<Fig.Spec | undefined> => {
-  return (await import(`@withfig/autocomplete/build/${key}.js`)).default;
+  const specPath = path.join(specResourcesPath, `${key}.js`);
+  const importPath = path.isAbsolute(specPath) ? pathToFileURL(specPath).href : specPath;
+  return (await import(importPath)).default;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- will be implemented in below TODO
@@ -71,16 +81,18 @@ const lazyLoadSpecLocation = async (location: Fig.SpecLocation): Promise<Fig.Spe
 export const loadLocalSpecsSet = async () => {
   const specsPath = getConfig().specs.path;
   await Promise.allSettled(
-    specsPath.map((specPath) =>
-      import(path.join(specPath, "index.js"))
+    specsPath.map((specPath) => {
+      const indexPath = path.join(specPath, "index.js");
+      const importPath = path.isAbsolute(indexPath) ? pathToFileURL(indexPath).href : indexPath;
+      return import(importPath)
         .then((res) => {
           const { default: speclist, diffVersionedCompletions: versionedSpeclist } = res;
           loadSpecsSet(speclist, versionedSpeclist, specPath);
         })
         .catch((e) => {
           log.debug({ msg: `no local specs imported from '${specPath}', this will not break the current session`, e: (e as Error).message, specPath });
-        }),
-    ),
+        });
+    }),
   );
 };
 

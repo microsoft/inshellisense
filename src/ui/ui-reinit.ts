@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 import chalk from "chalk";
-import { permissionNativeModules, unpackNativeModules, unpackShellFiles } from "../utils/node.js";
+import { unpackResources } from "../utils/node.js";
 import { createShellConfigs } from "../utils/shell.js";
-import { shellResourcesPath, nativeResourcesPath, loggingResourcesPath, initResourcesPath } from "../utils/constants.js";
+import { shellResourcesPath, nativeResourcesPath, loggingResourcesPath, initResourcesPath, specResourcesPath } from "../utils/constants.js";
 import fs from "node:fs";
 
 export const render = async () => {
@@ -12,11 +12,11 @@ export const render = async () => {
   fs.rmSync(nativeResourcesPath, { recursive: true, force: true });
   fs.rmSync(loggingResourcesPath, { recursive: true, force: true });
   fs.rmSync(initResourcesPath, { recursive: true, force: true });
+  fs.rmSync(specResourcesPath, { recursive: true, force: true });
   process.stdout.write(chalk.green("✓") + " removed old inshellisense resources \n");
 
   await createShellConfigs();
-  await unpackNativeModules();
-  await permissionNativeModules();
-  await unpackShellFiles();
+  await unpackResources();
+  
   process.stdout.write(chalk.green("✓") + " successfully installed inshellisense \n");
 };

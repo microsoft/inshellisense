@@ -136,6 +136,10 @@ If you are using a [NerdFont](https://www.nerdfonts.com/) patched font, you can 
 useNerdFont = true
 ```
 
+## Unsupported Specs
+
+Specs for the `az`, `gcloud`, & `aws` CLIs are not supported in inshellisense due to their large size.
+
 ## Contributing
 
 This project welcomes contributions and suggestions. Most contributions require you to agree to a
