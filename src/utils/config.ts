@@ -31,6 +31,7 @@ type Config = {
   };
   useAliases: boolean;
   useNerdFont: boolean;
+  maxSuggestions?: number;
 };
 
 const bindingSchema: JSONSchemaType<Binding> = {
@@ -81,6 +82,11 @@ const configSchema = {
       nullable: true,
       default: false,
     },
+    maxSuggestions: {
+      type: "number",
+      nullable: true,
+      default: 5,
+    }
   },
   additionalProperties: false,
 };
@@ -133,6 +139,7 @@ export const loadConfig = async (program: Command) => {
         },
         useAliases: config.useAliases ?? false,
         useNerdFont: config?.useNerdFont ?? false,
+        maxSuggestions: config?.maxSuggestions ?? 5,
       };
     }
   });
