@@ -97,12 +97,10 @@ export const loadLocalSpecsSet = async () => {
 
 export const getSuggestions = async (cmd: string, cwd: string, shell: Shell): Promise<SuggestionBlob | undefined> => {
   let activeCmd = parseCommand(cmd, shell);
+  const rootToken = activeCmd.at(0);
   if (activeCmd.length === 0) {
     return;
   }
-
-  const rootToken = activeCmd.at(0);
-  
   if (rootToken != null && !rootToken.complete) {
     return runCommand(rootToken);
   }
