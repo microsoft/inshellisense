@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/inshellisense",
-  "version": "0.0.1-rc.30",
+  "version": "0.0.1-rc.31",
   "description": "IDE style command line auto complete",
   "type": "module",
   "engines": {
@@ -21,11 +21,11 @@
     "build": "tsc",
     "package": "tsx ./scripts/pkg.ts",
     "package:base": "tsx ./scripts/pkg-base.ts",
-    "dev": "node --import=tsx src/index.ts -V",
+    "dev": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import=tsx src/index.ts -V",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "lint": "eslint src/ --ext .ts,.tsx && prettier src/ --check",
     "lint:fix": "eslint src/ --ext .ts,.tsx --fix && prettier src/ --write",
-    "debug": "node --inspect --import=tsx src/index.ts -V"
+    "debug": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --inspect --import=tsx src/index.ts -V"
   },
   "repository": {
     "type": "git",
