@@ -4,7 +4,7 @@
   "description": "IDE style command line auto complete",
   "type": "module",
   "engines": {
-    "node": ">=18.0 <23.0.0"
+    "node": ">=18.0 <25.0.0"
   },
   "bin": {
     "inshellisense": "./build/index.js",
