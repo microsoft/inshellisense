@@ -108,7 +108,7 @@ let globalConfig: Config = {
 
 export const getConfig = (): Config => globalConfig;
 export const loadConfig = async (program: Command) => {
-  configPaths.forEach(async (configPath) => {
+  for (const configPath of configPaths) {
     if (fs.existsSync(configPath)) {
       let config: Config;
       try {
@@ -129,14 +129,14 @@ export const loadConfig = async (program: Command) => {
           dismissSuggestions: config?.bindings?.dismissSuggestions ?? globalConfig.bindings.dismissSuggestions,
         },
         specs: {
-          path: [...(config?.specs?.path ?? []), ...(config?.specs?.path ?? [])],
+          path: [...(config?.specs?.path ?? [])],
         },
         useAliases: config.useAliases ?? false,
         useNerdFont: config?.useNerdFont ?? false,
       };
     }
-  });
-  globalConfig.specs = { path: [path.join(os.homedir(), ".fig", "autocomplete", "build"), ...(globalConfig.specs?.path ?? [])].map((p) => `file:\\${p}`) };
+  }
+  globalConfig.specs = { path: [path.join(os.homedir(), ".fig", "autocomplete", "build"), ...(globalConfig.specs?.path ?? [])] };
 };
 
 export const deleteCacheFolder = (): void => {
