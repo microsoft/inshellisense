@@ -2,7 +2,12 @@
 
 exports[`parseCommand alreadyUsedOption 1`] = `
 {
-  "charactersToDrop": 3,
+  "activeToken": {
+    "complete": false,
+    "isOption": true,
+    "token": "--b",
+    "tokenLength": 3,
+  },
   "suggestions": [
     {
       "allNames": [
@@ -24,7 +29,12 @@ exports[`parseCommand alreadyUsedSuggestion 1`] = `undefined`;
 
 exports[`parseCommand command 1`] = `
 {
-  "charactersToDrop": 3,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "sta",
+    "tokenLength": 3,
+  },
   "suggestions": [
     {
       "allNames": [
@@ -68,7 +78,12 @@ exports[`parseCommand command 1`] = `
 
 exports[`parseCommand completePrefixFilter 1`] = `
 {
-  "charactersToDrop": 4,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "stat",
+    "tokenLength": 4,
+  },
   "suggestions": [
     {
       "allNames": [
@@ -88,7 +103,7 @@ exports[`parseCommand completePrefixFilter 1`] = `
 
 exports[`parseCommand completedOptionWithArg 1`] = `
 {
-  "charactersToDrop": 0,
+  "activeToken": undefined,
   "suggestions": [
     {
       "allNames": [
@@ -320,7 +335,12 @@ exports[`parseCommand emptySuggestions 1`] = `undefined`;
 
 exports[`parseCommand exclusiveOnOption 1`] = `
 {
-  "charactersToDrop": 4,
+  "activeToken": {
+    "complete": false,
+    "isOption": true,
+    "token": "--no",
+    "tokenLength": 4,
+  },
   "suggestions": [
     {
       "allNames": [
@@ -449,7 +469,12 @@ exports[`parseCommand exclusiveOnOption 1`] = `
 
 exports[`parseCommand fullyTypedSuggestion 1`] = `
 {
-  "charactersToDrop": 2,
+  "activeToken": {
+    "complete": false,
+    "isOption": true,
+    "token": "-W",
+    "tokenLength": 2,
+  },
   "suggestions": [
     {
       "allNames": [
@@ -481,7 +506,12 @@ exports[`parseCommand fullyTypedSuggestion 1`] = `
 
 exports[`parseCommand generatorUsingPartialInput 1`] = `
 {
-  "charactersToDrop": 27,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "Microsoft.Azure.WebJobs.Cor",
+    "tokenLength": 27,
+  },
   "suggestions": [
     {
       "allNames": [
@@ -501,7 +531,12 @@ exports[`parseCommand generatorUsingPartialInput 1`] = `
 
 exports[`parseCommand loadSpec 1`] = `
 {
-  "charactersToDrop": 3,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "add",
+    "tokenLength": 3,
+  },
   "suggestions": [
     {
       "allNames": [
@@ -521,7 +556,7 @@ exports[`parseCommand loadSpec 1`] = `
 
 exports[`parseCommand noArgsArgumentGiven 1`] = `
 {
-  "charactersToDrop": 0,
+  "activeToken": undefined,
   "suggestions": [
     {
       "allNames": [
@@ -567,8 +602,13 @@ exports[`parseCommand noOptionsSuggestedDuringVariadicArg 1`] = `undefined`;
 
 exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
 {
+  "activeToken": {
+    "complete": false,
+    "isOption": true,
+    "token": "-l",
+    "tokenLength": 2,
+  },
   "argumentDescription": undefined,
-  "charactersToDrop": 2,
   "suggestions": [
     {
       "allNames": [
@@ -612,7 +652,12 @@ exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
 
 exports[`parseCommand partialPrefixFilter 1`] = `
 {
-  "charactersToDrop": 3,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "sta",
+    "tokenLength": 3,
+  },
   "suggestions": [
     {
       "allNames": [
@@ -656,7 +701,14 @@ exports[`parseCommand partialPrefixFilter 1`] = `
 
 exports[`parseCommand pathNestedSuggestion 1`] = `
 {
-  "charactersToDrop": 12,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "isPath": true,
+    "isPathComplete": false,
+    "token": ".github/work",
+    "tokenLength": 12,
+  },
   "suggestions": [
     {
       "allNames": [
@@ -676,7 +728,12 @@ exports[`parseCommand pathNestedSuggestion 1`] = `
 
 exports[`parseCommand pathSuggestion 1`] = `
 {
-  "charactersToDrop": 3,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "she",
+    "tokenLength": 3,
+  },
   "suggestions": [
     {
       "allNames": [
@@ -696,7 +753,14 @@ exports[`parseCommand pathSuggestion 1`] = `
 
 exports[`parseCommand pathWithFileFilteredSuggestion 1`] = `
 {
-  "charactersToDrop": 23,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "isPath": true,
+    "isPathComplete": false,
+    "token": "shell/shellIntegration.",
+    "tokenLength": 23,
+  },
   "suggestions": [
     {
       "allNames": [
@@ -716,7 +780,14 @@ exports[`parseCommand pathWithFileFilteredSuggestion 1`] = `
 
 exports[`parseCommand pathWithFileSuggestion 1`] = `
 {
-  "charactersToDrop": 6,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "isPath": true,
+    "isPathComplete": true,
+    "token": "shell/",
+    "tokenLength": 6,
+  },
   "suggestions": [
     {
       "allNames": [
@@ -736,7 +807,12 @@ exports[`parseCommand pathWithFileSuggestion 1`] = `
 
 exports[`parseCommand provideFileSuggestion 1`] = `
 {
-  "charactersToDrop": 4,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "READ",
+    "tokenLength": 4,
+  },
   "suggestions": [
     {
       "allNames": [
@@ -756,7 +832,12 @@ exports[`parseCommand provideFileSuggestion 1`] = `
 
 exports[`parseCommand provideFolderSuggestion 1`] = `
 {
-  "charactersToDrop": 2,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "sr",
+    "tokenLength": 2,
+  },
   "suggestions": [
     {
       "allNames": [
@@ -776,16 +857,16 @@ exports[`parseCommand provideFolderSuggestion 1`] = `
 
 exports[`parseCommand providedArgDescription 1`] = `
 {
+  "activeToken": undefined,
   "argumentDescription": "actor",
-  "charactersToDrop": 0,
   "suggestions": [],
 }
 `;
 
 exports[`parseCommand providedSuggestion 1`] = `
 {
+  "activeToken": undefined,
   "argumentDescription": "Shell to generate completions for",
-  "charactersToDrop": 0,
   "suggestions": [
     {
       "allNames": [
