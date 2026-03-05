@@ -30,31 +30,51 @@ describe("calculateReplacement", () => {
     expect(calculateReplacement(undefined, makeSuggestion({ name: "status" }))).toEqual({ backspaceCount: 0, insertText: "status " });
   });
   test("complete token inserts full suggestion", () => {
-    expect(calculateReplacement(makeToken({ token: "add", complete: true }), makeSuggestion({ name: "status" }))).toEqual({ backspaceCount: 0, insertText: "status " });
+    expect(calculateReplacement(makeToken({ token: "add", complete: true }), makeSuggestion({ name: "status" }))).toEqual({
+      backspaceCount: 0,
+      insertText: "status ",
+    });
   });
   test("insertValue backspaces token and inserts custom value", () => {
-    expect(calculateReplacement(makeToken({ token: "sta" }), makeSuggestion({ name: "status", insertValue: "status --short" }))).toEqual({ backspaceCount: 3, insertText: "status --short" });
+    expect(calculateReplacement(makeToken({ token: "sta" }), makeSuggestion({ name: "status", insertValue: "status --short" }))).toEqual({
+      backspaceCount: 3,
+      insertText: "status --short",
+    });
   });
   test("divergent text backspaces entire token", () => {
-    expect(calculateReplacement(makeToken({ token: "comit", tokenLength: 5 }), makeSuggestion({ name: "commit" }))).toEqual({ backspaceCount: 5, insertText: "commit " });
+    expect(calculateReplacement(makeToken({ token: "comit", tokenLength: 5 }), makeSuggestion({ name: "commit" }))).toEqual({
+      backspaceCount: 5,
+      insertText: "commit ",
+    });
   });
   test("unrelated text backspaces entire token", () => {
     expect(calculateReplacement(makeToken({ token: "xyz" }), makeSuggestion({ name: "status" }))).toEqual({ backspaceCount: 3, insertText: "status " });
   });
   test("path with insertValue backspaces token", () => {
-    expect(calculateReplacement(makeToken({ token: "src/run", tokenLength: 7 }), makeSuggestion({ name: "runtime", insertValue: "src/runtime/", type: "folder" }))).toEqual({ backspaceCount: 7, insertText: "src/runtime/" });
+    expect(
+      calculateReplacement(makeToken({ token: "src/run", tokenLength: 7 }), makeSuggestion({ name: "runtime", insertValue: "src/runtime/", type: "folder" })),
+    ).toEqual({ backspaceCount: 7, insertText: "src/runtime/" });
   });
   test("empty suggestion returns undefined", () => {
     expect(calculateReplacement(undefined, makeSuggestion({ name: "" }))).toBeUndefined();
   });
   test("wide-char prefix appends remainder", () => {
-    expect(calculateReplacement(makeToken({ token: "你", tokenLength: 2 }), makeSuggestion({ name: "你好" }))).toEqual({ backspaceCount: 0, insertText: "好 " });
+    expect(calculateReplacement(makeToken({ token: "你", tokenLength: 2 }), makeSuggestion({ name: "你好" }))).toEqual({
+      backspaceCount: 0,
+      insertText: "好 ",
+    });
   });
   test("wide-char divergent uses display width for backspace", () => {
-    expect(calculateReplacement(makeToken({ token: "你", tokenLength: 2 }), makeSuggestion({ name: "世界" }))).toEqual({ backspaceCount: 2, insertText: "世界 " });
+    expect(calculateReplacement(makeToken({ token: "你", tokenLength: 2 }), makeSuggestion({ name: "世界" }))).toEqual({
+      backspaceCount: 2,
+      insertText: "世界 ",
+    });
   });
   test("option prefix appends remaining", () => {
-    expect(calculateReplacement(makeToken({ token: "--ver", isOption: true }), makeSuggestion({ name: "--version" }))).toEqual({ backspaceCount: 0, insertText: "sion " });
+    expect(calculateReplacement(makeToken({ token: "--ver", isOption: true }), makeSuggestion({ name: "--version" }))).toEqual({
+      backspaceCount: 0,
+      insertText: "sion ",
+    });
   });
 });
 

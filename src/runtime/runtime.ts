@@ -121,7 +121,7 @@ export const getSuggestions = async (cmd: string, cwd: string, shell: Shell): Pr
   const result = await runSubcommand(activeCmd.slice(1), activeCmd, subcommand, resolvedCwd, shell);
   if (result == null) return;
   if (result.suggestions.length == 0 && !result.argumentDescription) return;
-  
+
   const activeToken = lastCommand?.complete ? undefined : lastCommand;
   return { ...result, activeToken };
 };
