@@ -88,12 +88,13 @@ export const escapePath = (value: string | undefined, shell: Shell): string | un
   value != null && needsQuoted(value, getShellQuoteChar(shell)) ? quoteString(value, getShellQuoteChar(shell)) : value;
 
 export const buildExecuteShellCommand =
-  (timeout: number): Fig.ExecuteCommandFunction =>
+  (timeout: number, signal?: AbortSignal): Fig.ExecuteCommandFunction =>
   async ({ command, env, args, cwd }: Fig.ExecuteCommandInput): Promise<Fig.ExecuteCommandOutput> => {
+    signal?.throwIfAborted();
     const executionShell = await getExecutionShell();
     const escapedArgs = escapeArgs(executionShell, args);
-    const child = spawn(command, escapedArgs, { cwd, env: { ...process.env, ...env, ISTERM: "1" }, shell: executionShell });
-    setTimeout(() => child.kill("SIGKILL"), timeout);
+    const child = spawn(command, escapedArgs, { cwd, env: { ...process.env, ...env, ISTERM: "1" }, shell: executionShell, signal });
+    const killTimeout = setTimeout(() => child.kill("SIGKILL"), timeout);
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (data) => (stdout += data));
@@ -103,6 +104,7 @@ export const buildExecuteShellCommand =
     });
     return new Promise((resolve) => {
       child.on("close", (code) => {
+        clearTimeout(killTimeout);
         resolve({
           status: code ?? 0,
           stderr,
@@ -118,6 +120,7 @@ export const resolveCwd = async (
   cmdToken: CommandToken | undefined,
   cwd: string,
   shell: Shell,
+  signal?: AbortSignal,
 ): Promise<{ cwd: string; pathy: boolean; complete: boolean }> => {
   if (cmdToken == null || cmdToken.complete) return { cwd, pathy: false, complete: false };
   const { token: rawToken, isQuoted } = cmdToken;
@@ -131,12 +134,14 @@ export const resolveCwd = async (
   const token = trimmedToken;
   const resolvedCwd = path.isAbsolute(token) ? token : isHomedir(token) ? token.replace("~", homedir()) : path.join(cwd, token);
   try {
+    signal?.throwIfAborted();
     await fsAsync.access(resolvedCwd, fsAsync.constants.R_OK);
     return { cwd: resolvedCwd, pathy: true, complete: tokenComplete };
   } catch {
     // fallback to the parent folder if possible
     const baselessCwd = resolvedCwd.substring(0, resolvedCwd.length - path.basename(resolvedCwd).length);
     try {
+      signal?.throwIfAborted();
       await fsAsync.access(baselessCwd, fsAsync.constants.R_OK);
       return { cwd: baselessCwd, pathy: true, complete: tokenComplete };
     } catch {

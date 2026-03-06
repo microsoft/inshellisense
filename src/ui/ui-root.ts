@@ -11,7 +11,6 @@ import { getBackspaceSequence, Shell } from "../utils/shell.js";
 import { enableWin32InputMode, resetToInitialState } from "../utils/ansi.js";
 import { MAX_LINES, type KeyPressEvent, type SuggestionManager } from "./suggestionManager.js";
 import type { ISTerm } from "../isterm/pty.js";
-import { v4 as uuidV4 } from "uuid";
 
 export const renderConfirmation = (live: boolean): string => {
   const statusMessage = live ? chalk.green("live") : chalk.red("not found");
@@ -43,7 +42,7 @@ const _render = (term: ISTerm, suggestionManager: SuggestionManager, data: strin
 
   const commandState = term.getCommandState();
   const cursorTerminated = handlingBackspace ? true : commandState.cursorTerminated ?? false;
-  const showSuggestions = hasSuggestion && cursorTerminated && !commandState.hasOutput && !cursorShift;
+  const showSuggestions = hasSuggestion && cursorTerminated && !commandState.hasOutput && !cursorShift && !!commandState.commandText;
   const patch = term.getPatch(linesOfInterest, showSuggestions ? suggestion : [], direction);
 
   const ansiCursorShow = cursorHidden ? "" : ansi.cursorShow;
@@ -81,7 +80,6 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   let hasSuggestion = false;
   let direction = _direction(term);
   let handlingBackspace = false; // backspace normally consistent of two data points (move back & delete), so on the first data point, we won't enforce the cursor terminated rule. this will help reduce flicker
-  let renderId = uuidV4();
   const stdinStartedInRawMode = process.stdin.isRaw;
   if (process.stdin.isTTY) process.stdin.setRawMode(true);
   readline.emitKeypressEvents(process.stdin);
@@ -103,15 +101,8 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
     }
 
     hasSuggestion = _render(term, suggestionManager, data, handlingBackspace, hasSuggestion);
-
-    const currentRenderId = uuidV4();
-    renderId = currentRenderId;
     await suggestionManager.exec();
-
-    // handle race conditions where a earlier render might override a later one
-    if (currentRenderId == renderId) {
-      hasSuggestion = _render(term, suggestionManager, "", handlingBackspace, hasSuggestion);
-    }
+    hasSuggestion = _render(term, suggestionManager, "", handlingBackspace, hasSuggestion);
 
     handlingBackspace = false;
     direction = _direction(term);

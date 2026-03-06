@@ -36,6 +36,7 @@ export class SuggestionManager {
   #suggestBlob?: SuggestionBlob;
   #shell: Shell;
   #hideSuggestions: boolean = false;
+  #abortController?: AbortController;
 
   constructor(terminal: ISTerm, shell: Shell) {
     this.#term = terminal;
@@ -46,6 +47,7 @@ export class SuggestionManager {
   }
 
   private async _loadSuggestions(): Promise<void> {
+    this.#abortController?.abort();
     const commandText = this.#term.getCommandState().commandText;
     if (!commandText) {
       this.#command = "";
@@ -58,10 +60,19 @@ export class SuggestionManager {
     if (commandText == this.#command) {
       return;
     }
-    const suggestionBlob = await getSuggestions(commandText, this.#term.cwd, this.#shell);
-    this.#command = commandText;
-    this.#suggestBlob = suggestionBlob;
-    this.#activeSuggestionIdx = 0;
+    this.#abortController = new AbortController();
+    try {
+      const suggestionBlob = await getSuggestions(commandText, this.#term.cwd, this.#shell, this.#abortController.signal);
+      this.#command = commandText;
+      this.#suggestBlob = suggestionBlob;
+      this.#activeSuggestionIdx = 0;
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        log.debug({ msg: "suggestion generation aborted", commandText, shell: this.#shell });
+        return;
+      }
+      throw e;
+    }
   }
 
   private _renderArgumentDescription(description: string | undefined) {
@@ -187,6 +198,9 @@ export class SuggestionManager {
         return false;
       }
       this.#term.write(applyReplacement(action));
+    } else if (name == "return" || (name == "c" && ctrl)) {
+      this.#term.clearCommand();
+      return false;
     } else {
       return false;
     }

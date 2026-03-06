@@ -108,11 +108,21 @@ const toSuggestion = (suggestion: Fig.Suggestion, name?: string, type?: Fig.Sugg
     description: suggestion.description,
     icon: getIcon(suggestion.icon, type ?? suggestion.type),
     allNames: suggestion.name instanceof Array ? suggestion.name : [suggestion.name],
-    priority: suggestion.priority ?? 50,
+    priority: getSuggestionPriority(suggestion),
     insertValue: suggestion.insertValue,
     type: suggestion.type,
     hidden: suggestion.hidden,
   };
+};
+
+const getSuggestionPriority = (suggestion: Fig.Suggestion): number => {
+  const isOption =
+    suggestion.type === "option" ||
+    (suggestion.name instanceof Array
+      ? suggestion.name.some((n) => n.startsWith("--") || n.startsWith("-"))
+      : suggestion?.name?.startsWith("--") || suggestion?.name?.startsWith("-"));
+  if (isOption) return 45;
+  return suggestion.priority ?? 50;
 };
 
 function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string>; type?: Fig.SuggestionType | undefined }>(
@@ -201,11 +211,13 @@ const generatorSuggestions = async (
   filterStrategy: FilterStrategy | undefined,
   partialCmd: string | undefined,
   cwd: string,
+  signal?: AbortSignal,
 ): Promise<Suggestion[]> => {
   const generators = generator instanceof Array ? generator : generator ? [generator] : [];
   const tokens = allTokens.map((t) => t.token);
   if (partialCmd) tokens.push(partialCmd);
-  const suggestions = (await Promise.all(generators.map((gen) => runGenerator(gen, tokens, cwd)))).flat();
+  signal?.throwIfAborted();
+  const suggestions = (await Promise.all(generators.map((gen) => runGenerator(gen, tokens, cwd, signal)))).flat();
   return filter<Fig.Suggestion>(
     suggestions.map((suggestion) => ({ ...suggestion, priority: suggestion.priority ?? 60 })),
     filterStrategy,
@@ -219,8 +231,9 @@ const templateSuggestions = async (
   filterStrategy: FilterStrategy | undefined,
   partialCmd: string | undefined,
   cwd: string,
+  signal?: AbortSignal,
 ): Promise<Suggestion[]> => {
-  return filter<Fig.Suggestion>(await runTemplates(templates ?? [], cwd), filterStrategy, partialCmd, undefined);
+  return filter<Fig.Suggestion>(await runTemplates(templates ?? [], cwd, signal), filterStrategy, partialCmd, undefined);
 };
 
 const suggestionSuggestions = (
@@ -310,6 +323,7 @@ export const getSubcommandDrivenRecommendation = async (
   allTokens: CommandToken[],
   cwd: string,
   shell: Shell,
+  signal?: AbortSignal,
 ): Promise<SuggestionBlob | undefined> => {
   log.debug({ msg: "suggestion point", subcommand, persistentOptions, partialToken, argsDepleted, argsFromSubcommand, acceptedTokens, cwd });
   if (argsDepleted && argsFromSubcommand) {
@@ -331,9 +345,9 @@ export const getSubcommandDrivenRecommendation = async (
   }
   if (argLength != 0) {
     const activeArg = subcommand.args instanceof Array ? subcommand.args[0] : subcommand.args;
-    suggestions.push(...(await generatorSuggestions(activeArg?.generators, allTokens, activeArg?.filterStrategy, partialCmd, cwd)));
+    suggestions.push(...(await generatorSuggestions(activeArg?.generators, allTokens, activeArg?.filterStrategy, partialCmd, cwd, signal)));
     suggestions.push(...suggestionSuggestions(activeArg?.suggestions, activeArg?.filterStrategy, partialCmd));
-    suggestions.push(...(await templateSuggestions(activeArg?.template, activeArg?.filterStrategy, partialCmd, cwd)));
+    suggestions.push(...(await templateSuggestions(activeArg?.template, activeArg?.filterStrategy, partialCmd, cwd, signal)));
   }
 
   return {
@@ -369,6 +383,7 @@ export const getArgDrivenRecommendation = async (
   variadicArgBound: boolean,
   cwd: string,
   shell: Shell,
+  signal?: AbortSignal,
 ): Promise<SuggestionBlob | undefined> => {
   let partialCmd = partialToken?.token;
   if (partialToken?.isPath) {
@@ -379,9 +394,9 @@ export const getArgDrivenRecommendation = async (
   const activeArg = args[0];
   const allOptions = persistentOptions.concat(subcommand.options ?? []);
   const suggestions = [
-    ...(await generatorSuggestions(args[0].generators, allTokens, activeArg?.filterStrategy, partialCmd, cwd)),
+    ...(await generatorSuggestions(args[0].generators, allTokens, activeArg?.filterStrategy, partialCmd, cwd, signal)),
     ...suggestionSuggestions(args[0].suggestions, activeArg?.filterStrategy, partialCmd),
-    ...(await templateSuggestions(args[0].template, activeArg?.filterStrategy, partialCmd, cwd)),
+    ...(await templateSuggestions(args[0].template, activeArg?.filterStrategy, partialCmd, cwd, signal)),
   ];
 
   if (activeArg.isOptional || (activeArg.isVariadic && variadicArgBound)) {
