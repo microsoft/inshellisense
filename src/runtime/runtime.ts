@@ -126,8 +126,8 @@ export const getSuggestions = async (cmd: string, cwd: string, shell: Shell, sig
   if (result == null) return;
   if (result.suggestions.length == 0 && !result.argumentDescription) return;
 
-  const charactersToDrop = lastCommand?.complete ? 0 : lastCommand?.tokenLength;
-  return { ...result, charactersToDrop };
+  const activeToken = lastCommand?.complete ? undefined : lastCommand;
+  return { ...result, activeToken };
 };
 
 export const getSpecNames = (): string[] => {
@@ -435,6 +435,6 @@ const runCommand = async (token: CommandToken): Promise<SuggestionBlob | undefin
           }) as Suggestion,
       ),
     ],
-    charactersToDrop: token.tokenLength,
+    activeToken: token,
   };
 };
