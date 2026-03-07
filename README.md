@@ -136,6 +136,16 @@ If you are using a [NerdFont](https://www.nerdfonts.com/) patched font, you can 
 useNerdFont = true
 ```
 
+### Max Suggestions
+
+You can change the maximum number of suggestions displayed in the autocomplete list at one time in your config file:
+
+
+```toml
+maxSuggestions = 10
+```
+
+
 ## Unsupported Specs
 
 Specs for the `az`, `gcloud`, & `aws` CLIs are not supported in inshellisense due to their large size.
