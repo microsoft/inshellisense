@@ -1,8 +1,8 @@
 class Inshellisense < Formula
   desc "IDE style command line auto complete"
   homepage "https://github.com/microsoft/inshellisense"
-  url "https://registry.npmjs.org/@microsoft/inshellisense/-/inshellisense-0.0.1-rc.31.tgz"
-  sha256 "93065cebbb3f581af3c69794e6d416ed8794a3ca4b91cedb2de8b0eeb00e4ce1"
+  url "https://registry.npmjs.org/@microsoft/inshellisense/-/inshellisense-0.0.1-rc.32.tgz"
+  sha256 "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   license "MIT"
 
   depends_on "node"
