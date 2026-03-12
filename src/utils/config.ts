@@ -114,7 +114,7 @@ let globalConfig: Config = {
 
 export const getConfig = (): Config => globalConfig;
 export const loadConfig = async (program: Command) => {
-  configPaths.forEach(async (configPath) => {
+  for (const configPath of configPaths) {
     if (fs.existsSync(configPath)) {
       let config: Config;
       try {
@@ -142,7 +142,7 @@ export const loadConfig = async (program: Command) => {
         maxSuggestions: config?.maxSuggestions ?? 5,
       };
     }
-  });
+  }
   globalConfig.specs = { path: [path.join(os.homedir(), ".fig", "autocomplete", "build"), ...(globalConfig.specs?.path ?? [])].map((p) => `file:\\${p}`) };
 };
 

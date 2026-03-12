@@ -9,6 +9,7 @@ import chalk from "chalk";
 import { Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
 import { getConfig } from "../utils/config.js";
+import { calculateReplacement, applyReplacement } from "../runtime/replacement.js";
 
 const getMaxSuggestions = () => getConfig().maxSuggestions ?? 5;
 const suggestionWidth = 40;
@@ -35,6 +36,7 @@ export class SuggestionManager {
   #suggestBlob?: SuggestionBlob;
   #shell: Shell;
   #hideSuggestions: boolean = false;
+  #abortController?: AbortController;
 
   constructor(terminal: ISTerm, shell: Shell) {
     this.#term = terminal;
@@ -45,6 +47,7 @@ export class SuggestionManager {
   }
 
   private async _loadSuggestions(): Promise<void> {
+    this.#abortController?.abort();
     const commandText = this.#term.getCommandState().commandText;
     if (!commandText) {
       this.#command = "";
@@ -57,10 +60,19 @@ export class SuggestionManager {
     if (commandText == this.#command) {
       return;
     }
-    const suggestionBlob = await getSuggestions(commandText, this.#term.cwd, this.#shell);
-    this.#command = commandText;
-    this.#suggestBlob = suggestionBlob;
-    this.#activeSuggestionIdx = 0;
+    this.#abortController = new AbortController();
+    try {
+      const suggestionBlob = await getSuggestions(commandText, this.#term.cwd, this.#shell, this.#abortController.signal);
+      this.#command = commandText;
+      this.#suggestBlob = suggestionBlob;
+      this.#activeSuggestionIdx = 0;
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        log.debug({ msg: "suggestion generation aborted", commandText, shell: this.#shell });
+        return;
+      }
+      throw e;
+    }
   }
 
   private _renderArgumentDescription(description: string | undefined) {
@@ -179,12 +191,17 @@ export class SuggestionManager {
       this.#activeSuggestionIdx = Math.min(this.#activeSuggestionIdx + 1, (this.#suggestBlob?.suggestions.length ?? 1) - 1);
     } else if (name == acceptKey && shift == !!acceptShift && ctrl == !!acceptCtrl) {
       const suggestion = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx);
-      const insertChars = suggestion?.insertValue ?? suggestion?.name + " ";
-      const chars = insertChars.substring(this.#suggestBlob?.charactersToDrop ?? 0);
-      if (this.#suggestBlob == null || !chars.trim() || this.#suggestBlob?.suggestions.length == 0) {
+      if (suggestion == null || this.#suggestBlob?.suggestions.length == 0) {
         return false;
       }
-      this.#term.write(chars);
+      const action = calculateReplacement(this.#suggestBlob?.activeToken, suggestion);
+      if (action == null) {
+        return false;
+      }
+      this.#term.write(applyReplacement(action));
+    } else if (name == "return" || (name == "c" && ctrl)) {
+      this.#term.clearCommand();
+      return false;
     } else {
       return false;
     }
