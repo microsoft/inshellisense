@@ -205,7 +205,7 @@ export class CommandManager {
     const globalCursorPosition = this.#terminal.buffer.active.baseY + this.#terminal.buffer.active.cursorY;
     this.#maxCursorY = Math.max(this.#maxCursorY, globalCursorPosition);
 
-    if (globalCursorPosition < this.#activeCommand.promptStartMarker.line || globalCursorPosition < this.#maxCursorY) {
+    if (this.#activeCommand.hasOutput && (globalCursorPosition < this.#activeCommand.promptStartMarker.line || globalCursorPosition < this.#maxCursorY)) {
       this.handleClear();
       this.#activeCommand.promptEndMarker = this.#terminal.registerMarker(0);
       return;
