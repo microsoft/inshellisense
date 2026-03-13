@@ -86,7 +86,7 @@ const configSchema = {
       type: "number",
       nullable: true,
       default: 5,
-    }
+    },
   },
   additionalProperties: false,
 };
