@@ -135,15 +135,15 @@ export const loadConfig = async (program: Command) => {
           dismissSuggestions: config?.bindings?.dismissSuggestions ?? globalConfig.bindings.dismissSuggestions,
         },
         specs: {
-          path: [...(config?.specs?.path ?? []), ...(config?.specs?.path ?? [])],
+          path: [...(config?.specs?.path ?? []), ...(globalConfig.specs?.path ?? [])],
         },
-        useAliases: config.useAliases ?? false,
-        useNerdFont: config?.useNerdFont ?? false,
-        maxSuggestions: config?.maxSuggestions ?? 5,
+        useAliases: config.useAliases ?? globalConfig.useAliases,
+        useNerdFont: config?.useNerdFont ?? globalConfig.useNerdFont,
+        maxSuggestions: config?.maxSuggestions ?? globalConfig.maxSuggestions,
       };
     }
   }
-  globalConfig.specs = { path: [path.join(os.homedir(), ".fig", "autocomplete", "build"), ...(globalConfig.specs?.path ?? [])].map((p) => `file:\\${p}`) };
+  globalConfig.specs = { path: [path.join(os.homedir(), ".fig", "autocomplete", "build"), ...(globalConfig.specs?.path ?? [])] };
 };
 
 export const deleteCacheFolder = (): void => {
