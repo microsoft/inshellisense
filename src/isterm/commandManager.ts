@@ -28,7 +28,6 @@ export class CommandManager {
   #activeCommand: TerminalCommand;
   #terminal: Terminal;
   #acceptedCommandLines: Set<number>;
-  #maxCursorY: number;
   #shell: Shell;
   #promptRewrites: boolean;
 
@@ -36,7 +35,6 @@ export class CommandManager {
     this.#terminal = terminal;
     this.#shell = shell;
     this.#activeCommand = {};
-    this.#maxCursorY = 0;
     this.#acceptedCommandLines = new Set();
     this.#promptRewrites = getShellPromptRewrites(shell);
 
@@ -52,7 +50,6 @@ export class CommandManager {
   }
 
   handlePromptEnd() {
-    if (this.#activeCommand.promptEndMarker != null) return;
     if (this.#hasBeenAccepted()) {
       this.#activeCommand = {};
       return;
@@ -90,7 +87,6 @@ export class CommandManager {
 
   handleClear() {
     this.handlePromptStart();
-    this.#maxCursorY = 0;
     this.#acceptedCommandLines.clear();
   }
 
@@ -203,15 +199,12 @@ export class CommandManager {
     }
 
     const globalCursorPosition = this.#terminal.buffer.active.baseY + this.#terminal.buffer.active.cursorY;
-    this.#maxCursorY = Math.max(this.#maxCursorY, globalCursorPosition);
 
-    if (globalCursorPosition < this.#activeCommand.promptStartMarker.line || globalCursorPosition < this.#maxCursorY) {
-      this.handleClear();
+    if (this.#activeCommand.promptStartMarker.isDisposed || this.#activeCommand.promptEndMarker.isDisposed) {
+      log.debug({ msg: "markers disposed, re-registering" });
+      this.#activeCommand.promptStartMarker = this.#terminal.registerMarker(0);
       this.#activeCommand.promptEndMarker = this.#terminal.registerMarker(0);
-      return;
     }
-
-    if (this.#activeCommand.promptEndMarker == null) return;
 
     // if the prompt is set, now parse out the values from the terminal
     if (this.#activeCommand.promptText != null) {

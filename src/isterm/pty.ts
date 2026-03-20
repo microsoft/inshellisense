@@ -13,7 +13,12 @@ import type { IPty, IEvent } from "node-pty";
 import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
 import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
 import xterm from "@xterm/headless";
-import type { ICellData } from "@xterm/xterm/src/common/Types.js";
+import type { IBufferCell } from "@xterm/xterm";
+
+interface ICellData extends IBufferCell {
+  extended: { underlineStyle: number };
+  hasExtendedAttrs(): number;
+}
 import { CommandManager, CommandState } from "./commandManager.js";
 import log from "../utils/log.js";
 import { gitBashPath } from "../utils/shell.js";

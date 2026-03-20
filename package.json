@@ -23,6 +23,7 @@
     "package:base": "tsx ./scripts/pkg-base.ts",
     "dev": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import=tsx src/index.ts -V",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:e2e": "npx @microsoft/tui-test",
     "lint": "eslint src/ --ext .ts,.tsx && prettier src/ --check",
     "lint:fix": "eslint src/ --ext .ts,.tsx --fix && prettier src/ --write",
     "debug": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --inspect --import=tsx src/index.ts -V"
@@ -41,8 +42,8 @@
   "homepage": "https://github.com/microsoft/inshellisense#readme",
   "dependencies": {
     "@withfig/autocomplete": "2.675.0",
-    "@xterm/addon-unicode11": "^0.8.0",
-    "@xterm/headless": "^5.5.0",
+    "@xterm/addon-unicode11": "^0.9.0",
+    "@xterm/headless": "^6.0.0",
     "ajv": "^8.12.0",
     "ansi-escapes": "^6.2.0",
     "ansi-styles": "^6.2.1",
@@ -58,6 +59,7 @@
     "wrap-ansi": "^8.1.0"
   },
   "devDependencies": {
+    "@microsoft/tui-test": "^0.0.3",
     "@tsconfig/node18": "^18.2.2",
     "@types/color-convert": "^2.0.3",
     "@types/jest": "^29.5.5",
@@ -68,7 +70,7 @@
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
     "@withfig/autocomplete-types": "^1.28.0",
-    "@xterm/xterm": "^5.5.0",
+    "@xterm/xterm": "^6.0.0",
     "esbuild": "^0.27.2",
     "eslint": "^8.51.0",
     "eslint-config-prettier": "^9.0.0",

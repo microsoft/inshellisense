@@ -19,6 +19,43 @@ jobs:
         with:
           node-version: 22.21.1
 
+      - name: setup macOS shells
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          brew install fish
+          brew install zsh
+
+          for dir in /usr/local/share/zsh /usr/local/share/zsh/site-functions /usr/share/zsh /opt/homebrew/share/zsh /opt/homebrew/share/zsh/site-functions /opt/homebrew/share/fish /opt/homebrew/share/fish/vendor_completions.d; do
+            [ -d "$dir" ] && sudo chmod g-w "$dir"
+          done
+
+      - name: setup linux shells
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          sudo apt-add-repository ppa:fish-shell/release-3
+          sudo apt-get update
+          sudo apt install fish zsh
+
+          sudo chmod -R 755 /usr/share/zsh/vendor-completions
+          sudo chown -R root:root /usr/share/zsh/vendor-completions
+          sudo chmod -R 755 /usr/share/zsh
+          sudo chown -R root:root /usr/share/zsh
+
+      - name: setup windows shells
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          python -m pip install 'xonsh[full]'
+
+      - name: setup oh-my-zsh
+        if: matrix.os != 'windows-latest'
+        shell: bash
+        run: |
+          sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended --keep-zshrc
+          git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"
+
       - run: npm ci
 
       - run: npm run lint
@@ -26,3 +63,7 @@ jobs:
       - run: npm test
 
       - run: npm run build
+
+      - run: npm link
+
+      - run: npm run test:e2e
