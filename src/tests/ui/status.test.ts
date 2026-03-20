@@ -11,7 +11,7 @@ test.describe("status checks", () => {
     test.use({ program: { file: "is", args: ["-T", "-s", shell] } });
 
     test("current status", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible({timeout: 30_000});
+      await expect(terminal.getByText(">  ")).toBeVisible({ timeout: 30_000 });
 
       terminal.write("is -c\r");
       await expect(terminal.getByText("live")).toBeVisible();
