@@ -26,7 +26,7 @@ const unixConfigs: ShellConfig[] = [
   { label: Shell.Bash, shell: Shell.Bash },
   { label: Shell.Fish, shell: Shell.Fish },
   { label: Shell.Zsh, shell: Shell.Zsh },
-  ...(hasOhMyZsh ? [{ label: "zsh-ohmyzsh", shell: Shell.Zsh, env: { ZDOTDIR: ohmyzshFixtureDir } }] : []),
+  ...(hasOhMyZsh ? [{ label: "zsh-ohmyzsh", shell: Shell.Zsh, env: { ...process.env, ZDOTDIR: ohmyzshFixtureDir } }] : []),
 ];
 const configs = os.platform() == "win32" ? windowsConfigs : unixConfigs;
 

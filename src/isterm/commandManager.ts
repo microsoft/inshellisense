@@ -73,8 +73,8 @@ export class CommandManager {
       const whitespace = " ".repeat(commandWhitespaceTerminationWidth);
       const whitespaceIdx = promptLineText.indexOf(whitespace);
       if (whitespaceIdx != -1) {
-        this.#activeCommand.promptText = promptLineText.substring(0, whitespaceIdx) + 1;
-        this.#activeCommand.promptEndX = whitespaceIdx;
+        this.#activeCommand.promptText = promptLineText.substring(0, whitespaceIdx + 1);
+        this.#activeCommand.promptEndX = whitespaceIdx + 1;
       }
     }
   }
@@ -153,7 +153,7 @@ export class CommandManager {
     let suggestion = "";
     const whitespace = " ".repeat(commandWhitespaceTerminationWidth);
     for (const [y, line] of commandLines.entries()) {
-      const startX = y == 0 ? this.#activeCommand.promptText?.length ?? 0 : 0;
+      const startX = y == 0 ? this.#activeCommand.promptEndX ?? this.#activeCommand.promptText?.length ?? 0 : 0;
       for (let x = startX; x < this.#terminal.cols; x++) {
         if (postCursorCommand.endsWith(whitespace)) break; // assume that a command that ends with 4 spaces is terminated, avoids capturing right prompts
 
