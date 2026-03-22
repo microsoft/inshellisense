@@ -48,7 +48,7 @@ export const action = (program: Command) => async (options: RootCommandOptions) 
     program.error(`Unsupported shell: '${shell}', supported shells: ${supportedShells}`, { exitCode: 1 });
   }
 
-  await Promise.all([loadLocalSpecsSet(), loadAliases(shell), shell == Shell.Zsh ? setupZshDotfiles() : Promise.resolve()]);
+  await Promise.all([loadLocalSpecsSet(), loadAliases(shell), shell == Shell.Zsh ? setupZshDotfiles(options.test ?? false) : Promise.resolve()]);
 
   await render(program, shell, options.test ?? false, options.login ?? false);
 };

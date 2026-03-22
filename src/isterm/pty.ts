@@ -445,7 +445,7 @@ const convertToPtyEnv = (shell: Shell, underTest: boolean, login: boolean) => {
       return { ...env, PROMPT: `${IstermPromptStart}${prompt}${IstermPromptEnd}` };
     }
     case Shell.Zsh: {
-      return { ...env, ZDOTDIR: zdotdir, USER_ZDOTDIR: userZdotdir };
+      return { ...env, ZDOTDIR: zdotdir(underTest), USER_ZDOTDIR: userZdotdir };
     }
   }
 
