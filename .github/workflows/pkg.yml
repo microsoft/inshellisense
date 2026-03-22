@@ -1,0 +1,72 @@
+name: Package
+
+permissions:
+  contents: read
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            arch: arm64
+            artifact-name: inshellisense-darwin-arm64
+          - os: macos-15-intel
+            arch: x64
+            artifact-name: inshellisense-darwin-x64
+          - os: ubuntu-latest
+            arch: x64
+            artifact-name: inshellisense-linux-x64
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            artifact-name: inshellisense-linux-arm64
+          - os: windows-latest
+            arch: x64
+            artifact-name: inshellisense-win32-x64
+          - os: windows-11-arm
+            arch: arm64
+            artifact-name: inshellisense-win32-arm64
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - run: npm run package
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: pkg/*.tgz
+          if-no-files-found: error
+
+  combine:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Upload combined artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: inshellisense-all
+          path: artifacts/*.tgz
+          if-no-files-found: error

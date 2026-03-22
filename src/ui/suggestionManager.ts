@@ -3,20 +3,21 @@
 
 import { Suggestion, SuggestionBlob } from "../runtime/model.js";
 import { getSuggestions } from "../runtime/runtime.js";
-import { ISTerm, ISTermPatch } from "../isterm/pty.js";
+import type { ISTerm, ISTermPatch } from "../isterm/pty.js";
 import { renderBox, truncateText, truncateMultilineText } from "./utils.js";
 import chalk from "chalk";
 import { Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
 import { getConfig } from "../utils/config.js";
+import { calculateReplacement, applyReplacement } from "../runtime/replacement.js";
 
-const maxSuggestions = 5;
+const getMaxSuggestions = () => getConfig().maxSuggestions ?? 5;
 const suggestionWidth = 40;
 const descriptionWidth = 30;
 const descriptionHeight = 5;
 const borderWidth = 2;
 const activeSuggestionBackgroundColor = "#7D56F4";
-export const MAX_LINES = borderWidth + Math.max(maxSuggestions, descriptionHeight) + 1; // accounts when there is a unhandled newline at the end of the command
+export const getMaxLines = () => borderWidth + Math.max(getMaxSuggestions(), descriptionHeight) + 1; // accounts when there is a unhandled newline at the end of the command
 export const MIN_WIDTH = borderWidth + descriptionWidth;
 
 export type KeyPressEvent = [string | null | undefined, KeyPress];
@@ -35,6 +36,7 @@ export class SuggestionManager {
   #suggestBlob?: SuggestionBlob;
   #shell: Shell;
   #hideSuggestions: boolean = false;
+  #abortController?: AbortController;
 
   constructor(terminal: ISTerm, shell: Shell) {
     this.#term = terminal;
@@ -45,6 +47,7 @@ export class SuggestionManager {
   }
 
   private async _loadSuggestions(): Promise<void> {
+    this.#abortController?.abort();
     const commandText = this.#term.getCommandState().commandText;
     if (!commandText) {
       this.#command = "";
@@ -57,10 +60,19 @@ export class SuggestionManager {
     if (commandText == this.#command) {
       return;
     }
-    const suggestionBlob = await getSuggestions(commandText, this.#term.cwd, this.#shell);
-    this.#command = commandText;
-    this.#suggestBlob = suggestionBlob;
-    this.#activeSuggestionIdx = 0;
+    this.#abortController = new AbortController();
+    try {
+      const suggestionBlob = await getSuggestions(commandText, this.#term.cwd, this.#shell, this.#abortController.signal);
+      this.#command = commandText;
+      this.#suggestBlob = suggestionBlob;
+      this.#activeSuggestionIdx = 0;
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        log.debug({ msg: "suggestion generation aborted", commandText, shell: this.#shell });
+        return;
+      }
+      throw e;
+    }
   }
 
   private _renderArgumentDescription(description: string | undefined) {
@@ -110,6 +122,7 @@ export class SuggestionManager {
     }
     const { suggestions, argumentDescription } = this.#suggestBlob;
 
+    const maxSuggestions = getMaxSuggestions();
     const page = Math.min(Math.floor(this.#activeSuggestionIdx / maxSuggestions) + 1, Math.floor(suggestions.length / maxSuggestions) + 1);
     const pagedSuggestions = suggestions.filter((_, idx) => idx < page * maxSuggestions && idx >= (page - 1) * maxSuggestions);
     const activePagedSuggestionIndex = this.#activeSuggestionIdx % maxSuggestions;
@@ -177,13 +190,18 @@ export class SuggestionManager {
     } else if (name == nextKey && shift == !!nextShift && ctrl == !!nextCtrl) {
       this.#activeSuggestionIdx = Math.min(this.#activeSuggestionIdx + 1, (this.#suggestBlob?.suggestions.length ?? 1) - 1);
     } else if (name == acceptKey && shift == !!acceptShift && ctrl == !!acceptCtrl) {
-      const removals = "\u007F".repeat(this.#suggestBlob?.charactersToDrop ?? 0);
       const suggestion = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx);
-      const chars = suggestion?.insertValue ?? suggestion?.name + " ";
-      if (this.#suggestBlob == null || !chars.trim() || this.#suggestBlob?.suggestions.length == 0) {
+      if (suggestion == null || this.#suggestBlob?.suggestions.length == 0) {
         return false;
       }
-      this.#term.write(removals + chars);
+      const action = calculateReplacement(this.#suggestBlob?.activeToken, suggestion);
+      if (action == null) {
+        return false;
+      }
+      this.#term.write(applyReplacement(action));
+    } else if (name == "return" || (name == "c" && ctrl)) {
+      this.#term.clearCommand();
+      return false;
     } else {
       return false;
     }

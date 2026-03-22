@@ -2,13 +2,19 @@
 
 exports[`parseCommand alreadyUsedOption 1`] = `
 {
-  "charactersToDrop": 3,
+  "activeToken": {
+    "complete": false,
+    "isOption": true,
+    "token": "--b",
+    "tokenLength": 3,
+  },
   "suggestions": [
     {
       "allNames": [
         "--bug-report",
       ],
       "description": "Display system information for bug report",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--bug-report",
@@ -23,13 +29,19 @@ exports[`parseCommand alreadyUsedSuggestion 1`] = `undefined`;
 
 exports[`parseCommand command 1`] = `
 {
-  "charactersToDrop": 3,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "sta",
+    "tokenLength": 3,
+  },
   "suggestions": [
     {
       "allNames": [
         "stage",
       ],
       "description": "Add file contents to the staging area",
+      "hidden": undefined,
       "icon": "📦",
       "insertValue": undefined,
       "name": "stage",
@@ -41,6 +53,7 @@ exports[`parseCommand command 1`] = `
         "status",
       ],
       "description": "Show the working tree status",
+      "hidden": undefined,
       "icon": "📦",
       "insertValue": undefined,
       "name": "status",
@@ -52,6 +65,7 @@ exports[`parseCommand command 1`] = `
         "stash",
       ],
       "description": "Temporarily stores all the modified tracked files",
+      "hidden": undefined,
       "icon": "📦",
       "insertValue": undefined,
       "name": "stash",
@@ -64,13 +78,19 @@ exports[`parseCommand command 1`] = `
 
 exports[`parseCommand completePrefixFilter 1`] = `
 {
-  "charactersToDrop": 4,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "stat",
+    "tokenLength": 4,
+  },
   "suggestions": [
     {
       "allNames": [
         "status",
       ],
       "description": "Show the working tree status",
+      "hidden": undefined,
       "icon": "📦",
       "insertValue": undefined,
       "name": "status",
@@ -83,17 +103,18 @@ exports[`parseCommand completePrefixFilter 1`] = `
 
 exports[`parseCommand completedOptionWithArg 1`] = `
 {
-  "charactersToDrop": 0,
+  "activeToken": undefined,
   "suggestions": [
     {
       "allNames": [
         "--artifact-server-path",
       ],
       "description": "Defines the path where the artifact server stores uploads and retrieves downloads from. If not specified the artifact server will not start",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--artifact-server-path",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -101,10 +122,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "--artifact-server-port",
       ],
       "description": "Defines the port where the artifact server listens (will only bind to localhost)",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--artifact-server-port",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -112,10 +134,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "--container-architecture",
       ],
       "description": "Architecture which should be used to run containers, e.g.: linux/amd64. If not specified, will use host default architecture. Requires Docker server API Version 1.41+. Ignored on earlier Docker server platforms",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--container-architecture",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -123,10 +146,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "--container-daemon-socket",
       ],
       "description": "Path to Docker daemon socket which will be mounted to containers",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--container-daemon-socket",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -135,10 +159,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "-C",
       ],
       "description": "Working directory",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--directory",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -147,10 +172,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "-n",
       ],
       "description": "Dryrun mode",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--dryrun",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -158,10 +184,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "--env-file",
       ],
       "description": "Environment file to read and use as env in the containers",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--env-file",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -169,10 +196,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "--github-instance",
       ],
       "description": "GitHub instance to use. Don't use this if you are not using GitHub Enterprise Server",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--github-instance",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -180,10 +208,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "--insecure-secrets",
       ],
       "description": "NOT RECOMMENDED! Doesn't hide secrets while printing logs",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--insecure-secrets",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -191,10 +220,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "--json",
       ],
       "description": "Output logs in json format",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--json",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -202,10 +232,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "--no-recurse",
       ],
       "description": "Flag to disable running workflows from subdirectories of specified path in '--workflows'/'-W' flag",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--no-recurse",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -213,10 +244,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "--no-skip-checkout",
       ],
       "description": "Do not skip actions/checkout",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--no-skip-checkout",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -225,10 +257,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "-q",
       ],
       "description": "Disable logging of output from steps",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--quiet",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -236,10 +269,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "--secret-file",
       ],
       "description": "File with list of secrets to read from (e.g. --secret-file .secrets)",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--secret-file",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -248,10 +282,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "-v",
       ],
       "description": "Verbose output",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--verbose",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -260,10 +295,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "-W",
       ],
       "description": "Path to workflow file(s)",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--workflows",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -272,10 +308,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "-h",
       ],
       "description": "Display help",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--help",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -283,10 +320,11 @@ exports[`parseCommand completedOptionWithArg 1`] = `
         "--no-descriptions",
       ],
       "description": "Disable completion descriptions",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--no-descriptions",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
   ],
@@ -297,13 +335,19 @@ exports[`parseCommand emptySuggestions 1`] = `undefined`;
 
 exports[`parseCommand exclusiveOnOption 1`] = `
 {
-  "charactersToDrop": 4,
+  "activeToken": {
+    "complete": false,
+    "isOption": true,
+    "token": "--no",
+    "tokenLength": 4,
+  },
   "suggestions": [
     {
       "allNames": [
         "--nobreak",
       ],
       "description": "Print a newline between matches in different files. Enabled by default",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nobreak",
@@ -315,6 +359,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
         "--nocolor",
       ],
       "description": "Don't print color codes in results",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nocolor",
@@ -326,6 +371,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
         "--nofilename",
       ],
       "description": "Don't print file names",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nofilename",
@@ -337,6 +383,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
         "--nofollow",
       ],
       "description": "Don't follow symlinks",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nofollow",
@@ -348,6 +395,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
         "--nogroup",
       ],
       "description": "Refrains from lumping matches in the same file together, and instead places the filename at the start of each match line",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nogroup",
@@ -359,6 +407,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
         "--noheading",
       ],
       "description": "Don't print filenames above matching contents",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--noheading",
@@ -370,6 +419,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
         "--nommap",
       ],
       "description": "Don't use of memory-mapped I/O. Defaults to true on platforms where mmap() is faster than read(). (All but macOS.)",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nommap",
@@ -381,6 +431,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
         "--nomultiline",
       ],
       "description": "Don't match regexes across newlines",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nomultiline",
@@ -393,6 +444,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
         "--norecurse",
       ],
       "description": "Don't recurse into directories",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--norecurse",
@@ -404,6 +456,7 @@ exports[`parseCommand exclusiveOnOption 1`] = `
         "--nonumbers",
       ],
       "description": "Don't print line numbers",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--nonumbers",
@@ -416,13 +469,19 @@ exports[`parseCommand exclusiveOnOption 1`] = `
 
 exports[`parseCommand fullyTypedSuggestion 1`] = `
 {
-  "charactersToDrop": 2,
+  "activeToken": {
+    "complete": false,
+    "isOption": true,
+    "token": "-W",
+    "tokenLength": 2,
+  },
   "suggestions": [
     {
       "allNames": [
         "-W",
       ],
       "description": "Display whiteouts when scanning directories.  (-S) flag)",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "-W",
@@ -434,6 +493,7 @@ exports[`parseCommand fullyTypedSuggestion 1`] = `
         "-w",
       ],
       "description": "Force raw printing of non-printable characters.  This is the default when output is not to a terminal",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "-w",
@@ -446,13 +506,19 @@ exports[`parseCommand fullyTypedSuggestion 1`] = `
 
 exports[`parseCommand generatorUsingPartialInput 1`] = `
 {
-  "charactersToDrop": 27,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "Microsoft.Azure.WebJobs.Cor",
+    "tokenLength": 27,
+  },
   "suggestions": [
     {
       "allNames": [
         "Microsoft.Azure.WebJobs.Core",
       ],
       "description": "This package provides the core Types and Attribute definitions for the WebJobs SDK. For more information, please visit https://go.microsoft.com/fwlink/?linkid=2279708.",
+      "hidden": undefined,
       "icon": "📀",
       "insertValue": "Microsoft.Azure.WebJobs.Core",
       "name": "Microsoft.Azure.WebJobs.Core",
@@ -465,13 +531,19 @@ exports[`parseCommand generatorUsingPartialInput 1`] = `
 
 exports[`parseCommand loadSpec 1`] = `
 {
-  "charactersToDrop": 3,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "add",
+    "tokenLength": 3,
+  },
   "suggestions": [
     {
       "allNames": [
         "add-tags-to-certificate",
       ],
       "description": "Adds one or more tags to an ACM certificate. Tags are labels that you can use to identify and organize your Amazon Web Services resources. Each tag consists of a key and an optional value. You specify the certificate on input by its Amazon Resource Name (ARN). You specify the tag by using a key-value pair.  You can apply a tag to just one certificate if you want to identify a specific characteristic of that certificate, or you can apply the same tag to multiple certificates if you want to filter for a common relationship among those certificates. Similarly, you can apply the same tag to multiple resources if you want to specify a relationship among those resources. For example, you can add the same tag to an ACM certificate and an Elastic Load Balancing load balancer to indicate that they are both used by the same website. For more information, see Tagging ACM certificates.  To remove one or more tags, use the RemoveTagsFromCertificate action. To view all of the tags that have been applied to the certificate, use the ListTagsForCertificate action",
+      "hidden": undefined,
       "icon": "📦",
       "insertValue": undefined,
       "name": "add-tags-to-certificate",
@@ -484,17 +556,18 @@ exports[`parseCommand loadSpec 1`] = `
 
 exports[`parseCommand noArgsArgumentGiven 1`] = `
 {
-  "charactersToDrop": 0,
+  "activeToken": undefined,
   "suggestions": [
     {
       "allNames": [
         "--analyzer-output",
       ],
       "description": "Static analyzer report output format",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--analyzer-output",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -502,10 +575,11 @@ exports[`parseCommand noArgsArgumentGiven 1`] = `
         "--analyze",
       ],
       "description": "Run the static analyzer",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "--analyze",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
     {
@@ -513,10 +587,11 @@ exports[`parseCommand noArgsArgumentGiven 1`] = `
         "-arcmt-migrate-emit-errors",
       ],
       "description": "Emit ARC errors even if the migrator can fix them",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "-arcmt-migrate-emit-errors",
-      "priority": 50,
+      "priority": 45,
       "type": undefined,
     },
   ],
@@ -527,14 +602,20 @@ exports[`parseCommand noOptionsSuggestedDuringVariadicArg 1`] = `undefined`;
 
 exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
 {
+  "activeToken": {
+    "complete": false,
+    "isOption": true,
+    "token": "-l",
+    "tokenLength": 2,
+  },
   "argumentDescription": undefined,
-  "charactersToDrop": 2,
   "suggestions": [
     {
       "allNames": [
         "package-lock.json",
       ],
       "description": undefined,
+      "hidden": undefined,
       "icon": "📄",
       "insertValue": "package-lock.json",
       "name": "package-lock.json",
@@ -546,6 +627,7 @@ exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
         "-L",
       ],
       "description": "Follow all symbolic links to final target and list the file or directory the link references rather than the link itself.  This option cancels the -P option",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "-L",
@@ -557,6 +639,7 @@ exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
         "-l",
       ],
       "description": "(The lowercase letter \`\`ell''.)  List in long format.  (See below.)  A total sum for all the file sizes is output on a line before the long listing",
+      "hidden": undefined,
       "icon": "🔗",
       "insertValue": undefined,
       "name": "-l",
@@ -569,13 +652,19 @@ exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
 
 exports[`parseCommand partialPrefixFilter 1`] = `
 {
-  "charactersToDrop": 3,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "sta",
+    "tokenLength": 3,
+  },
   "suggestions": [
     {
       "allNames": [
         "stage",
       ],
       "description": "Add file contents to the staging area",
+      "hidden": undefined,
       "icon": "📦",
       "insertValue": undefined,
       "name": "stage",
@@ -587,6 +676,7 @@ exports[`parseCommand partialPrefixFilter 1`] = `
         "status",
       ],
       "description": "Show the working tree status",
+      "hidden": undefined,
       "icon": "📦",
       "insertValue": undefined,
       "name": "status",
@@ -598,6 +688,7 @@ exports[`parseCommand partialPrefixFilter 1`] = `
         "stash",
       ],
       "description": "Temporarily stores all the modified tracked files",
+      "hidden": undefined,
       "icon": "📦",
       "insertValue": undefined,
       "name": "stash",
@@ -610,13 +701,21 @@ exports[`parseCommand partialPrefixFilter 1`] = `
 
 exports[`parseCommand pathNestedSuggestion 1`] = `
 {
-  "charactersToDrop": 12,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "isPath": true,
+    "isPathComplete": false,
+    "token": ".github/work",
+    "tokenLength": 12,
+  },
   "suggestions": [
     {
       "allNames": [
         "workflows",
       ],
       "description": undefined,
+      "hidden": undefined,
       "icon": "📁",
       "insertValue": ".github/workflows/",
       "name": "workflows",
@@ -629,13 +728,19 @@ exports[`parseCommand pathNestedSuggestion 1`] = `
 
 exports[`parseCommand pathSuggestion 1`] = `
 {
-  "charactersToDrop": 3,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "she",
+    "tokenLength": 3,
+  },
   "suggestions": [
     {
       "allNames": [
         "shell",
       ],
       "description": undefined,
+      "hidden": undefined,
       "icon": "📁",
       "insertValue": "shell/",
       "name": "shell",
@@ -648,13 +753,21 @@ exports[`parseCommand pathSuggestion 1`] = `
 
 exports[`parseCommand pathWithFileFilteredSuggestion 1`] = `
 {
-  "charactersToDrop": 23,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "isPath": true,
+    "isPathComplete": false,
+    "token": "shell/shellIntegration.",
+    "tokenLength": 23,
+  },
   "suggestions": [
     {
       "allNames": [
         "shellIntegration.bash",
       ],
       "description": undefined,
+      "hidden": undefined,
       "icon": "📄",
       "insertValue": "shell/shellIntegration.bash",
       "name": "shellIntegration.bash",
@@ -667,13 +780,21 @@ exports[`parseCommand pathWithFileFilteredSuggestion 1`] = `
 
 exports[`parseCommand pathWithFileSuggestion 1`] = `
 {
-  "charactersToDrop": 6,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "isPath": true,
+    "isPathComplete": true,
+    "token": "shell/",
+    "tokenLength": 6,
+  },
   "suggestions": [
     {
       "allNames": [
         "bash-preexec.sh",
       ],
       "description": undefined,
+      "hidden": undefined,
       "icon": "📄",
       "insertValue": "shell/bash-preexec.sh",
       "name": "bash-preexec.sh",
@@ -686,13 +807,19 @@ exports[`parseCommand pathWithFileSuggestion 1`] = `
 
 exports[`parseCommand provideFileSuggestion 1`] = `
 {
-  "charactersToDrop": 4,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "READ",
+    "tokenLength": 4,
+  },
   "suggestions": [
     {
       "allNames": [
         "README.md",
       ],
       "description": undefined,
+      "hidden": undefined,
       "icon": "📄",
       "insertValue": "README.md",
       "name": "README.md",
@@ -705,13 +832,19 @@ exports[`parseCommand provideFileSuggestion 1`] = `
 
 exports[`parseCommand provideFolderSuggestion 1`] = `
 {
-  "charactersToDrop": 2,
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "sr",
+    "tokenLength": 2,
+  },
   "suggestions": [
     {
       "allNames": [
         "src",
       ],
       "description": undefined,
+      "hidden": undefined,
       "icon": "📁",
       "insertValue": "src/",
       "name": "src",
@@ -724,22 +857,23 @@ exports[`parseCommand provideFolderSuggestion 1`] = `
 
 exports[`parseCommand providedArgDescription 1`] = `
 {
+  "activeToken": undefined,
   "argumentDescription": "actor",
-  "charactersToDrop": 0,
   "suggestions": [],
 }
 `;
 
 exports[`parseCommand providedSuggestion 1`] = `
 {
+  "activeToken": undefined,
   "argumentDescription": "Shell to generate completions for",
-  "charactersToDrop": 0,
   "suggestions": [
     {
       "allNames": [
         "zsh",
       ],
       "description": undefined,
+      "hidden": undefined,
       "icon": "📀",
       "insertValue": undefined,
       "name": "zsh",

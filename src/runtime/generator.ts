@@ -17,11 +17,12 @@ const getGeneratorContext = (cwd: string): Fig.GeneratorContext => {
 };
 
 // TODO: add support for caching, trigger, & getQueryTerm
-export const runGenerator = async (generator: Fig.Generator, tokens: string[], cwd: string): Promise<Fig.Suggestion[]> => {
+export const runGenerator = async (generator: Fig.Generator, tokens: string[], cwd: string, signal?: AbortSignal): Promise<Fig.Suggestion[]> => {
   // TODO: support trigger
+  signal?.throwIfAborted();
   const { script, postProcess, scriptTimeout, splitOn, custom, template, filterTemplateSuggestions } = generator;
 
-  const executeShellCommand = await buildExecuteShellCommand(scriptTimeout ?? 5000);
+  const executeShellCommand = await buildExecuteShellCommand(scriptTimeout ?? 5000, signal);
   const suggestions = [];
   try {
     if (script) {
@@ -43,7 +44,7 @@ export const runGenerator = async (generator: Fig.Generator, tokens: string[], c
     }
 
     if (template != null) {
-      const templateSuggestions = await runTemplates(template, cwd);
+      const templateSuggestions = await runTemplates(template, cwd, signal);
       if (filterTemplateSuggestions) {
         suggestions.push(...filterTemplateSuggestions(templateSuggestions));
       } else {

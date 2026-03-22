@@ -5,11 +5,11 @@ import { EventEmitter } from "node:events";
 import process from "node:process";
 import os from "node:os";
 import path from "node:path";
-import url from "node:url";
 import fs from "node:fs";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
 
-import pty, { IPty, IEvent } from "@homebridge/node-pty-prebuilt-multiarch";
+import pty from "node-pty";
+import type { IPty, IEvent } from "node-pty";
 import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
 import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
 import xterm from "@xterm/headless";
@@ -21,6 +21,7 @@ import styles from "ansi-styles";
 import * as ansi from "../utils/ansi.js";
 import { Command } from "commander";
 import which from "which";
+import { shellResourcesPath } from "../utils/constants.js";
 
 const ISTermOnDataEvent = "data";
 
@@ -368,22 +369,21 @@ const shellExists = async (shellTarget: string): Promise<boolean> => {
 const convertToPtyTarget = async (shell: Shell, underTest: boolean, login: boolean) => {
   const platform = os.platform();
   const shellTarget = shell == Shell.Bash && platform == "win32" ? await gitBashPath() : platform == "win32" ? `${shell}.exe` : shell;
-  const shellFolderPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "..", "..", "shell");
   let shellArgs: string[] = [];
 
   switch (shell) {
     case Shell.Bash:
-      shellArgs = ["--init-file", path.join(shellFolderPath, "shellIntegration.bash")];
+      shellArgs = ["--init-file", path.join(shellResourcesPath, "shellIntegration.bash")];
       break;
     case Shell.Powershell:
     case Shell.Pwsh:
-      shellArgs = ["-noexit", "-command", `try { . "${path.join(shellFolderPath, "shellIntegration.ps1")}" } catch {}`];
+      shellArgs = ["-noexit", "-command", `try { . "${path.join(shellResourcesPath, "shellIntegration.ps1")}" } catch {}`];
       break;
     case Shell.Fish:
       shellArgs =
         platform == "win32"
-          ? ["--init-command", `. "$(cygpath -u '${path.join(shellFolderPath, "shellIntegration.fish")}')"`]
-          : ["--init-command", `. ${path.join(shellFolderPath, "shellIntegration.fish").replace(/(\s+)/g, "\\$1")}`];
+          ? ["--init-command", `. "$(cygpath -u '${path.join(shellResourcesPath, "shellIntegration.fish")}')"`]
+          : ["--init-command", `. ${path.join(shellResourcesPath, "shellIntegration.fish").replace(/(\s+)/g, "\\$1")}`];
       break;
     case Shell.Xonsh: {
       const sharedConfig = os.platform() == "win32" ? path.join("C:\\ProgramData", "xonsh", "xonshrc") : path.join("etc", "xonsh", "xonshrc");
@@ -393,11 +393,11 @@ const convertToPtyTarget = async (shell: Shell, underTest: boolean, login: boole
         path.join(os.homedir(), ".config", "xonsh", "rc.d"),
       ];
       const configs = [sharedConfig, ...userConfigs].filter((config) => fs.existsSync(config));
-      shellArgs = ["--rc", ...configs, path.join(shellFolderPath, "shellIntegration.xsh")];
+      shellArgs = ["--rc", ...configs, path.join(shellResourcesPath, "shellIntegration.xsh")];
       break;
     }
     case Shell.Nushell:
-      shellArgs = ["-e", `source \`${path.join(shellFolderPath, "shellIntegration.nu")}\``];
+      shellArgs = ["-e", `source \`${path.join(shellResourcesPath, "shellIntegration.nu")}\``];
       if (underTest) shellArgs.push("-n");
       break;
   }

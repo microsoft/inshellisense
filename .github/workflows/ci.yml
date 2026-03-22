@@ -9,16 +9,15 @@ jobs:
   build:
     strategy:
       matrix:
-        version: [18, 20, 22]
         os: ["macos-latest", "windows-latest", "ubuntu-latest"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.version }}.x
+      - name: Use Node.js 22.21.1
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.version }}
+          node-version: 22.21.1
 
       - run: npm ci
 
@@ -27,5 +26,3 @@ jobs:
       - run: npm test
 
       - run: npm run build
-
-      - run: npm link

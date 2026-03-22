@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { CommandToken } from "./parser.js";
+
 export type Suggestion = {
   name: string;
   allNames: string[];
@@ -9,10 +11,11 @@ export type Suggestion = {
   priority: number;
   insertValue?: string;
   type?: Fig.SuggestionType;
+  hidden?: boolean;
 };
 
 export type SuggestionBlob = {
   suggestions: Suggestion[];
   argumentDescription?: string;
-  charactersToDrop?: number;
+  activeToken?: CommandToken;
 };

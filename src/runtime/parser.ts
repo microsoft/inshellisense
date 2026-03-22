@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import wcwidth from "wcwidth";
+import { wcswidth } from "../utils/unicode.js";
 import { Shell } from "../utils/shell.js";
 import { getShellWhitespaceEscapeChar } from "./utils.js";
 
@@ -82,7 +82,7 @@ const lex = (command: string, shell: Shell): CommandToken[] => {
       const complete = idx + 1 < command.length && spaceRegex.test(command[idx + 1]);
       tokens.push({
         token: command.slice(readingIdx + 1, idx),
-        tokenLength: wcwidth(command.slice(readingIdx + 1, idx)) + 2, // +2 for both quotes
+        tokenLength: wcswidth(command.slice(readingIdx + 1, idx)) + 2, // +2 for both quotes
         complete,
         isOption: false,
         isQuoted: true,
@@ -91,7 +91,7 @@ const lex = (command: string, shell: Shell): CommandToken[] => {
       readingQuoteContinuedString = false;
       tokens.push({
         token: command.slice(readingIdx, idx),
-        tokenLength: wcwidth(command.slice(readingIdx, idx)),
+        tokenLength: wcswidth(command.slice(readingIdx, idx)),
         complete: true,
         isOption: false,
         isQuoted: true,
@@ -101,7 +101,7 @@ const lex = (command: string, shell: Shell): CommandToken[] => {
       readingFlag = false;
       tokens.push({
         token: command.slice(readingIdx, idx),
-        tokenLength: wcwidth(command.slice(readingIdx, idx)),
+        tokenLength: wcswidth(command.slice(readingIdx, idx)),
         complete: true,
         isOption: true,
       });
@@ -109,7 +109,7 @@ const lex = (command: string, shell: Shell): CommandToken[] => {
       readingCmd = false;
       tokens.push({
         token: command.slice(readingIdx, idx),
-        tokenLength: wcwidth(command.slice(readingIdx, idx)),
+        tokenLength: wcswidth(command.slice(readingIdx, idx)),
         complete: true,
         isOption: false,
       });
@@ -121,7 +121,7 @@ const lex = (command: string, shell: Shell): CommandToken[] => {
     if (readingQuotedString) {
       tokens.push({
         token: command.slice(readingIdx + 1),
-        tokenLength: wcwidth(command.slice(readingIdx + 1)) + 1, // +1 for the leading quote
+        tokenLength: wcswidth(command.slice(readingIdx + 1)) + 1, // +1 for the leading quote
         complete: false,
         isOption: false,
         isQuoted: true,
@@ -129,7 +129,7 @@ const lex = (command: string, shell: Shell): CommandToken[] => {
     } else if (readingQuoteContinuedString) {
       tokens.push({
         token: command.slice(readingIdx),
-        tokenLength: wcwidth(command.slice(readingIdx)),
+        tokenLength: wcswidth(command.slice(readingIdx)),
         complete: false,
         isOption: false,
         isQuoted: true,
@@ -138,7 +138,7 @@ const lex = (command: string, shell: Shell): CommandToken[] => {
     } else {
       tokens.push({
         token: command.slice(readingIdx),
-        tokenLength: wcwidth(command.slice(readingIdx)),
+        tokenLength: wcswidth(command.slice(readingIdx)),
         complete: false,
         isOption: readingFlag,
       });

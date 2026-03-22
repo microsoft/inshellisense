@@ -1,12 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import speclist, {
-  diffVersionedCompletions as versionedSpeclist,
+import figSpecList, {
+  diffVersionedCompletions as figVersionedSpeclist,
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
 } from "@withfig/autocomplete/build/index.js";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { parseCommand, CommandToken } from "./parser.js";
 import { getArgDrivenRecommendation, getSubcommandDrivenRecommendation, SuggestionIcons } from "./suggestion.js";
 import { Suggestion, SuggestionBlob } from "./model.js";
@@ -15,9 +16,13 @@ import { Shell } from "../utils/shell.js";
 import { aliasExpand, getAliasNames } from "./alias.js";
 import { getConfig } from "../utils/config.js";
 import log from "../utils/log.js";
+import { specResourcesPath } from "../utils/constants.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- recursive type, setting as any
 const specSet: any = {};
+const ignoredSpecs = ["gcloud", "az", "aws"];
+const speclist = figSpecList.filter((spec: string) => !ignoredSpecs.some((name) => spec.startsWith(name + "/")));
+const versionedSpeclist = figVersionedSpeclist.filter((spec: string) => !ignoredSpecs.some((name) => spec.startsWith(name)));
 
 function loadSpecsSet(speclist: string[], versionedSpeclist: string[], specsPath: string) {
   speclist.forEach((s) => {
@@ -29,7 +34,7 @@ function loadSpecsSet(speclist: string[], versionedSpeclist: string[], specsPath
       }
       if (idx === specRoutes.length - 1) {
         const prefix = versionedSpeclist.includes(s) ? "/index.js" : `.js`;
-        activeSet[route] = `${specsPath}/${s}${prefix}`;
+        activeSet[route] = `${specsPath}${path.sep}${s}${prefix}`;
       } else {
         activeSet[route] = activeSet[route] || {};
         activeSet = activeSet[route];
@@ -38,11 +43,11 @@ function loadSpecsSet(speclist: string[], versionedSpeclist: string[], specsPath
   });
 }
 
-loadSpecsSet(speclist as string[], versionedSpeclist, `@withfig/autocomplete/build`);
+loadSpecsSet(speclist as string[], versionedSpeclist, specResourcesPath);
 
 const loadedSpecs: { [key: string]: Fig.Spec } = {};
 
-const loadSpec = async (cmd: CommandToken[]): Promise<Fig.Spec | undefined> => {
+const loadSpec = async (cmd: CommandToken[], signal?: AbortSignal): Promise<Fig.Spec | undefined> => {
   const rootToken = cmd.at(0);
   if (!rootToken?.complete) {
     return;
@@ -52,39 +57,47 @@ const loadSpec = async (cmd: CommandToken[]): Promise<Fig.Spec | undefined> => {
     return loadedSpecs[rootToken.token];
   }
   if (specSet[rootToken.token]) {
-    const spec = (await import(specSet[rootToken.token])).default;
+    signal?.throwIfAborted();
+    const specPath = specSet[rootToken.token];
+    const importPath = path.isAbsolute(specPath) ? pathToFileURL(specPath).href : specPath;
+    const spec = (await import(importPath)).default;
     loadedSpecs[rootToken.token] = spec;
     return spec;
   }
 };
 
 // this load spec function should only be used for `loadSpec` on the fly as it is cacheless
-const lazyLoadSpec = async (key: string): Promise<Fig.Spec | undefined> => {
-  return (await import(`@withfig/autocomplete/build/${key}.js`)).default;
+const lazyLoadSpec = async (key: string, signal?: AbortSignal): Promise<Fig.Spec | undefined> => {
+  signal?.throwIfAborted();
+  const specPath = path.join(specResourcesPath, `${key}.js`);
+  const importPath = path.isAbsolute(specPath) ? pathToFileURL(specPath).href : specPath;
+  return (await import(importPath)).default;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- will be implemented in below TODO
-const lazyLoadSpecLocation = async (location: Fig.SpecLocation): Promise<Fig.Spec | undefined> => {
+const lazyLoadSpecLocation = async (location: Fig.SpecLocation, signal?: AbortSignal): Promise<Fig.Spec | undefined> => {
   return; //TODO: implement spec location loading
 };
 
 export const loadLocalSpecsSet = async () => {
   const specsPath = getConfig().specs.path;
   await Promise.allSettled(
-    specsPath.map((specPath) =>
-      import(path.join(specPath, "index.js"))
+    specsPath.map((specPath) => {
+      const indexPath = path.join(specPath, "index.js");
+      const importPath = path.isAbsolute(indexPath) ? pathToFileURL(indexPath).href : indexPath;
+      return import(importPath)
         .then((res) => {
           const { default: speclist, diffVersionedCompletions: versionedSpeclist } = res;
           loadSpecsSet(speclist, versionedSpeclist, specPath);
         })
         .catch((e) => {
           log.debug({ msg: `no local specs imported from '${specPath}', this will not break the current session`, e: (e as Error).message, specPath });
-        }),
-    ),
+        });
+    }),
   );
 };
 
-export const getSuggestions = async (cmd: string, cwd: string, shell: Shell): Promise<SuggestionBlob | undefined> => {
+export const getSuggestions = async (cmd: string, cwd: string, shell: Shell, signal?: AbortSignal): Promise<SuggestionBlob | undefined> => {
   let activeCmd = parseCommand(cmd, shell);
   const rootToken = activeCmd.at(0);
   if (activeCmd.length === 0) {
@@ -96,23 +109,25 @@ export const getSuggestions = async (cmd: string, cwd: string, shell: Shell): Pr
 
   activeCmd = aliasExpand(activeCmd);
 
-  const spec = await loadSpec(activeCmd);
+  signal?.throwIfAborted();
+  const spec = await loadSpec(activeCmd, signal);
   if (spec == null) return;
   const subcommand = getSubcommand(spec);
   if (subcommand == null) return;
 
+  signal?.throwIfAborted();
   const lastCommand = activeCmd.at(-1);
-  const { cwd: resolvedCwd, pathy, complete: pathyComplete } = await resolveCwd(lastCommand, cwd, shell);
+  const { cwd: resolvedCwd, pathy, complete: pathyComplete } = await resolveCwd(lastCommand, cwd, shell, signal);
   if (pathy && lastCommand) {
     lastCommand.isPath = true;
     lastCommand.isPathComplete = pathyComplete;
   }
-  const result = await runSubcommand(activeCmd.slice(1), subcommand, resolvedCwd, shell);
+  const result = await runSubcommand(activeCmd.slice(1), activeCmd, subcommand, resolvedCwd, shell, undefined, undefined, undefined, undefined, signal);
   if (result == null) return;
   if (result.suggestions.length == 0 && !result.argumentDescription) return;
 
-  const charactersToDrop = lastCommand?.complete ? 0 : lastCommand?.tokenLength;
-  return { ...result, charactersToDrop };
+  const activeToken = lastCommand?.complete ? undefined : lastCommand;
+  return { ...result, activeToken };
 };
 
 export const getSpecNames = (): string[] => {
@@ -141,9 +156,7 @@ const getSubcommand = (spec?: Fig.Spec): Fig.Subcommand | undefined => {
   return spec;
 };
 
-const executeShellCommand = await buildExecuteShellCommand(5000);
-
-const genSubcommand = async (command: string, parentCommand: Fig.Subcommand): Promise<Fig.Subcommand | undefined> => {
+const genSubcommand = async (command: string, parentCommand: Fig.Subcommand, signal?: AbortSignal): Promise<Fig.Subcommand | undefined> => {
   if (!parentCommand.subcommands || parentCommand.subcommands.length === 0) return;
 
   const subcommandIdx = parentCommand.subcommands.findIndex((s) => (Array.isArray(s.name) ? s.name.includes(command) : s.name === command));
@@ -153,11 +166,13 @@ const genSubcommand = async (command: string, parentCommand: Fig.Subcommand): Pr
 
   // this pulls in the spec from the load spec and overwrites the subcommand in the parent with the loaded spec.
   // then it returns the subcommand and clears the loadSpec field so that it doesn't get called again
+  signal?.throwIfAborted();
+  const executeShellCommand = buildExecuteShellCommand(5000, signal);
   switch (typeof subcommand.loadSpec) {
     case "function": {
       const partSpec = await subcommand.loadSpec(command, executeShellCommand);
       if (partSpec instanceof Array) {
-        const locationSpecs = (await Promise.all(partSpec.map((s) => lazyLoadSpecLocation(s)))).filter((s) => s != null) as Fig.Spec[];
+        const locationSpecs = (await Promise.all(partSpec.map((s) => lazyLoadSpecLocation(s, signal)))).filter((s) => s != null) as Fig.Spec[];
         const subcommands = locationSpecs.map((s) => getSubcommand(s)).filter((s) => s != null) as Fig.Subcommand[];
         (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = {
           ...subcommand,
@@ -166,7 +181,7 @@ const genSubcommand = async (command: string, parentCommand: Fig.Subcommand): Pr
         };
         return (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx];
       } else if (Object.prototype.hasOwnProperty.call(partSpec, "type")) {
-        const locationSingleSpec = await lazyLoadSpecLocation(partSpec as Fig.SpecLocation);
+        const locationSingleSpec = await lazyLoadSpecLocation(partSpec as Fig.SpecLocation, signal);
         (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = {
           ...subcommand,
           ...(getSubcommand(locationSingleSpec) ?? []),
@@ -183,7 +198,7 @@ const genSubcommand = async (command: string, parentCommand: Fig.Subcommand): Pr
       }
     }
     case "string": {
-      const spec = await lazyLoadSpec(subcommand.loadSpec as string);
+      const spec = await lazyLoadSpec(subcommand.loadSpec as string, signal);
       (parentCommand.subcommands as Fig.Subcommand[])[subcommandIdx] = {
         ...subcommand,
         ...(getSubcommand(spec) ?? []),
@@ -219,12 +234,14 @@ const getArgs = (args: Fig.SingleOrArray<Fig.Arg> | undefined): Fig.Arg[] => {
 
 const runOption = async (
   tokens: CommandToken[],
+  allTokens: CommandToken[],
   option: Fig.Option,
   subcommand: Fig.Subcommand,
   cwd: string,
   shell: Shell,
   persistentOptions: Fig.Option[],
   acceptedTokens: CommandToken[],
+  signal?: AbortSignal,
 ): Promise<SuggestionBlob | undefined> => {
   if (tokens.length === 0) {
     throw new Error("invalid state reached, option expected but no tokens found");
@@ -233,10 +250,11 @@ const runOption = async (
   const isPersistent = persistentOptions.some((o) => (typeof o.name === "string" ? o.name === activeToken.token : o.name.includes(activeToken.token)));
   if ((option.args instanceof Array && option.args.length > 0) || option.args != null) {
     const args = option.args instanceof Array ? option.args : [option.args];
-    return runArg(tokens.slice(1), args, subcommand, cwd, shell, persistentOptions, acceptedTokens.concat(activeToken), true, false);
+    return runArg(tokens.slice(1), allTokens, args, subcommand, cwd, shell, persistentOptions, acceptedTokens.concat(activeToken), true, false, signal);
   }
   return runSubcommand(
     tokens.slice(1),
+    allTokens,
     subcommand,
     cwd,
     shell,
@@ -245,11 +263,15 @@ const runOption = async (
       ...activeToken,
       isPersistent,
     }),
+    undefined,
+    undefined,
+    signal,
   );
 };
 
 const runArg = async (
   tokens: CommandToken[],
+  allTokens: CommandToken[],
   args: Fig.Arg[],
   subcommand: Fig.Subcommand,
   cwd: string,
@@ -258,13 +280,15 @@ const runArg = async (
   acceptedTokens: CommandToken[],
   fromOption: boolean,
   fromVariadic: boolean,
+  signal?: AbortSignal,
 ): Promise<SuggestionBlob | undefined> => {
+  signal?.throwIfAborted();
   if (args.length === 0) {
-    return runSubcommand(tokens, subcommand, cwd, shell, persistentOptions, acceptedTokens, true, !fromOption);
+    return runSubcommand(tokens, allTokens, subcommand, cwd, shell, persistentOptions, acceptedTokens, true, !fromOption, signal);
   } else if (tokens.length === 0) {
-    return await getArgDrivenRecommendation(args, subcommand, persistentOptions, undefined, acceptedTokens, fromVariadic, cwd, shell);
+    return await getArgDrivenRecommendation(args, subcommand, persistentOptions, undefined, acceptedTokens, allTokens, fromVariadic, cwd, shell, signal);
   } else if (!tokens.at(0)?.complete) {
-    return await getArgDrivenRecommendation(args, subcommand, persistentOptions, tokens[0], acceptedTokens, fromVariadic, cwd, shell);
+    return await getArgDrivenRecommendation(args, subcommand, persistentOptions, tokens[0], acceptedTokens, allTokens, fromVariadic, cwd, shell, signal);
   }
 
   const activeToken = tokens[0];
@@ -272,35 +296,59 @@ const runArg = async (
     if (activeToken.isOption) {
       const option = getOption(activeToken, persistentOptions.concat(subcommand.options ?? []));
       if (option != null) {
-        return runOption(tokens, option, subcommand, cwd, shell, persistentOptions, acceptedTokens);
+        return runOption(tokens, allTokens, option, subcommand, cwd, shell, persistentOptions, acceptedTokens, signal);
       }
       return;
     }
 
-    const nextSubcommand = await genSubcommand(activeToken.token, subcommand);
+    const nextSubcommand = await genSubcommand(activeToken.token, subcommand, signal);
     if (nextSubcommand != null) {
-      return runSubcommand(tokens.slice(1), nextSubcommand, cwd, shell, persistentOptions, getPersistentTokens(acceptedTokens.concat(activeToken)));
+      return runSubcommand(
+        tokens.slice(1),
+        allTokens,
+        nextSubcommand,
+        cwd,
+        shell,
+        persistentOptions,
+        getPersistentTokens(acceptedTokens.concat(activeToken)),
+        undefined,
+        undefined,
+        signal,
+      );
     }
   }
 
   const activeArg = args[0];
   if (activeArg.isVariadic) {
-    return runArg(tokens.slice(1), args, subcommand, cwd, shell, persistentOptions, acceptedTokens.concat(activeToken), fromOption, true);
+    return runArg(tokens.slice(1), allTokens, args, subcommand, cwd, shell, persistentOptions, acceptedTokens.concat(activeToken), fromOption, true, signal);
   } else if (activeArg.isCommand) {
     if (tokens.length <= 0) {
       return;
     }
-    const spec = await loadSpec(tokens);
+    const spec = await loadSpec(tokens, signal);
     if (spec == null) return;
     const subcommand = getSubcommand(spec);
     if (subcommand == null) return;
-    return runSubcommand(tokens.slice(1), subcommand, cwd, shell);
+    return runSubcommand(tokens.slice(1), allTokens, subcommand, cwd, shell, undefined, undefined, undefined, undefined, signal);
   }
-  return runArg(tokens.slice(1), args.slice(1), subcommand, cwd, shell, persistentOptions, acceptedTokens.concat(activeToken), fromOption, false);
+  return runArg(
+    tokens.slice(1),
+    allTokens,
+    args.slice(1),
+    subcommand,
+    cwd,
+    shell,
+    persistentOptions,
+    acceptedTokens.concat(activeToken),
+    fromOption,
+    false,
+    signal,
+  );
 };
 
 const runSubcommand = async (
   tokens: CommandToken[],
+  allTokens: CommandToken[],
   subcommand: Fig.Subcommand,
   cwd: string,
   shell: Shell,
@@ -308,11 +356,13 @@ const runSubcommand = async (
   acceptedTokens: CommandToken[] = [],
   argsDepleted = false,
   argsUsed = false,
+  signal?: AbortSignal,
 ): Promise<SuggestionBlob | undefined> => {
+  signal?.throwIfAborted();
   if (tokens.length === 0) {
-    return getSubcommandDrivenRecommendation(subcommand, persistentOptions, undefined, argsDepleted, argsUsed, acceptedTokens, cwd, shell);
+    return getSubcommandDrivenRecommendation(subcommand, persistentOptions, undefined, argsDepleted, argsUsed, acceptedTokens, allTokens, cwd, shell, signal);
   } else if (!tokens.at(0)?.complete) {
-    return getSubcommandDrivenRecommendation(subcommand, persistentOptions, tokens[0], argsDepleted, argsUsed, acceptedTokens, cwd, shell);
+    return getSubcommandDrivenRecommendation(subcommand, persistentOptions, tokens[0], argsDepleted, argsUsed, acceptedTokens, allTokens, cwd, shell, signal);
   }
 
   const activeToken = tokens[0];
@@ -322,20 +372,24 @@ const runSubcommand = async (
   if (activeToken.isOption) {
     const option = getOption(activeToken, allOptions);
     if (option != null) {
-      return runOption(tokens, option, subcommand, cwd, shell, persistentOptions, acceptedTokens);
+      return runOption(tokens, allTokens, option, subcommand, cwd, shell, persistentOptions, acceptedTokens, signal);
     }
     return;
   }
 
-  const nextSubcommand = await genSubcommand(activeToken.token, subcommand);
+  const nextSubcommand = await genSubcommand(activeToken.token, subcommand, signal);
   if (nextSubcommand != null) {
     return runSubcommand(
       tokens.slice(1),
+      allTokens,
       nextSubcommand,
       cwd,
       shell,
       getPersistentOptions(persistentOptions, subcommand.options),
       getPersistentTokens(acceptedTokens.concat(activeToken)),
+      undefined,
+      undefined,
+      signal,
     );
   }
 
@@ -345,10 +399,10 @@ const runSubcommand = async (
 
   const args = getArgs(subcommand.args);
   if (args.length != 0) {
-    return runArg(tokens, args, subcommand, cwd, shell, allOptions, acceptedTokens, false, false);
+    return runArg(tokens, allTokens, args, subcommand, cwd, shell, allOptions, acceptedTokens, false, false, signal);
   }
   // if the subcommand has no args specified, fallback to the subcommand and ignore this item
-  return runSubcommand(tokens.slice(1), subcommand, cwd, shell, persistentOptions, acceptedTokens.concat(activeToken));
+  return runSubcommand(tokens.slice(1), allTokens, subcommand, cwd, shell, persistentOptions, acceptedTokens.concat(activeToken), undefined, undefined, signal);
 };
 
 const runCommand = async (token: CommandToken): Promise<SuggestionBlob | undefined> => {
@@ -381,6 +435,6 @@ const runCommand = async (token: CommandToken): Promise<SuggestionBlob | undefin
           }) as Suggestion,
       ),
     ],
-    charactersToDrop: token.tokenLength,
+    activeToken: token,
   };
 };

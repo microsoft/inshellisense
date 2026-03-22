@@ -8,6 +8,7 @@
 import { Command, Option } from "commander";
 
 import complete from "./commands/complete.js";
+import reinit from "./commands/reinit.js";
 import uninstall from "./commands/uninstall.js";
 import init from "./commands/init.js";
 import specs from "./commands/specs/root.js";
@@ -26,7 +27,7 @@ const hiddenOption = (flags: string, description: string) => {
 program
   .name("inshellisense")
   .description("IDE style command line auto complete")
-  .version(await getVersion(), "-v, --version", "output the current version")
+  .version(getVersion(), "-v, --version", "output the current version")
   .action(action(program))
   .option("-l, --login", `start shell as a login shell`)
   .option("-s, --shell <shell>", `shell to use for command execution, supported shells: ${supportedShells}`)
@@ -35,10 +36,11 @@ program
   .option("-V, --verbose", `enable verbose logging`)
   .passThroughOptions();
 
+program.addCommand(init);
+program.addCommand(reinit);
+program.addCommand(doctor);
+program.addCommand(specs);
 program.addCommand(complete);
 program.addCommand(uninstall);
-program.addCommand(init);
-program.addCommand(specs);
-program.addCommand(doctor);
 
 program.parse();

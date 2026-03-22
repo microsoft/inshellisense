@@ -6,14 +6,25 @@
 
 ## Getting Started
 
-### Requirements
-
-- Node.js 22.X, 20.X, 18.X
-
 ### Installation
 
+**npm (recommended)**
 ```shell
 npm install -g @microsoft/inshellisense
+is init
+```
+**homebrew (macOS/linux)**
+```shell
+brew tap microsoft/inshellisense https://github.com/microsoft/inshellisense
+brew install inshellisense
+is init
+```
+
+### Updating
+
+```shell
+npm install -g @microsoft/inshellisense # OR brew upgrade inshellisense
+is reinit
 ```
 
 ### Quickstart
@@ -109,6 +120,14 @@ key = "escape"
 
 Key names are matched against the Node.js [keypress](https://nodejs.org/api/readline.html#readlineemitkeypresseventsstream-interface) events.
 
+### Alias Expansion
+
+Inshellisense supports expanding aliases for bash/zsh shells. You can enable alias expansion in your config file:
+
+```toml
+useAliases = true
+```
+
 ### NerdFonts
 
 If you are using a [NerdFont](https://www.nerdfonts.com/) patched font, you can enable the NerdFonts support in your config file:
@@ -116,6 +135,20 @@ If you are using a [NerdFont](https://www.nerdfonts.com/) patched font, you can 
 ```toml
 useNerdFont = true
 ```
+
+### Max Suggestions
+
+You can change the maximum number of suggestions displayed in the autocomplete list at one time in your config file:
+
+
+```toml
+maxSuggestions = 10
+```
+
+
+## Unsupported Specs
+
+Specs for the `az`, `gcloud`, & `aws` CLIs are not supported in inshellisense due to their large size.
 
 ## Contributing
 
