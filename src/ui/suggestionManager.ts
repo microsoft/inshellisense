@@ -48,11 +48,12 @@ export class SuggestionManager {
 
   private async _loadSuggestions(): Promise<void> {
     this.#abortController?.abort();
-    const commandText = this.#term.getCommandState().commandText;
+    const commandState = this.#term.getCommandState();
+    const commandText = commandState.commandText;
     if (!commandText) {
       this.#command = "";
     }
-    if (!commandText || this.#hideSuggestions) {
+    if (!commandText || this.#hideSuggestions || commandState.hasOutput) {
       this.#suggestBlob = undefined;
       this.#activeSuggestionIdx = 0;
       return;
