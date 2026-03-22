@@ -26,7 +26,7 @@ const unixConfigs: ShellConfig[] = [
   { label: Shell.Bash, shell: Shell.Bash },
   { label: Shell.Fish, shell: Shell.Fish },
   { label: Shell.Zsh, shell: Shell.Zsh },
-  ...(hasOhMyZsh ? [{ label: "zsh-ohmyzsh", shell: Shell.Zsh, env: { ...process.env, ZDOTDIR: ohmyzshFixtureDir } }] : []),
+  ...(hasOhMyZsh ? [{ label: "zsh-ohmyzsh", shell: Shell.Zsh, env: { ...process.env, USER_ZDOTDIR: ohmyzshFixtureDir } }] : []),
 ];
 const configs = os.platform() == "win32" ? windowsConfigs : unixConfigs;
 
@@ -137,6 +137,7 @@ configs.map((config) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
       terminal.resize(80, 10);
       terminal.write(returnChar.repeat(10));
+      await expect(terminal.getByText(">  ")).toBeVisible();
 
       terminal.write("git  ");
       await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
@@ -147,6 +148,7 @@ configs.map((config) => {
 
       terminal.write(`echo "hello"${returnChar}`);
       await expect(terminal.getByText("hello", { strict: false })).toBeVisible();
+      await expect(terminal.getByText(">  ")).toBeVisible();
 
       terminal.write("git ");
       await expect(terminal.getByText("archive", { strict: false })).toBeVisible();

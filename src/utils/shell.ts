@@ -52,7 +52,7 @@ export const initSupportedShells = supportedShells.filter((shell) => shell != Sh
 export const aliasSupportedShells = [Shell.Bash, Shell.Zsh];
 
 export const userZdotdir = process.env?.ZDOTDIR ?? os.homedir() ?? `~`;
-export const zdotdir = path.join(os.tmpdir(), `is-zsh`);
+export const zdotdir = path.join(os.tmpdir(), `is-zsh-${process.pid}`);
 
 export const checkShellConfigs = (): Shell[] => {
   const shellsWithoutConfigs: Shell[] = [];
@@ -154,10 +154,11 @@ const getShellConfigName = (shell: Shell) => {
 };
 
 export const setupZshDotfiles = async () => {
-  await fsAsync.cp(path.join(shellResourcesPath, "shellIntegration-rc.zsh"), path.join(zdotdir, ".zshrc"));
-  await fsAsync.cp(path.join(shellResourcesPath, "shellIntegration-profile.zsh"), path.join(zdotdir, ".zprofile"));
-  await fsAsync.cp(path.join(shellResourcesPath, "shellIntegration-env.zsh"), path.join(zdotdir, ".zshenv"));
-  await fsAsync.cp(path.join(shellResourcesPath, "shellIntegration-login.zsh"), path.join(zdotdir, ".zlogin"));
+  await fsAsync.mkdir(zdotdir, { recursive: true });
+  await fsAsync.cp(path.join(shellResourcesPath, "shellIntegration-rc.zsh"), path.join(zdotdir, ".zshrc"), { force: true });
+  await fsAsync.cp(path.join(shellResourcesPath, "shellIntegration-profile.zsh"), path.join(zdotdir, ".zprofile"), { force: true });
+  await fsAsync.cp(path.join(shellResourcesPath, "shellIntegration-env.zsh"), path.join(zdotdir, ".zshenv"), { force: true });
+  await fsAsync.cp(path.join(shellResourcesPath, "shellIntegration-login.zsh"), path.join(zdotdir, ".zlogin"), { force: true });
 };
 
 const findParentProcess = async () => {

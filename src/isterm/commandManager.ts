@@ -56,7 +56,7 @@ export class CommandManager {
     }
 
     this.#activeCommand.promptEndMarker = this.#terminal.registerMarker(0);
-    if (this.#activeCommand.promptEndMarker?.line === this.#terminal.buffer.active.cursorY) {
+    if (this.#activeCommand.promptEndMarker?.line === this.#terminal.buffer.active.baseY + this.#terminal.buffer.active.cursorY) {
       this.#activeCommand.promptEndX = this.#terminal.buffer.active.cursorX;
     }
 

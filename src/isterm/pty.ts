@@ -291,7 +291,10 @@ export class ISTerm implements IPty {
 
   getPatch(height: number, patches: ISTermPatch[], direction: "below" | "above"): string {
     const currentCursorPosition = this.#term.buffer.active.cursorY + this.#term.buffer.active.baseY;
+    const viewportStart = this.#term.buffer.active.baseY;
+    const viewportEnd = this.#term.buffer.active.baseY + this.#term.rows - 1;
     const writeLine = (y: number, patch?: ISTermPatch): string => {
+      if (y < viewportStart || y > viewportEnd) return "";
       const line = this.#term.buffer.active.getLine(y);
       const hasPatch = patch != null;
       const ansiPrePatch = [ansi.resetColor, ansi.resetLine];

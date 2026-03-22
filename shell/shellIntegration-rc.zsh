@@ -54,24 +54,19 @@ __is_precmd() {
 	fi
 }
 
-# For non-test mode, emit PS and PE markers via ZLE widgets rather than PS1 wrapping.
-# This avoids issues with prompt managers (like powerlevel10k) that overwrite PS1
-# or use async `zle reset-prompt` which would strip embedded markers.
-if [[ $ISTERM_TESTING != "1" ]]; then
-	if (( ${+widgets[zle-line-init]} )); then
-		zle -A zle-line-init __is_orig_zle_line_init
-		__is_zle_line_init() {
-			__is_prompt_start
-			zle __is_orig_zle_line_init
-			__is_prompt_end
-		}
-	else
-		__is_zle_line_init() {
-			__is_prompt_start
-			__is_prompt_end
-		}
-	fi
-	zle -N zle-line-init __is_zle_line_init
+if (( ${+widgets[zle-line-init]} )); then
+	zle -A zle-line-init __is_orig_zle_line_init
+	__is_zle_line_init() {
+		__is_prompt_start
+		zle __is_orig_zle_line_init
+		__is_prompt_end
+	}
+else
+	__is_zle_line_init() {
+		__is_prompt_start
+		__is_prompt_end
+	}
 fi
+zle -N zle-line-init __is_zle_line_init
 
 add-zsh-hook precmd __is_precmd
