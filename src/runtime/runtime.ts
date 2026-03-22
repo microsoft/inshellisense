@@ -21,7 +21,7 @@ import { specResourcesPath } from "../utils/constants.js";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- recursive type, setting as any
 const specSet: any = {};
 const ignoredSpecs = ["gcloud", "az", "aws"];
-const speclist = figSpecList.filter((spec: string) => !ignoredSpecs.some((name) => spec.startsWith(name + "/")));
+const speclist = figSpecList.filter((spec: string) => !ignoredSpecs.some((name) => spec === name || spec.startsWith(name + "/")));
 const versionedSpeclist = figVersionedSpeclist.filter((spec: string) => !ignoredSpecs.some((name) => spec.startsWith(name)));
 
 function loadSpecsSet(speclist: string[], versionedSpeclist: string[], specsPath: string) {
