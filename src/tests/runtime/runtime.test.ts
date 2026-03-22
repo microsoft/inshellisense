@@ -24,8 +24,8 @@ const testData = [
   { name: "providedArgDescription", command: "act completion bash -a " },
   { name: "completedOptionWithArg", command: "act completion bash -a 'actor' " },
   { name: "command", command: "sudo git sta" },
-  { name: "nestedNonCommands", command: "az az ", skip: true }, // TODO: fix skipped test
-  { name: "loadSpec", command: "aws acm add" },
+  { name: "nestedNonCommands", command: "az az ", skip: true }, // no longer supported
+  { name: "loadSpec", command: "aws acm add", skip: true }, // no longer loaded
   { name: "noArgsArgumentGiven", command: "gcc lab ", maxSuggestions: 3 },
   { name: "generatorUsingPartialInput", command: "dotnet add package Microsoft.Azure.WebJobs.Cor", maxSuggestions: 1 },
   { name: "pathSuggestion", command: "source she" },
