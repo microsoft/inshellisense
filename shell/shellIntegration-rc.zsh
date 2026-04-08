@@ -6,11 +6,11 @@ if [[ -f $USER_ZDOTDIR/.zshrc ]]; then
 fi
 
 __is_prompt_start() {
-	builtin printf '\e]6973;PS\a'
+	builtin printf '\e]6973;PS\a' > /dev/tty
 }
 
 __is_prompt_end() {
-	builtin printf '\e]6973;PE\a'
+	builtin printf '\e]6973;PE\a' > /dev/tty
 }
 
 __is_escape_value() {
