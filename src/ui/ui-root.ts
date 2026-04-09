@@ -54,9 +54,7 @@ const _render = (term: ISTerm, suggestionManager: SuggestionManager, data: strin
 
   const ansiCursorShow = cursorHidden ? "" : ansi.cursorShow;
   if (direction == "above") {
-    writeOutput(
-      data + ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorPrevLine.repeat(lines) + patch + ansi.cursorRestorePosition + ansiCursorShow,
-    );
+    writeOutput(data + ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorPrevLine.repeat(lines) + patch + ansi.cursorRestorePosition + ansiCursorShow);
   } else {
     writeOutput(ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorNextLine + patch + ansi.cursorRestorePosition + ansiCursorShow + data);
   }
