@@ -26,10 +26,17 @@ const writeOutput = (data: string) => {
   process.stdout.write(data);
 };
 
+const _suggestionLayout = (term: ISTerm): { direction: "above" | "below"; lines: number } => {
+  const maxLines = getMaxLines();
+  const { remainingLines, cursorY } = term.getCursorState();
+  const direction = remainingLines >= maxLines ? "below" : cursorY >= maxLines ? "above" : remainingLines >= cursorY ? "below" : "above";
+  const lines = direction === "above" ? Math.min(maxLines, cursorY) : Math.min(maxLines, remainingLines);
+  return { direction, lines };
+};
+
 const _render = (term: ISTerm, suggestionManager: SuggestionManager, data: string, handlingBackspace: boolean, handlingSuggestion: boolean): boolean => {
-  const direction = _direction(term);
+  const { direction, lines } = _suggestionLayout(term);
   const { hidden: cursorHidden, shift: cursorShift } = term.getCursorState();
-  const linesOfInterest = getMaxLines();
 
   const suggestion = suggestionManager.render(direction);
   const hasSuggestion = suggestion.length != 0;
@@ -43,12 +50,12 @@ const _render = (term: ISTerm, suggestionManager: SuggestionManager, data: strin
   const commandState = term.getCommandState();
   const cursorTerminated = handlingBackspace ? true : commandState.cursorTerminated ?? false;
   const showSuggestions = hasSuggestion && cursorTerminated && !commandState.hasOutput && !cursorShift && !!commandState.commandText;
-  const patch = term.getPatch(linesOfInterest, showSuggestions ? suggestion : [], direction);
+  const patch = term.getPatch(lines, showSuggestions ? suggestion : [], direction);
 
   const ansiCursorShow = cursorHidden ? "" : ansi.cursorShow;
   if (direction == "above") {
     writeOutput(
-      data + ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorPrevLine.repeat(linesOfInterest) + patch + ansi.cursorRestorePosition + ansiCursorShow,
+      data + ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorPrevLine.repeat(lines) + patch + ansi.cursorRestorePosition + ansiCursorShow,
     );
   } else {
     writeOutput(ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorNextLine + patch + ansi.cursorRestorePosition + ansiCursorShow + data);
@@ -57,20 +64,18 @@ const _render = (term: ISTerm, suggestionManager: SuggestionManager, data: strin
 };
 
 const _clear = (term: ISTerm): void => {
-  const clearDirection = _direction(term) == "above" ? "below" : "above"; // invert direction to clear what was previously rendered
-  const { hidden: cursorHidden } = term.getCursorState();
-  const patch = term.getPatch(getMaxLines(), [], clearDirection);
+  const { direction } = _suggestionLayout(term);
+  const clearDirection = direction == "above" ? "below" : "above"; // invert direction to clear what was previously rendered
+  const { hidden: cursorHidden, cursorY, remainingLines } = term.getCursorState();
+  const lines = clearDirection === "above" ? Math.min(getMaxLines(), cursorY) : Math.min(getMaxLines(), remainingLines);
+  const patch = term.getPatch(lines, [], clearDirection);
 
   const ansiCursorShow = cursorHidden ? "" : ansi.cursorShow;
   if (clearDirection == "above") {
-    writeOutput(ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorPrevLine.repeat(getMaxLines()) + patch + ansi.cursorRestorePosition + ansiCursorShow);
+    writeOutput(ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorPrevLine.repeat(lines) + patch + ansi.cursorRestorePosition + ansiCursorShow);
   } else {
     writeOutput(ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorNextLine + patch + ansi.cursorRestorePosition + ansiCursorShow);
   }
-};
-
-const _direction = (term: ISTerm): "above" | "below" => {
-  return term.getCursorState().remainingLines > getMaxLines() ? "below" : "above";
 };
 
 export const render = async (program: Command, shell: Shell, underTest: boolean, login: boolean) => {
@@ -78,7 +83,7 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   const term = await isterm.default.spawn(program, { shell, rows: process.stdout.rows, cols: process.stdout.columns, underTest, login });
   const suggestionManager = new SuggestionManager(term, shell);
   let hasSuggestion = false;
-  let direction = _direction(term);
+  let direction = _suggestionLayout(term).direction;
   let handlingBackspace = false; // backspace normally consistent of two data points (move back & delete), so on the first data point, we won't enforce the cursor terminated rule. this will help reduce flicker
   const stdinStartedInRawMode = process.stdin.isRaw;
   if (process.stdin.isTTY) process.stdin.setRawMode(true);
@@ -94,7 +99,7 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   term.onData(async (data) => {
     data = data.replace(enableWin32InputMode, ""); // remove win32-input-mode enable sequence if it comes through data
 
-    const handlingDirectionChange = direction != _direction(term);
+    const handlingDirectionChange = direction != _suggestionLayout(term).direction;
     // clear the previous suggestion if the direction has changed to avoid leftover suggestions
     if (handlingDirectionChange) {
       _clear(term);
@@ -105,7 +110,7 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
     hasSuggestion = _render(term, suggestionManager, "", handlingBackspace, hasSuggestion);
 
     handlingBackspace = false;
-    direction = _direction(term);
+    direction = _suggestionLayout(term).direction;
   });
 
   process.stdin.on("keypress", (...keyPress: KeyPressEvent) => {
