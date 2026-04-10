@@ -90,6 +90,7 @@ export class ISTerm implements IPty {
     this.#shell = shell;
 
     this.#ptyEmitter = new EventEmitter();
+    this.#term.onData((data) => this.#pty.write(data));
     this.#pty.onData((data) => {
       const cursorY = this.#term.buffer.active.cursorY;
       this.#term.write(data, () => {
@@ -390,8 +391,8 @@ const convertToPtyTarget = async (shell: Shell, underTest: boolean, login: boole
     case Shell.Fish:
       shellArgs =
         platform == "win32"
-          ? ["--features", "no-query-term", "--init-command", `. "$(cygpath -u '${path.join(shellResourcesPath, "shellIntegration.fish")}')"`]
-          : ["--features", "no-query-term", "--init-command", `. ${path.join(shellResourcesPath, "shellIntegration.fish").replace(/(\s+)/g, "\\$1")}`];
+          ? ["--init-command", `. "$(cygpath -u '${path.join(shellResourcesPath, "shellIntegration.fish")}')"` ]
+          : ["--init-command", `. ${path.join(shellResourcesPath, "shellIntegration.fish").replace(/(\s+)/g, "\\$1")}`];
       break;
     case Shell.Xonsh: {
       const sharedConfig = os.platform() == "win32" ? path.join("C:\\ProgramData", "xonsh", "xonshrc") : path.join("etc", "xonsh", "xonshrc");
