@@ -86,15 +86,6 @@ export class ISTerm implements IPty {
     this.#term.unicode.activeVersion = "11";
 
     this.#term.parser.registerOscHandler(IsTermOscPs, (data) => this._handleIsSequence(data));
-    // handling fish DA1 failing in e2e tests due to proxy issues - send fake response when under test
-    if (underTest) {
-      this.#term.parser.registerCsiHandler({ final: "c" }, (params) => {
-        if (params[0] === 0) {
-          this.#pty.write("\x1b[?1;2c");
-        }
-        return false;
-      });
-    }
     this.#commandManager = new CommandManager(this.#term, shell);
     this.#shell = shell;
 
