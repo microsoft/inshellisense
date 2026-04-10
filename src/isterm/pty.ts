@@ -399,7 +399,7 @@ const convertToPtyTarget = async (shell: Shell, underTest: boolean, login: boole
     case Shell.Fish:
       shellArgs =
         platform == "win32"
-          ? ["--init-command", `. "$(cygpath -u '${path.join(shellResourcesPath, "shellIntegration.fish")}')"` ]
+          ? ["--init-command", `. "$(cygpath -u '${path.join(shellResourcesPath, "shellIntegration.fish")}')"`]
           : ["--init-command", `. ${path.join(shellResourcesPath, "shellIntegration.fish").replace(/(\s+)/g, "\\$1")}`];
       break;
     case Shell.Xonsh: {
