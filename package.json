@@ -71,7 +71,7 @@
     "@typescript-eslint/parser": "^6.7.4",
     "@withfig/autocomplete-types": "^1.28.0",
     "@xterm/xterm": "^6.0.0",
-    "esbuild": "^0.27.2",
+    "esbuild": "^0.28.1",
     "eslint": "^8.51.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-header": "^3.1.1",
