@@ -54,6 +54,7 @@ export class SuggestionManager {
       this.#command = "";
     }
     if (!commandText || this.#hideSuggestions || commandState.hasOutput) {
+      this.#command = "";
       this.#suggestBlob = undefined;
       this.#activeSuggestionIdx = 0;
       return;
@@ -168,7 +169,7 @@ export class SuggestionManager {
       this.#term.clearCommand(); // clear the current command on enter
     }
 
-    // if suggestions are hidden, keep them hidden until during command navigation
+    // if suggestions are hidden, keep them hidden while navigating command history
     if (this.#hideSuggestions) {
       this.#hideSuggestions = name == "up" || name == "down";
     }
@@ -183,12 +184,22 @@ export class SuggestionManager {
       previousSuggestion: { key: prevKey, shift: prevShift, control: prevCtrl },
     } = getConfig().bindings;
 
+    const isPreviousSuggestionKey = name == prevKey && shift == !!prevShift && ctrl == !!prevCtrl;
+    const isNextSuggestionKey = name == nextKey && shift == !!nextShift && ctrl == !!nextCtrl;
+    const isShellHistoryKey = (name == "up" || name == "down") && !shift && !ctrl;
+
+    if (isShellHistoryKey && !isPreviousSuggestionKey && !isNextSuggestionKey) {
+      this.#suggestBlob = undefined;
+      this.#hideSuggestions = true;
+      return false;
+    }
+
     if (name == dismissKey && shift == !!dismissShift && ctrl == !!dismissCtrl) {
       this.#suggestBlob = undefined;
       this.#hideSuggestions = true;
-    } else if (name == prevKey && shift == !!prevShift && ctrl == !!prevCtrl) {
+    } else if (isPreviousSuggestionKey) {
       this.#activeSuggestionIdx = Math.max(0, this.#activeSuggestionIdx - 1);
-    } else if (name == nextKey && shift == !!nextShift && ctrl == !!nextCtrl) {
+    } else if (isNextSuggestionKey) {
       this.#activeSuggestionIdx = Math.min(this.#activeSuggestionIdx + 1, (this.#suggestBlob?.suggestions.length ?? 1) - 1);
     } else if (name == acceptKey && shift == !!acceptShift && ctrl == !!acceptCtrl) {
       const suggestion = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx);

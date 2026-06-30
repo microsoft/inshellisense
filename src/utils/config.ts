@@ -100,8 +100,8 @@ const configPaths = [rcPath, xdgPath];
 
 let globalConfig: Config = {
   bindings: {
-    nextSuggestion: { key: "down" },
-    previousSuggestion: { key: "up" },
+    nextSuggestion: { key: "n", control: true },
+    previousSuggestion: { key: "p", control: true },
     acceptSuggestion: { key: "tab" },
     dismissSuggestions: { key: "escape" },
   },
