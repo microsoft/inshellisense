@@ -43,12 +43,12 @@ configs.map((config) => {
       await expect(terminal.getByText("archive", { strict: false })).toHaveBgColor("7d56f4");
     });
 
-    test("cursor up when at top of list", async ({ terminal }) => {
+    test("previous suggestion when at top of list", async ({ terminal }) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
       terminal.write("git ");
 
       await expect(terminal.getByText("archive", { strict: false })).toHaveBgColor("7d56f4");
-      terminal.keyUp();
+      terminal.write("\x10"); // ctrl+p
       await expect(terminal.getByText("archive", { strict: false })).toHaveBgColor("7d56f4");
     });
 
@@ -62,12 +62,12 @@ configs.map((config) => {
       await expect(terminal.getByText("archive", { strict: false })).not.toBeVisible();
     });
 
-    test("cursor down when at top of list", async ({ terminal }) => {
+    test("next suggestion when at top of list", async ({ terminal }) => {
       await expect(terminal.getByText(">  ")).toBeVisible();
       terminal.write("git ");
 
       await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
-      terminal.keyDown(2);
+      terminal.write("\x0e".repeat(2)); // ctrl+n
 
       await expect(terminal.getByText("repository")).toBeVisible();
       await expect(terminal.getByText("commit")).toHaveBgColor("7d56f4");
@@ -79,7 +79,7 @@ configs.map((config) => {
       terminal.write("git ");
 
       await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
-      terminal.keyDown(5);
+      terminal.write("\x0e".repeat(5)); // ctrl+n
 
       await expect(terminal.getByText("archive", { strict: false })).not.toBeVisible();
       await expect(terminal.getByText("add")).toHaveBgColor("7d56f4");
@@ -121,7 +121,7 @@ configs.map((config) => {
       terminal.write("git ");
 
       await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
-      terminal.keyDown(2);
+      terminal.write("\x0e".repeat(2)); // ctrl+n
 
       await expect(terminal.getByText("repository")).toBeVisible();
       await expect(terminal.getByText("commit")).toHaveBgColor("7d56f4");

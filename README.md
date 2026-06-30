@@ -71,14 +71,14 @@ is init nu | save $nu.env-path --append
 
 #### Keybindings
 
-All other keys are passed through to the shell. The keybindings below are only captured when the inshellisense suggestions are visible, otherwise they are passed through to the shell as well. These can be customized in the [config](#configuration).
+All other keys are passed through to the shell. The keybindings below are only captured when the inshellisense suggestions are visible, otherwise they are passed through to the shell as well. By default, unmodified <kbd>↑</kbd>/<kbd>↓</kbd> continue to navigate shell history; if suggestions are visible, they are hidden until you resume typing or editing the input. These can be customized in the [config](#configuration).
 
-| Action                    | Keybinding     |
-| ------------------------- | -------------- |
-| Accept Current Suggestion | <kbd>tab</kbd> |
-| View Next Suggestion      | <kbd>↓</kbd>   |
-| View Previous Suggestion  | <kbd>↑</kbd>   |
-| Dismiss Suggestions       | <kbd>esc</kbd> |
+| Action                    | Keybinding                         |
+| ------------------------- | ---------------------------------- |
+| Accept Current Suggestion | <kbd>tab</kbd>                     |
+| View Next Suggestion      | <kbd>ctrl</kbd> + <kbd>n</kbd>     |
+| View Previous Suggestion  | <kbd>ctrl</kbd> + <kbd>p</kbd>     |
+| Dismiss Suggestions       | <kbd>esc</kbd>                     |
 
 ## Integrations
 
@@ -104,15 +104,17 @@ You can customize the keybindings for inshellisense by adding a `bindings` secti
 ```toml
 [bindings.acceptSuggestion]
 key = "tab"
-# shift and ctrl are optional and default to false
+# shift and control are optional and default to false
 shift = false
-ctrl = false
+control = false
 
 [bindings.nextSuggestion]
-key = "down"
+key = "n"
+control = true
 
 [bindings.previousSuggestion]
-key = "up"
+key = "p"
+control = true
 
 [bindings.dismissSuggestions]
 key = "escape"
