@@ -19,6 +19,26 @@ jobs:
         with:
           node-version: 22.21.1
 
+      - name: install shell-use
+        if: matrix.os != 'windows-latest'
+        shell: bash
+        env:
+          SHELL_USE_INSTALL_DIR: ${{ runner.temp }}/shell-use/bin
+        run: |
+          export SHELL_USE_VERSION="$(node -p "require('./package.json').devDependencies['@microsoft/shell-use']")"
+          curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/microsoft/shell-use/main/install/install.sh | sh
+          echo "$SHELL_USE_INSTALL_DIR" >> "$GITHUB_PATH"
+
+      - name: install shell-use
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        env:
+          SHELL_USE_INSTALL_DIR: ${{ runner.temp }}\shell-use\bin
+        run: |
+          $env:SHELL_USE_VERSION = node -p "require('./package.json').devDependencies['@microsoft/shell-use']"
+          irm https://raw.githubusercontent.com/microsoft/shell-use/main/install/install.ps1 | iex
+          $env:SHELL_USE_INSTALL_DIR | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
       - name: setup macOS shells
         if: matrix.os == 'macos-latest'
         shell: bash
