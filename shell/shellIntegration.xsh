@@ -25,7 +25,7 @@ __is_original_prompt = $PROMPT
 $PROMPT_FIELDS['__is_prompt_start'] = __is_prompt_start
 $PROMPT_FIELDS['__is_prompt_end'] = __is_prompt_end
 $PROMPT_FIELDS['__is_update_cwd'] = __is_update_cwd
-if 'ISTERM_TESTING' in ${...}:
+if 'ISTERM_TESTING' in @.env:
     $PROMPT = "> "
 
 $PROMPT = "{__is_prompt_start}{__is_update_cwd}" + $PROMPT + "{__is_prompt_end}"
