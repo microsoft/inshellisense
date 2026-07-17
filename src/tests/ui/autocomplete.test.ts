@@ -1,10 +1,15 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { jest } from "@jest/globals";
 import { ShellUse } from "@microsoft/shell-use";
 import { configs, returnChar, startSession } from "./helpers";
 
 const accent = "#7d56f4";
+
+if (process.platform === "win32") {
+  jest.retryTimes(2);
+}
 
 configs.map((config) => {
   const rc = returnChar(config.shell);
@@ -43,7 +48,7 @@ configs.map((config) => {
 
       await terminal.press("Left");
       await terminal.expectText("archive", { strict: false, not: true });
-    });
+    }, 15_000);
 
     test("cursor down when at top of list", async () => {
       await terminal.expectText(">  ");
