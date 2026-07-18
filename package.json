@@ -23,7 +23,7 @@
     "package:base": "tsx ./scripts/pkg-base.ts",
     "dev": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import=tsx src/index.ts -V",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:e2e": "npx @microsoft/tui-test",
+    "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.e2e.config.cjs",
     "lint": "eslint src/ --ext .ts,.tsx && prettier src/ --check",
     "lint:fix": "eslint src/ --ext .ts,.tsx --fix && prettier src/ --write",
     "debug": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --inspect --import=tsx src/index.ts -V"
@@ -59,7 +59,7 @@
     "wrap-ansi": "^8.1.0"
   },
   "devDependencies": {
-    "@microsoft/tui-test": "^0.0.3",
+    "@microsoft/shell-use": "0.0.1-beta.5",
     "@tsconfig/node18": "^18.2.2",
     "@types/color-convert": "^2.0.3",
     "@types/jest": "^29.5.5",

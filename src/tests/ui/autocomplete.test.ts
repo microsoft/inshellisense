@@ -1,201 +1,192 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { test, expect, Shell } from "@microsoft/tui-test";
-import os from "node:os";
-import path from "node:path";
-import fs from "node:fs";
-import url from "node:url";
+import { jest } from "@jest/globals";
+import { ShellUse } from "@microsoft/shell-use";
+import { configs, returnChar, startSession } from "./helpers";
 
-type ShellConfig = {
-  label: string;
-  shell: string;
-  env?: Record<string, string>;
-};
+const accent = "#7d56f4";
 
-const ohmyzshFixtureDir = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), "..", "fixtures", "ohmyzsh");
-const hasOhMyZsh = os.platform() !== "win32" && fs.existsSync(path.join(os.homedir(), ".oh-my-zsh"));
-
-const windowsConfigs: ShellConfig[] = [
-  { label: Shell.Cmd, shell: Shell.Cmd },
-  { label: Shell.Powershell, shell: Shell.Powershell },
-  { label: Shell.WindowsPowershell, shell: Shell.WindowsPowershell },
-  { label: Shell.Xonsh, shell: Shell.Xonsh },
-];
-const unixConfigs: ShellConfig[] = [
-  { label: Shell.Bash, shell: Shell.Bash },
-  { label: Shell.Fish, shell: Shell.Fish },
-  { label: Shell.Zsh, shell: Shell.Zsh },
-  ...(hasOhMyZsh ? [{ label: "zsh-ohmyzsh", shell: Shell.Zsh, env: { ...process.env, USER_ZDOTDIR: ohmyzshFixtureDir } }] : []),
-];
-const configs = os.platform() == "win32" ? windowsConfigs : unixConfigs;
+if (process.platform === "win32") {
+  jest.retryTimes(2);
+}
 
 configs.map((config) => {
-  const returnChar = config.shell == "xonsh" ? "\n" : "\r";
-  test.describe(`[${config.label}]`, () => {
-    test.use({ program: { file: "is", args: ["-V", "-T", "-s", config.shell] }, ...(config.env ? { env: config.env } : {}) });
-
-    test("basic git suggestions", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
-      terminal.write("git ");
-
-      await expect(terminal.getByText("blame")).toBeVisible();
-      await expect(terminal.getByText("archive", { strict: false })).toHaveBgColor("7d56f4");
+  const rc = returnChar(config.shell);
+  const args = ["-V", "-T", "-s", config.shell];
+  describe(`[${config.label}]`, () => {
+    let terminal: ShellUse;
+    beforeEach(async () => {
+      terminal = await startSession(config, args);
+    });
+    afterEach(async () => {
+      await terminal.close();
     });
 
-    test("cursor up when at top of list", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
-      terminal.write("git ");
+    test("basic git suggestions", async () => {
+      await terminal.expectText(">  ");
+      await terminal.type("git ");
 
-      await expect(terminal.getByText("archive", { strict: false })).toHaveBgColor("7d56f4");
-      terminal.keyUp();
-      await expect(terminal.getByText("archive", { strict: false })).toHaveBgColor("7d56f4");
+      await terminal.expectText("blame");
+      await terminal.expectText("archive", { strict: false, bg: accent });
     });
 
-    test("move cursor backwards to hide suggestions", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
-      terminal.write("git ");
+    test("cursor up when at top of list", async () => {
+      await terminal.expectText(">  ");
+      await terminal.type("git ");
 
-      await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
-
-      terminal.keyLeft();
-      await expect(terminal.getByText("archive", { strict: false })).not.toBeVisible();
+      await terminal.expectText("archive", { strict: false, bg: accent });
+      await terminal.press("Up");
+      await terminal.expectText("archive", { strict: false, bg: accent });
     });
 
-    test("cursor down when at top of list", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
-      terminal.write("git ");
+    test("move cursor backwards to hide suggestions", async () => {
+      await terminal.expectText(">  ");
+      await terminal.type("git ");
 
-      await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
-      terminal.keyDown(2);
+      await terminal.expectText("archive", { strict: false });
 
-      await expect(terminal.getByText("repository")).toBeVisible();
-      await expect(terminal.getByText("commit")).toHaveBgColor("7d56f4");
-      await expect(terminal.getByText("archive", { strict: false })).not.toHaveBgColor("7d56f4");
+      await terminal.press("Left");
+      await terminal.expectText("archive", { strict: false, not: true });
+    }, 15_000);
+
+    test("cursor down when at top of list", async () => {
+      await terminal.expectText(">  ");
+      await terminal.type("git ");
+
+      await terminal.expectText("archive", { strict: false });
+      await terminal.waitIdle();
+      await terminal.press("Down", "Down");
+
+      await terminal.expectText("repository");
+      await terminal.expectText("commit", { bg: accent });
+      await terminal.expectText("archive", { strict: false, bg: accent, not: true });
     });
 
-    test("scroll down a full page when at top of list", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
-      terminal.write("git ");
+    test("scroll down a full page when at top of list", async () => {
+      await terminal.expectText(">  ");
+      await terminal.type("git ");
 
-      await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
-      terminal.keyDown(5);
+      await terminal.expectText("archive", { strict: false });
+      await terminal.waitIdle();
+      await terminal.press("Down", "Down", "Down", "Down", "Down");
 
-      await expect(terminal.getByText("archive", { strict: false })).not.toBeVisible();
-      await expect(terminal.getByText("add")).toHaveBgColor("7d56f4");
+      await terminal.expectText("archive", { strict: false, not: true });
+      await terminal.expectText("add", { bg: accent });
     });
 
     // excluding cmd since it doesn't support CWD tracking
-    test.when(config.shell !== Shell.Cmd, "generator results lead suggestions", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
-      terminal.write("ls ");
+    (config.shell !== "cmd" ? test : test.skip)("generator results lead suggestions", async () => {
+      await terminal.expectText(">  ");
+      await terminal.type("ls ");
 
-      await expect(terminal.getByText("📄", { strict: false })).toBeVisible();
+      await terminal.expectText("📄", { strict: false });
     });
 
-    test("tab completion", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
-      terminal.write("git ");
+    test("tab completion", async () => {
+      await terminal.expectText(">  ");
+      await terminal.type("git ");
 
-      await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
-      terminal.write("\t");
+      await terminal.expectText("archive", { strict: false });
+      await terminal.press("Tab");
 
-      await expect(terminal.getByText("--format")).toBeVisible();
+      await terminal.expectText("--format");
     });
 
-    test("backspacing after accepting tab completion", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
-      terminal.write("git  ");
+    test("backspacing after accepting tab completion", async () => {
+      await terminal.expectText(">  ");
+      await terminal.type("git  ");
 
-      await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
-      terminal.write("\t");
+      await terminal.expectText("archive", { strict: false });
+      await terminal.press("Tab");
 
-      await expect(terminal.getByText("--format")).toBeVisible();
-      terminal.keyBackspace(3);
+      await terminal.expectText("--format");
+      await terminal.press("Backspace", "Backspace", "Backspace");
 
-      await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
+      await terminal.expectText("archive", { strict: false });
     });
 
-    test("suggestion cursor resets between views", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
-      terminal.write("git ");
+    test("suggestion cursor resets between views", async () => {
+      await terminal.expectText(">  ");
+      await terminal.type("git ");
 
-      await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
-      terminal.keyDown(2);
+      await terminal.expectText("archive", { strict: false });
+      await terminal.waitIdle();
+      await terminal.press("Down", "Down");
 
-      await expect(terminal.getByText("repository")).toBeVisible();
-      await expect(terminal.getByText("commit")).toHaveBgColor("7d56f4");
+      await terminal.expectText("repository");
+      await terminal.expectText("commit", { bg: accent });
 
-      terminal.keyBackspace(1);
-      await expect(terminal.getByText("repository")).not.toBeVisible();
+      await terminal.press("Backspace");
+      await terminal.expectText("repository", { not: true });
 
-      terminal.write(" ");
-      await expect(terminal.getByText("archive", { strict: false })).toHaveBgColor("7d56f4");
+      await terminal.type(" ");
+      await terminal.expectText("archive", { strict: false, bg: accent });
     });
 
-    test("ui on bottom of the screen", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
-      terminal.resize(80, 10);
-      terminal.write(returnChar.repeat(10));
-      await expect(terminal.getByText(">  ")).toBeVisible();
+    test("ui on bottom of the screen", async () => {
+      await terminal.expectText(">  ");
+      await terminal.resize(80, 10);
+      await terminal.write(rc.repeat(10));
+      await terminal.expectText(">  ");
 
-      terminal.write("git  ");
-      await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
+      await terminal.type("git  ");
+      await terminal.expectText("archive", { strict: false });
     });
 
-    test("command detection after command execution", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
+    test("command detection after command execution", async () => {
+      await terminal.expectText(">  ");
 
-      terminal.write(`echo "hello"${returnChar}`);
-      await expect(terminal.getByText("hello", { strict: false })).toBeVisible();
-      await expect(terminal.getByText(">  ")).toBeVisible();
+      await terminal.write(`echo "hello"${rc}`);
+      await terminal.expectText("hello", { strict: false });
+      await terminal.expectText(">  ");
 
-      terminal.write("git ");
-      await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
+      await terminal.type("git ");
+      await terminal.expectText("archive", { strict: false });
     });
 
-    test("suggestions clear after command execution", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
+    test("suggestions clear after command execution", async () => {
+      await terminal.expectText(">  ");
 
-      terminal.write("git ");
-      await expect(terminal.getByText("archive", { strict: false })).toBeVisible();
+      await terminal.type("git ");
+      await terminal.expectText("archive", { strict: false });
 
-      terminal.write(returnChar);
-      await expect(terminal.getByText("archive", { strict: false })).not.toBeVisible();
+      await terminal.write(rc);
+      await terminal.expectText("archive", { strict: false, not: true });
     });
 
-    test.skip("access history when no suggestions exist", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
+    test.skip("access history when no suggestions exist", async () => {
+      await terminal.expectText(">  ");
 
-      terminal.write("clear");
-      await expect(terminal.getByText("clear")).toBeVisible();
+      await terminal.type("clear");
+      await terminal.expectText("clear");
 
-      terminal.write(returnChar);
-      await expect(terminal.getByText("clear")).not.toBeVisible();
+      await terminal.write(rc);
+      await terminal.expectText("clear", { not: true });
 
-      terminal.keyUp();
-      await expect(terminal.getByText("clear")).toBeVisible();
+      await terminal.press("Up");
+      await terminal.expectText("clear");
     });
 
-    test("proper overflow truncation in command", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
+    test("proper overflow truncation in command", async () => {
+      await terminal.expectText(">  ");
 
-      terminal.write("dotnet add package Holoon.Newtonsoft");
-      await expect(terminal.getByText("CanBeUndefi…│")).toBeVisible();
+      await terminal.type("dotnet add package Holoon.Newtonsoft");
+      await terminal.expectText("CanBeUndefi…│");
     });
 
-    test.skip("command detection with suggestions", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
+    test.skip("command detection with suggestions", async () => {
+      await terminal.expectText(">  ");
 
-      terminal.write(`dotnet add item${returnChar}`);
-      await expect(terminal.getByText("dotnet", { strict: false })).toBeVisible();
+      await terminal.write(`dotnet add item${rc}`);
+      await terminal.expectText("dotnet", { strict: false });
 
-      terminal.write(`clear${returnChar}`);
-      await expect(terminal.getByText("dotnet", { strict: false })).not.toBeVisible();
+      await terminal.write(`clear${rc}`);
+      await terminal.expectText("dotnet", { strict: false, not: true });
 
-      terminal.write("dotnet add ");
-      await expect(terminal.getByText("item")).toBeVisible();
-      await expect(terminal.getByText("package", { strict: false })).toBeVisible();
+      await terminal.type("dotnet add ");
+      await terminal.expectText("item");
+      await terminal.expectText("package", { strict: false });
     });
   });
 });

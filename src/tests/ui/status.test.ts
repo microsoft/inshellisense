@@ -1,31 +1,43 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { test, expect, Shell } from "@microsoft/tui-test";
 import os from "node:os";
+import { ShellUse } from "@microsoft/shell-use";
+import { startSession } from "./helpers";
 
-const shell = os.platform() == "darwin" ? Shell.Zsh : os.platform() == "linux" ? Shell.Bash : Shell.Powershell;
+const shell = os.platform() == "darwin" ? "zsh" : os.platform() == "linux" ? "bash" : "powershell";
 
-test.describe("status checks", () => {
-  test.describe("inside inshellisense session", () => {
-    test.use({ program: { file: "is", args: ["-T", "-s", shell] } });
+describe("status checks", () => {
+  describe("inside inshellisense session", () => {
+    let terminal: ShellUse;
+    beforeEach(async () => {
+      terminal = await startSession({ label: "status", shell }, ["-T", "-s", shell]);
+    });
+    afterEach(async () => {
+      await terminal.close();
+    });
 
-    test("current status", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible({ timeout: 30_000 });
+    test("current status", async () => {
+      await terminal.expectText(">  ", { timeout: 30_000 });
 
-      terminal.write("is -c\r");
-      await expect(terminal.getByText("live")).toBeVisible();
-      await expect(terminal.getByText("live")).toHaveFgColor(2);
+      await terminal.write("is -c\r");
+      await terminal.expectText("live", { fg: "2" });
     });
   });
 
-  test.describe("outside inshellisense session", () => {
-    test("current status", async ({ terminal }) => {
-      await expect(terminal.getByText(">  ")).toBeVisible();
+  describe("outside inshellisense session", () => {
+    let terminal: ShellUse;
+    beforeEach(async () => {
+      terminal = new ShellUse(`is-e2e-status-outside-${process.pid}`);
+      await terminal.open({ shell });
+    });
+    afterEach(async () => {
+      await terminal.close();
+    });
 
-      terminal.write("is -c\r");
-      await expect(terminal.getByText("not found")).toBeVisible();
-      await expect(terminal.getByText("not found")).toHaveFgColor(1);
+    test("current status", async () => {
+      await terminal.write("is -c\r");
+      await terminal.expectText("not found", { fg: "1" });
     });
   });
 });
