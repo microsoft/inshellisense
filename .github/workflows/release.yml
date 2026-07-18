@@ -1,0 +1,136 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Validate release version
+        id: version
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          tag="${{ github.event.release.tag_name }}"
+
+          if [[ "$tag" != "$version" && "$tag" != "v$version" ]]; then
+            echo "::error::Release tag '$tag' does not match package version '$version'."
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            artifact-name: inshellisense-darwin-arm64
+          - os: macos-15-intel
+            artifact-name: inshellisense-darwin-x64
+          - os: ubuntu-latest
+            artifact-name: inshellisense-linux-x64
+          - os: ubuntu-24.04-arm
+            artifact-name: inshellisense-linux-arm64
+          - os: windows-latest
+            artifact-name: inshellisense-win32-x64
+          - os: windows-11-arm
+            artifact-name: inshellisense-win32-arm64
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Use Node.js 22.21.1
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.21.1
+          package-manager-cache: false
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - run: npm run package
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: pkg/*.tgz
+          if-no-files-found: error
+
+  publish:
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Use Node.js 22.21.1
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.21.1
+          package-manager-cache: false
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+
+      - name: Use npm with trusted publishing support
+        run: npm install --global npm@11
+
+      - name: Download platform packages
+        uses: actions/download-artifact@v4
+        with:
+          path: pkg
+          merge-multiple: true
+
+      - name: Package base package
+        run: npm run package:base
+
+      - name: Publish packages
+        shell: bash
+        env:
+          NPM_TAG: ${{ github.event.release.prerelease && 'next' || 'latest' }}
+        run: |
+          platform_packages=(
+            pkg/microsoft-inshellisense-darwin-arm64-*.tgz
+            pkg/microsoft-inshellisense-darwin-x64-*.tgz
+            pkg/microsoft-inshellisense-linux-arm64-*.tgz
+            pkg/microsoft-inshellisense-linux-x64-*.tgz
+            pkg/microsoft-inshellisense-win32-arm64-*.tgz
+            pkg/microsoft-inshellisense-win32-x64-*.tgz
+          )
+          base_package=(pkg/microsoft-inshellisense-${{ needs.validate.outputs.version }}.tgz)
+
+          for package in "${platform_packages[@]}" "${base_package[@]}"; do
+            if [[ ! -f "$package" ]]; then
+              echo "::error::Missing package '$package'."
+              exit 1
+            fi
+          done
+
+          for package in "${platform_packages[@]}"; do
+            npm publish "$package" --access public --tag "$NPM_TAG"
+          done
+
+          npm publish "${base_package[0]}" --access public --tag "$NPM_TAG"
