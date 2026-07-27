@@ -62,6 +62,7 @@ export const closeSession = async (terminal: ShellUse | undefined): Promise<void
   try {
     await terminal?.close();
   } catch {
+    /*empty*/
   }
 };
 
