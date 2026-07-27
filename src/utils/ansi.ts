@@ -21,9 +21,11 @@ export const cursorHide = CSI + "?25l";
 export const cursorShow = CSI + "?25h";
 export const cursorNextLine = CSI + "E";
 export const eraseLine = CSI + "2K";
+export const eraseViewport = CSI + "2J";
 export const resetColor = CSI + "0m";
 export const resetLine = CSI + "2K";
 export const enableWin32InputMode = CSI + "?9001h";
+export const disableWin32InputMode = CSI + "?9001l";
 export const resetToInitialState = ESC + "c"; // RIS - Reset to Initial State
 export const cursorBackward = (count = 1) => CSI + count + "D";
 export const cursorForward = (count = 1) => CSI + count + "C";

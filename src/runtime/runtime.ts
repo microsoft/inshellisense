@@ -17,9 +17,12 @@ import { aliasExpand, getAliasNames } from "./alias.js";
 import { getConfig } from "../utils/config.js";
 import log from "../utils/log.js";
 import { specResourcesPath } from "../utils/constants.js";
+import { endTiming, startTiming } from "../utils/performance.js";
+import { clearImplicitGeneratorState } from "./generatorCache.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- recursive type, setting as any
 const specSet: any = {};
+let specNames: string[] = [];
 const ignoredSpecs = ["gcloud", "az", "aws"];
 const speclist = figSpecList.filter((spec: string) => !ignoredSpecs.some((name) => spec === name || spec.startsWith(name + "/")));
 const versionedSpeclist = figVersionedSpeclist.filter((spec: string) => !ignoredSpecs.some((name) => spec.startsWith(name)));
@@ -41,6 +44,9 @@ function loadSpecsSet(speclist: string[], versionedSpeclist: string[], specsPath
       }
     });
   });
+  specNames = Object.keys(specSet)
+    .filter((spec) => !spec.startsWith("@") && spec != "-")
+    .sort();
 }
 
 loadSpecsSet(speclist as string[], versionedSpeclist, specResourcesPath);
@@ -98,40 +104,63 @@ export const loadLocalSpecsSet = async () => {
 };
 
 export const getSuggestions = async (cmd: string, cwd: string, shell: Shell, signal?: AbortSignal): Promise<SuggestionBlob | undefined> => {
-  let activeCmd = parseCommand(cmd, shell);
-  const rootToken = activeCmd.at(0);
-  if (activeCmd.length === 0) {
-    return;
+  const suggestionTiming = startTiming();
+  try {
+    let activeCmd = parseCommand(cmd, shell);
+    const rootToken = activeCmd.at(0);
+    if (activeCmd.length === 0) {
+      return;
+    }
+    if (rootToken != null && !rootToken.complete) {
+      return runCommand(rootToken);
+    }
+
+    activeCmd = aliasExpand(activeCmd);
+
+    signal?.throwIfAborted();
+    const spec = await loadSpec(activeCmd, signal);
+    if (spec == null) return;
+    const subcommand = getSubcommand(spec);
+    if (subcommand == null) return;
+
+    signal?.throwIfAborted();
+    const lastCommand = activeCmd.at(-1);
+    const { cwd: resolvedCwd, pathy, complete: pathyComplete } = await resolveCwd(lastCommand, cwd, shell, signal);
+    if (pathy && lastCommand) {
+      lastCommand.isPath = true;
+      lastCommand.isPathComplete = pathyComplete;
+    }
+    const result = await runSubcommand(activeCmd.slice(1), activeCmd, subcommand, resolvedCwd, shell, undefined, undefined, undefined, undefined, signal);
+    if (result == null) return;
+    if (result.suggestions.length == 0 && !result.argumentDescription) return;
+
+    const activeToken = lastCommand?.complete ? undefined : lastCommand;
+    return { ...result, activeToken };
+  } finally {
+    endTiming("runtime.getSuggestions", suggestionTiming);
   }
-  if (rootToken != null && !rootToken.complete) {
-    return runCommand(rootToken);
-  }
-
-  activeCmd = aliasExpand(activeCmd);
-
-  signal?.throwIfAborted();
-  const spec = await loadSpec(activeCmd, signal);
-  if (spec == null) return;
-  const subcommand = getSubcommand(spec);
-  if (subcommand == null) return;
-
-  signal?.throwIfAborted();
-  const lastCommand = activeCmd.at(-1);
-  const { cwd: resolvedCwd, pathy, complete: pathyComplete } = await resolveCwd(lastCommand, cwd, shell, signal);
-  if (pathy && lastCommand) {
-    lastCommand.isPath = true;
-    lastCommand.isPathComplete = pathyComplete;
-  }
-  const result = await runSubcommand(activeCmd.slice(1), activeCmd, subcommand, resolvedCwd, shell, undefined, undefined, undefined, undefined, signal);
-  if (result == null) return;
-  if (result.suggestions.length == 0 && !result.argumentDescription) return;
-
-  const activeToken = lastCommand?.complete ? undefined : lastCommand;
-  return { ...result, activeToken };
 };
 
 export const getSpecNames = (): string[] => {
-  return Object.keys(specSet).filter((spec) => !spec.startsWith("@") && spec != "-");
+  return specNames;
+};
+
+export const clearTransientSuggestionState = (): void => clearImplicitGeneratorState();
+
+const prefixMatches = (values: string[], prefix: string): string[] => {
+  let low = 0;
+  let high = values.length;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (values[middle] < prefix) low = middle + 1;
+    else high = middle;
+  }
+
+  const matches: string[] = [];
+  for (let index = low; index < values.length && values[index].startsWith(prefix); index++) {
+    matches.push(values[index]);
+  }
+  return matches;
 };
 
 const getPersistentOptions = (persistentOptions: Fig.Option[], options?: Fig.Option[]) => {
@@ -406,12 +435,8 @@ const runSubcommand = async (
 };
 
 const runCommand = async (token: CommandToken): Promise<SuggestionBlob | undefined> => {
-  const specs = Object.keys(specSet)
-    .filter((spec) => spec.startsWith(token.token))
-    .sort();
-  const aliases = getAliasNames()
-    .filter((spec) => spec.startsWith(token.token))
-    .sort();
+  const specs = prefixMatches(specNames, token.token);
+  const aliases = prefixMatches(getAliasNames(), token.token);
   return {
     suggestions: [
       ...aliases.map(

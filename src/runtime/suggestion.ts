@@ -4,7 +4,8 @@
 import path from "node:path";
 
 import { CommandToken } from "./parser.js";
-import { runGenerator } from "./generator.js";
+import { getGeneratorSuggestions } from "./generatorCache.js";
+import { getGeneratorQueryTerm } from "./generator.js";
 import { runTemplates } from "./template.js";
 import { Suggestion, SuggestionBlob } from "./model.js";
 import log from "../utils/log.js";
@@ -132,6 +133,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
   suggestionType: Fig.SuggestionType | undefined,
 ): Suggestion[] {
   if (!partialCmd) return suggestions.map((s) => toSuggestion(s, undefined, suggestionType)).filter((s) => s != null) as Suggestion[];
+  const normalizedPartialCmd = partialCmd.toLowerCase();
 
   switch (filterStrategy) {
     case "fuzzy":
@@ -139,7 +141,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
         .map((s) => {
           if (s.name == null) return;
           if (s.name instanceof Array) {
-            const matchedName = s.name.find((n) => n.toLowerCase().includes(partialCmd.toLowerCase()));
+            const matchedName = s.name.find((n) => n.toLowerCase().includes(normalizedPartialCmd));
             return matchedName != null
               ? {
                   name: matchedName,
@@ -153,7 +155,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
                 }
               : undefined;
           }
-          return s.name.toLowerCase().includes(partialCmd.toLowerCase())
+          return s.name.toLowerCase().includes(normalizedPartialCmd)
             ? {
                 name: s.name,
                 description: s.description,
@@ -172,7 +174,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
         .map((s) => {
           if (s.name == null) return;
           if (s.name instanceof Array) {
-            const matchedName = s.name.find((n) => n.toLowerCase().startsWith(partialCmd.toLowerCase()));
+            const matchedName = s.name.find((n) => n.toLowerCase().startsWith(normalizedPartialCmd));
             return matchedName != null
               ? {
                   name: matchedName,
@@ -186,7 +188,7 @@ function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string
                 }
               : undefined;
           }
-          return s.name.toLowerCase().startsWith(partialCmd.toLowerCase())
+          return s.name.toLowerCase().startsWith(normalizedPartialCmd)
             ? {
                 name: s.name,
                 description: s.description,
@@ -211,19 +213,28 @@ const generatorSuggestions = async (
   filterStrategy: FilterStrategy | undefined,
   partialCmd: string | undefined,
   cwd: string,
+  debounce: boolean,
   signal?: AbortSignal,
 ): Promise<Suggestion[]> => {
   const generators = generator instanceof Array ? generator : generator ? [generator] : [];
   const tokens = allTokens.map((t) => t.token);
-  if (partialCmd) tokens.push(partialCmd);
+  const activeToken = allTokens.at(-1)?.complete === false ? allTokens.at(-1)?.token ?? "" : "";
   signal?.throwIfAborted();
-  const suggestions = (await Promise.all(generators.map((gen) => runGenerator(gen, tokens, cwd, signal)))).flat();
-  return filter<Fig.Suggestion>(
-    suggestions.map((suggestion) => ({ ...suggestion, priority: suggestion.priority ?? 60 })),
-    filterStrategy,
-    partialCmd,
-    undefined,
-  );
+  return (
+    await Promise.all(
+      generators.map(async (generator) =>
+        filter<Fig.Suggestion>(
+          (await getGeneratorSuggestions(generator, tokens, activeToken, cwd, debounce, signal)).map((suggestion) => ({
+            ...suggestion,
+            priority: suggestion.priority ?? 60,
+          })),
+          filterStrategy,
+          generator.getQueryTerm == null ? partialCmd : getGeneratorQueryTerm(generator, activeToken),
+          undefined,
+        ),
+      ),
+    )
+  ).flat();
 };
 
 const templateSuggestions = async (
@@ -345,7 +356,10 @@ export const getSubcommandDrivenRecommendation = async (
   }
   if (argLength != 0) {
     const activeArg = subcommand.args instanceof Array ? subcommand.args[0] : subcommand.args;
-    suggestions.push(...(await generatorSuggestions(activeArg?.generators, allTokens, activeArg?.filterStrategy, partialCmd, cwd, signal)));
+    const debounce = activeArg?.debounce === true;
+    suggestions.push(
+      ...(await generatorSuggestions(activeArg?.generators, allTokens, activeArg?.filterStrategy, partialCmd, cwd, debounce, signal)),
+    );
     suggestions.push(...suggestionSuggestions(activeArg?.suggestions, activeArg?.filterStrategy, partialCmd));
     suggestions.push(...(await templateSuggestions(activeArg?.template, activeArg?.filterStrategy, partialCmd, cwd, signal)));
   }
@@ -393,8 +407,9 @@ export const getArgDrivenRecommendation = async (
   const lastToken = allTokens.at(-1);
   const activeArg = args[0];
   const allOptions = persistentOptions.concat(subcommand.options ?? []);
+  const debounce = activeArg?.debounce === true;
   const suggestions = [
-    ...(await generatorSuggestions(args[0].generators, allTokens, activeArg?.filterStrategy, partialCmd, cwd, signal)),
+    ...(await generatorSuggestions(args[0].generators, allTokens, activeArg?.filterStrategy, partialCmd, cwd, debounce, signal)),
     ...suggestionSuggestions(args[0].suggestions, activeArg?.filterStrategy, partialCmd),
     ...(await templateSuggestions(args[0].template, activeArg?.filterStrategy, partialCmd, cwd, signal)),
   ];

@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 import { Suggestion, SuggestionBlob } from "../runtime/model.js";
-import { getSuggestions } from "../runtime/runtime.js";
 import type { ISTerm, ISTermPatch } from "../isterm/pty.js";
 import { renderBox, truncateText, truncateMultilineText } from "./utils.js";
 import chalk from "chalk";
@@ -10,6 +9,10 @@ import { Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
 import { getConfig } from "../utils/config.js";
 import { calculateReplacement, applyReplacement } from "../runtime/replacement.js";
+import { initializeRuntime } from "../runtime/initialize.js";
+
+type SuggestionRuntime = Pick<Awaited<ReturnType<typeof initializeRuntime>>, "getSuggestions"> &
+  Partial<Pick<Awaited<ReturnType<typeof initializeRuntime>>, "clearTransientSuggestionState">>;
 
 const getMaxSuggestions = () => getConfig().maxSuggestions ?? 5;
 const suggestionWidth = 40;
@@ -37,42 +40,96 @@ export class SuggestionManager {
   #shell: Shell;
   #hideSuggestions: boolean = false;
   #abortController?: AbortController;
+  #runtime?: Promise<SuggestionRuntime>;
+  #requestVersion = 0;
 
-  constructor(terminal: ISTerm, shell: Shell) {
+  constructor(terminal: ISTerm, shell: Shell, runtime?: Promise<SuggestionRuntime>) {
     this.#term = terminal;
-    this.#suggestBlob = { suggestions: [] };
     this.#command = "";
     this.#activeSuggestionIdx = 0;
     this.#shell = shell;
+    this.#runtime = runtime;
   }
 
-  private async _loadSuggestions(): Promise<void> {
+  initialize(): void {
+    this.#runtime ??= initializeRuntime(this.#shell);
+    void this.#runtime.catch((e) => log.debug({ msg: "suggestion runtime initialization failed", e: (e as Error).message }));
+  }
+
+  private _getRuntime(): Promise<SuggestionRuntime> {
+    this.initialize();
+    return this.#runtime!;
+  }
+
+  invalidate(): void {
+    this.#requestVersion += 1;
+    this.#abortController?.abort();
+  }
+
+  async suspend(): Promise<void> {
+    const commandCleared = this.#command.length !== 0 || this.#abortController != null;
+    this.invalidate();
+    this.#command = "";
+    this.#suggestBlob = undefined;
+    this.#activeSuggestionIdx = 0;
+    this.#hideSuggestions = false;
+    if (commandCleared) {
+      try {
+        const runtime = await this._getRuntime();
+        runtime.clearTransientSuggestionState?.();
+      }
+      catch (e) {
+        log.debug({ msg: "failed to clear transient suggestion state", e: (e as Error).message });
+      }
+    }
+  }
+
+  private async _loadSuggestions(): Promise<boolean> {
+    // Aborting is cooperative; the version check also rejects generators that ignore cancellation.
+    const ownVersion = ++this.#requestVersion;
     this.#abortController?.abort();
     const commandState = this.#term.getCommandState();
     const commandText = commandState.commandText;
     if (!commandText) {
+      const commandCleared = this.#command.length !== 0;
       this.#command = "";
+      if (commandCleared) {
+        const runtime = await this._getRuntime();
+        runtime.clearTransientSuggestionState?.();
+      }
     }
     if (!commandText || this.#hideSuggestions || commandState.hasOutput) {
+      const changed = this.#suggestBlob != null || this.#activeSuggestionIdx !== 0;
       this.#suggestBlob = undefined;
       this.#activeSuggestionIdx = 0;
-      return;
+      return changed;
     }
     if (commandText == this.#command) {
-      return;
+      return false;
     }
-    this.#abortController = new AbortController();
+    const abortController = new AbortController();
+    this.#abortController = abortController;
     try {
-      const suggestionBlob = await getSuggestions(commandText, this.#term.cwd, this.#shell, this.#abortController.signal);
+      const { getSuggestions } = await this._getRuntime();
+      abortController.signal.throwIfAborted();
+      const suggestionBlob = await getSuggestions(commandText, this.#term.cwd, this.#shell, abortController.signal);
+      if (abortController.signal.aborted || ownVersion !== this.#requestVersion) {
+        return false;
+      }
       this.#command = commandText;
       this.#suggestBlob = suggestionBlob;
       this.#activeSuggestionIdx = 0;
+      return true;
     } catch (e) {
-      if (e instanceof DOMException && e.name === "AbortError") {
+      if (e instanceof Error && e.name === "AbortError") {
         log.debug({ msg: "suggestion generation aborted", commandText, shell: this.#shell });
-        return;
+        return false;
       }
       throw e;
+    } finally {
+      if (this.#abortController === abortController) {
+        this.#abortController = undefined;
+      }
     }
   }
 
@@ -97,8 +154,8 @@ export class SuggestionManager {
     );
   }
 
-  private _calculatePadding(description: string): { padding: number; swapDescription: boolean } {
-    const wrappedPadding = this.#term.getCursorState().cursorX % this.#term.cols;
+  private _calculatePadding(description: string, cursorX: number): { padding: number; swapDescription: boolean } {
+    const wrappedPadding = cursorX % this.#term.cols;
     const maxPadding = description.length !== 0 ? this.#term.cols - suggestionWidth - descriptionWidth : this.#term.cols - suggestionWidth;
     const swapDescription = wrappedPadding > maxPadding && description.length !== 0;
     const swappedPadding = swapDescription ? Math.max(wrappedPadding - descriptionWidth, 0) : wrappedPadding;
@@ -113,11 +170,11 @@ export class SuggestionManager {
     return suggestionContent == null ? padding + suggestionWidth : padding;
   }
 
-  async exec(): Promise<void> {
+  async exec(): Promise<boolean> {
     return await this._loadSuggestions();
   }
 
-  render(direction: "above" | "below"): ISTermPatch[] {
+  render(direction: "above" | "below", cursorX: number): ISTermPatch[] {
     if (!this.#suggestBlob) {
       return [];
     }
@@ -128,7 +185,7 @@ export class SuggestionManager {
     const pagedSuggestions = suggestions.filter((_, idx) => idx < page * maxSuggestions && idx >= (page - 1) * maxSuggestions);
     const activePagedSuggestionIndex = this.#activeSuggestionIdx % maxSuggestions;
     const activeDescription = pagedSuggestions.at(activePagedSuggestionIndex)?.description || argumentDescription || "";
-    const { swapDescription, padding } = this._calculatePadding(activeDescription);
+    const { swapDescription, padding } = this._calculatePadding(activeDescription, cursorX);
 
     if (suggestions.length <= this.#activeSuggestionIdx) {
       this.#activeSuggestionIdx = Math.max(suggestions.length - 1, 0);
@@ -162,7 +219,7 @@ export class SuggestionManager {
     return ui;
   }
 
-  update(keyPress: KeyPress): boolean {
+  update(keyPress: KeyPress, allowBindings = true): boolean {
     const { name, shift, ctrl } = keyPress;
     if (name == "return") {
       this.#term.clearCommand(); // clear the current command on enter
@@ -173,7 +230,7 @@ export class SuggestionManager {
       this.#hideSuggestions = name == "up" || name == "down";
     }
 
-    if (!this.#suggestBlob) {
+    if (!allowBindings || !this.#suggestBlob) {
       return false;
     }
     const {
