@@ -60,6 +60,7 @@ test("clears transient state when an in-flight request is suspended", async () =
   const manager = new SuggestionManager(terminal, Shell.Bash, runtime);
 
   const request = manager.exec();
+  await Promise.resolve();
   await manager.suspend();
 
   suggestions.resolve({ suggestions: [] });

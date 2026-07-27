@@ -35,6 +35,7 @@ test("does not commit stale suggestions when a generator ignores cancellation", 
   const manager = new SuggestionManager(terminal, Shell.Bash, runtime);
 
   const firstRequest = manager.exec();
+  await Promise.resolve();
   commandText = "second";
   manager.invalidate();
   const secondRequest = manager.exec();
