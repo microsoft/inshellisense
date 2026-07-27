@@ -6,6 +6,8 @@ const CSI = ESC + "[";
 const OSC = "\u001B]";
 const BEL = "\u0007";
 
+export const shouldFallbackToDec = () => process.env.TERMINAL_EMULATOR === "JetBrains-JediTerm";
+
 export const IsTermOscPs = 6973;
 const IS_OSC = OSC + IsTermOscPs + ";";
 

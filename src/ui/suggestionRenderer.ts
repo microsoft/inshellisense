@@ -4,7 +4,8 @@
 import ansi from "ansi-escapes";
 
 import type { ISTerm } from "../isterm/pty.js";
-import { eraseViewport } from "../utils/ansi.js";
+import { eraseViewport, shouldFallbackToDec } from "../utils/ansi.js";
+import * as dec from "../utils/dec.js";
 import { endTiming, startTiming } from "../utils/performance.js";
 import { getMaxLines, type SuggestionManager } from "./suggestionManager.js";
 
@@ -24,10 +25,16 @@ type RenderCache = {
   clear?: string;
 };
 
+type CursorPositionSequences = {
+  cursorSavePosition: string;
+  cursorRestorePosition: string;
+};
+
 export class SuggestionRenderer {
   readonly #term: ISTerm;
   readonly #suggestions: SuggestionManager;
   readonly #writeOutput: (data: string) => void;
+  readonly #cursorPositionSequences: CursorPositionSequences;
   readonly #cache: RenderCache = {};
   #visible = false;
   #direction: Direction;
@@ -39,6 +46,7 @@ export class SuggestionRenderer {
     this.#term = term;
     this.#suggestions = suggestions;
     this.#writeOutput = writeOutput;
+    this.#cursorPositionSequences = shouldFallbackToDec() ? dec : ansi;
     this.#direction = this.#snapshot().layout.direction;
   }
 
@@ -169,10 +177,11 @@ export class SuggestionRenderer {
       cursor: { hidden: cursorHidden },
     } = snapshot;
     const showCursor = cursorHidden ? "" : ansi.cursorShow;
+    const { cursorSavePosition, cursorRestorePosition } = this.#cursorPositionSequences;
     if (direction === "above") {
-      return data + ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorPrevLine.repeat(lines) + patch + ansi.cursorRestorePosition + showCursor;
+      return data + ansi.cursorHide + cursorSavePosition + ansi.cursorPrevLine.repeat(lines) + patch + cursorRestorePosition + showCursor;
     }
-    return ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorNextLine + patch + ansi.cursorRestorePosition + showCursor + data;
+    return ansi.cursorHide + cursorSavePosition + ansi.cursorNextLine + patch + cursorRestorePosition + showCursor + data;
   }
 
   #clearOutput(direction: Direction, snapshot: RenderSnapshot, bufferType: PatchBuffer = "active"): string {
@@ -182,11 +191,12 @@ export class SuggestionRenderer {
     const lines = direction === "above" ? Math.min(getMaxLines(), cursorY) : Math.min(getMaxLines(), remainingLines);
     const patch = this.#term.getPatch(lines, [], direction, bufferType);
     const showCursor = cursorHidden ? "" : ansi.cursorShow;
+    const { cursorSavePosition, cursorRestorePosition } = this.#cursorPositionSequences;
 
     if (direction === "above") {
-      return ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorPrevLine.repeat(lines) + patch + ansi.cursorRestorePosition + showCursor;
+      return ansi.cursorHide + cursorSavePosition + ansi.cursorPrevLine.repeat(lines) + patch + cursorRestorePosition + showCursor;
     }
-    return ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorNextLine + patch + ansi.cursorRestorePosition + showCursor;
+    return ansi.cursorHide + cursorSavePosition + ansi.cursorNextLine + patch + cursorRestorePosition + showCursor;
   }
 
   #clearPreviousDirection(snapshot: RenderSnapshot): void {
