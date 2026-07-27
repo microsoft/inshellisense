@@ -9,6 +9,7 @@ import { buildExecuteShellCommand } from "./utils.js";
 import os from "node:os";
 
 const loadedAliases: { [key: string]: CommandToken[] | undefined } = {};
+let aliasNames: string[] = [];
 const platform = os.platform();
 const executeShellCommand = buildExecuteShellCommand(5_000);
 
@@ -60,10 +61,10 @@ export const loadAliases = async (shell: Shell) => {
       await loadZshAliases();
       break;
   }
-  return [];
+  aliasNames = Object.keys(loadedAliases).sort();
 };
 
-export const getAliasNames = () => Object.keys(loadedAliases);
+export const getAliasNames = () => aliasNames;
 
 export const aliasExpand = (command: CommandToken[]): CommandToken[] => {
   if (!command.at(0)?.complete) return command;

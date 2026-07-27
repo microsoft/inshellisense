@@ -26,6 +26,9 @@
     "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.e2e.config.cjs",
     "lint": "eslint src/ --ext .ts,.tsx && prettier src/ --check",
     "lint:fix": "eslint src/ --ext .ts,.tsx --fix && prettier src/ --write",
+    "perf": "npm run build && tsx ./scripts/perf/run.ts",
+    "perf:session": "npm run build && tsx ./scripts/perf/session.ts",
+    "perf:profile": "npm run build && node --cpu-prof --heap-prof --import=tsx ./scripts/perf/run.ts",
     "debug": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --inspect --import=tsx src/index.ts -V"
   },
   "repository": {

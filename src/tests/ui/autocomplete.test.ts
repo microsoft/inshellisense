@@ -7,9 +7,41 @@ import { configs, returnChar, startSession } from "./helpers";
 
 const accent = "#7d56f4";
 
-if (process.platform === "win32") {
-  jest.retryTimes(2);
-}
+jest.retryTimes(2);
+
+describe("resize recovery", () => {
+  let terminal: ShellUse;
+  beforeEach(async () => {
+    terminal = await startSession({ label: "bash-resize", shell: "bash", env: { BASH_SILENCE_DEPRECATION_WARNING: "1" } }, ["-T", "-s", "bash"]);
+  });
+  afterEach(async () => {
+    await terminal.close();
+  });
+
+  test("restores input and suggestions after becoming too narrow", async () => {
+    await terminal.expectText(">  ");
+    await terminal.type("git st");
+    await terminal.expectText("stage");
+    await terminal.waitIdle();
+    const initialView = (await terminal.text()).trimEnd();
+    expect(initialView).toMatchSnapshot("initial 80 column view");
+
+    await terminal.resize(40, 30);
+    await terminal.expectText("┘", { not: true });
+    expect((await terminal.text()).trimEnd()).toMatchSnapshot("40 column view");
+
+    await terminal.resize(21, 30);
+    await terminal.expectText("┘", { not: true });
+    expect((await terminal.text()).trimEnd()).toMatchSnapshot("21 column view");
+
+    await terminal.resize(80, 30);
+    await terminal.waitIdle();
+    await terminal.expectText("stage");
+    const restoredView = (await terminal.text()).trimEnd();
+    expect(restoredView).toMatchSnapshot("restored 80 column view");
+    expect(restoredView).toBe(initialView);
+  }, 30_000);
+});
 
 configs.map((config) => {
   const rc = returnChar(config.shell);
@@ -153,6 +185,17 @@ configs.map((config) => {
 
       await terminal.write(rc);
       await terminal.expectText("archive", { strict: false, not: true });
+    });
+
+    test("cursor-position reports are not treated as input", async () => {
+      await terminal.expectText(">  ");
+
+      await terminal.write("\u001B[2;7R");
+      await terminal.waitIdle();
+      await terminal.expectText("[2;7R", { not: true });
+
+      await terminal.type("git ");
+      await terminal.expectText("archive", { strict: false });
     });
 
     test.skip("access history when no suggestions exist", async () => {

@@ -1,124 +1,96 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import readline from "node:readline";
 import ansi from "ansi-escapes";
-import chalk from "chalk";
 import { Command } from "commander";
 
 import log from "../utils/log.js";
 import { getBackspaceSequence, Shell } from "../utils/shell.js";
-import { enableWin32InputMode, resetToInitialState } from "../utils/ansi.js";
-import { getMaxLines, type KeyPressEvent, type SuggestionManager } from "./suggestionManager.js";
-import type { ISTerm } from "../isterm/pty.js";
-
-export const renderConfirmation = (live: boolean): string => {
-  const statusMessage = live ? chalk.green("live") : chalk.red("not found");
-  return `inshellisense session [${statusMessage}]\n`;
-};
-
-export const renderMissingResources = (): string => {
-  return chalk.red(`inshellisense resources out of date, run "is reinit" to refresh\n`);
-};
+import { resetToInitialState } from "../utils/ansi.js";
+import { endTiming, incrementMetric, startTiming } from "../utils/performance.js";
+import type { KeyPressEvent } from "./suggestionManager.js";
+import { BatchScheduler } from "./batchScheduler.js";
+import { SuggestionRenderer } from "./suggestionRenderer.js";
+import { StdioProxy } from "./stdioProxy.js";
 
 const writeOutput = (data: string) => {
+  if (data.length === 0) return;
   log.debug({ msg: "writing data", data });
+  incrementMetric("ui.stdoutBytes", Buffer.byteLength(data));
   process.stdout.write(data);
-};
-
-const _suggestionLayout = (term: ISTerm): { direction: "above" | "below"; lines: number } => {
-  const maxLines = getMaxLines();
-  const { remainingLines, cursorY } = term.getCursorState();
-  const direction = remainingLines >= maxLines ? "below" : cursorY >= maxLines ? "above" : remainingLines >= cursorY ? "below" : "above";
-  const lines = direction === "above" ? Math.min(maxLines, cursorY) : Math.min(maxLines, remainingLines);
-  return { direction, lines };
-};
-
-const _render = (term: ISTerm, suggestionManager: SuggestionManager, data: string, handlingBackspace: boolean, handlingSuggestion: boolean): boolean => {
-  const { direction, lines } = _suggestionLayout(term);
-  const { hidden: cursorHidden, shift: cursorShift } = term.getCursorState();
-
-  const suggestion = suggestionManager.render(direction);
-  const hasSuggestion = suggestion.length != 0;
-
-  // there is no rendered suggestion and this will not render a suggestion
-  if (!handlingSuggestion && !hasSuggestion) {
-    writeOutput(data);
-    return false;
-  }
-
-  const commandState = term.getCommandState();
-  const cursorTerminated = handlingBackspace ? true : commandState.cursorTerminated ?? false;
-  const showSuggestions = hasSuggestion && cursorTerminated && !commandState.hasOutput && !cursorShift && !!commandState.commandText;
-  const patch = term.getPatch(lines, showSuggestions ? suggestion : [], direction);
-
-  const ansiCursorShow = cursorHidden ? "" : ansi.cursorShow;
-  if (direction == "above") {
-    writeOutput(data + ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorPrevLine.repeat(lines) + patch + ansi.cursorRestorePosition + ansiCursorShow);
-  } else {
-    writeOutput(ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorNextLine + patch + ansi.cursorRestorePosition + ansiCursorShow + data);
-  }
-  return showSuggestions;
-};
-
-const _clear = (term: ISTerm): void => {
-  const { direction } = _suggestionLayout(term);
-  const clearDirection = direction == "above" ? "below" : "above"; // invert direction to clear what was previously rendered
-  const { hidden: cursorHidden, cursorY, remainingLines } = term.getCursorState();
-  const lines = clearDirection === "above" ? Math.min(getMaxLines(), cursorY) : Math.min(getMaxLines(), remainingLines);
-  const patch = term.getPatch(lines, [], clearDirection);
-
-  const ansiCursorShow = cursorHidden ? "" : ansi.cursorShow;
-  if (clearDirection == "above") {
-    writeOutput(ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorPrevLine.repeat(lines) + patch + ansi.cursorRestorePosition + ansiCursorShow);
-  } else {
-    writeOutput(ansi.cursorHide + ansi.cursorSavePosition + ansi.cursorNextLine + patch + ansi.cursorRestorePosition + ansiCursorShow);
-  }
 };
 
 export const render = async (program: Command, shell: Shell, underTest: boolean, login: boolean) => {
   const [isterm, { SuggestionManager }] = await Promise.all([import("../isterm/index.js"), import("./suggestionManager.js")]);
   const term = await isterm.default.spawn(program, { shell, rows: process.stdout.rows, cols: process.stdout.columns, underTest, login });
-  const suggestionManager = new SuggestionManager(term, shell);
-  let hasSuggestion = false;
-  let direction = _suggestionLayout(term).direction;
-  let handlingBackspace = false; // backspace normally consistent of two data points (move back & delete), so on the first data point, we won't enforce the cursor terminated rule. this will help reduce flicker
+  const suggestions = new SuggestionManager(term, shell);
+  const renderer = new SuggestionRenderer(term, suggestions, writeOutput);
+  let commandStateVersion = term.getCommandStateVersion();
+  let backspaceEchoPending = false;
+
   const stdinStartedInRawMode = process.stdin.isRaw;
   if (process.stdin.isTTY) process.stdin.setRawMode(true);
-  readline.emitKeypressEvents(process.stdin);
-
-  const writeOutput = (data: string) => {
-    log.debug({ msg: "writing data", data });
-    process.stdout.write(data);
-  };
-
+  const stdio = new StdioProxy({
+    onCursorPositionReport: (data) => {
+      if (term.consumeCursorPositionQuery()) {
+        term.write(data);
+      }
+    },
+  });
+  const handleInput = (data: Buffer | string) => stdio.handleInput(data);
+  process.stdin.on("data", handleInput);
   writeOutput(ansi.clearTerminal);
 
-  term.onData(async (data) => {
-    data = data.replace(enableWin32InputMode, ""); // remove win32-input-mode enable sequence if it comes through data
+  const suggestionScheduler = new BatchScheduler(
+    async () => {
+      if (await suggestions.exec()) {
+        renderer.renderSuggestionUpdate(backspaceEchoPending);
+      }
+    },
+    (error) => log.debug({ msg: "suggestion update failed", error: error instanceof Error ? error.message : error }),
+  );
 
-    const handlingDirectionChange = direction != _suggestionLayout(term).direction;
-    // clear the previous suggestion if the direction has changed to avoid leftover suggestions
-    if (handlingDirectionChange) {
-      _clear(term);
-    }
-
-    hasSuggestion = _render(term, suggestionManager, data, handlingBackspace, hasSuggestion);
-    await suggestionManager.exec();
-    hasSuggestion = _render(term, suggestionManager, "", handlingBackspace, hasSuggestion);
-
-    handlingBackspace = false;
-    direction = _suggestionLayout(term).direction;
+  term.onBufferChange(async (bufferType) => {
+    await renderer.handleBufferChange(bufferType);
+    backspaceEchoPending = false;
   });
 
-  process.stdin.on("keypress", (...keyPress: KeyPressEvent) => {
+  term.onData((data) => {
+    const dataTiming = startTiming();
+    try {
+      renderer.renderPtyData(stdio.handleOutput(data), backspaceEchoPending);
+
+      if (term.isAlternateBuffer()) {
+        commandStateVersion = term.getCommandStateVersion();
+        backspaceEchoPending = false;
+        return;
+      }
+
+      const nextCommandStateVersion = term.getCommandStateVersion();
+      if (nextCommandStateVersion !== commandStateVersion) {
+        commandStateVersion = nextCommandStateVersion;
+        suggestions.invalidate();
+        suggestionScheduler.request();
+      }
+      backspaceEchoPending = false;
+    } finally {
+      endTiming("ui.ptyData", dataTiming);
+    }
+  });
+
+  stdio.onKeypress((...keyPress: KeyPressEvent) => {
     const press = keyPress[1];
-    const inputHandled = suggestionManager.update(press);
-    if (hasSuggestion && inputHandled) {
+    if (term.isAlternateBuffer()) {
+      term.write(press.name === "backspace" ? getBackspaceSequence(keyPress, shell) : press.sequence);
+      return;
+    }
+
+    const inputHandled = suggestions.update(press, renderer.hasVisibleSuggestions);
+    if (renderer.hasVisibleSuggestions && inputHandled) {
       term.noop();
     } else if (!inputHandled) {
-      if (press.name == "backspace") {
-        handlingBackspace = true;
+      if (press.name === "backspace") {
+        backspaceEchoPending = true;
         term.write(getBackspaceSequence(keyPress, shell));
       } else {
         term.write(press.sequence);
@@ -127,11 +99,15 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   });
 
   term.onExit(({ exitCode }) => {
+    process.stdin.removeListener("data", handleInput);
+    writeOutput(stdio.dispose());
     if (!stdinStartedInRawMode) process.stdin.setRawMode(false);
     process.stdout.write(resetToInitialState);
     process.exit(exitCode);
   });
+
   process.stdout.on("resize", () => {
-    term.resize(process.stdout.columns, process.stdout.rows);
+    renderer.resize(process.stdout.columns, process.stdout.rows);
   });
+  suggestions.initialize();
 };

@@ -6,6 +6,7 @@ import path from "node:path";
 import fs from "node:fs";
 import url from "node:url";
 import { ShellUse } from "@microsoft/shell-use";
+import type { ExpectTextOptions } from "@microsoft/shell-use";
 
 export type ShellConfig = {
   label: string;
@@ -32,10 +33,17 @@ export const configs = os.platform() == "win32" ? windowsConfigs : unixConfigs;
 export const returnChar = (shell: string) => (shell == "xonsh" ? "\n" : "\r");
 
 const buildEntry = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), "..", "..", "..", "build", "index.js");
+const expectTextTimeout = 15_000;
+
+class E2EShellUse extends ShellUse {
+  override expectText(text: string, opts: ExpectTextOptions = {}): Promise<void> {
+    return super.expectText(text, { timeout: expectTextTimeout, ...opts });
+  }
+}
 
 let counter = 0;
 export const startSession = async (config: ShellConfig, args: string[], cols = 80, rows = 30): Promise<ShellUse> => {
-  const su = new ShellUse(`is-e2e-${config.label}-${process.pid}-${counter++}`);
+  const su = new E2EShellUse(`is-e2e-${config.label}-${process.pid}-${counter++}`);
   await su.run("node", [buildEntry, ...args], { cols, rows, ...(config.env ? { env: config.env } : {}) });
   return su;
 };
