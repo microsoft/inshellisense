@@ -46,10 +46,10 @@ export class SuggestionRenderer {
     return this.#visible;
   }
 
-  handleBufferChange(bufferType: TerminalBuffer): void {
+  async handleBufferChange(bufferType: TerminalBuffer): Promise<void> {
     if (bufferType === "alternate") {
       this.#clearNormalBufferSuggestions();
-      this.#suggestions.suspend();
+      await this.#suggestions.suspend();
       this.#visible = false;
     } else {
       this.#skipNextPtyRender = true;
