@@ -29,11 +29,11 @@ describe("resize recovery", () => {
     expect(initialView).toMatchSnapshot("initial 80 column view");
 
     await terminal.resize(40, 30);
-    await terminal.expectText("stage", { not: true });
+    await terminal.expectText("┘", { not: true });
     expect((await terminal.text()).trimEnd()).toMatchSnapshot("40 column view");
 
     await terminal.resize(21, 30);
-    await terminal.expectText("stage", { not: true });
+    await terminal.expectText("┘", { not: true });
     expect((await terminal.text()).trimEnd()).toMatchSnapshot("21 column view");
 
     await terminal.resize(80, 30);
