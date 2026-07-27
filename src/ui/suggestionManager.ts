@@ -77,8 +77,7 @@ export class SuggestionManager {
       try {
         const runtime = await this._getRuntime();
         runtime.clearTransientSuggestionState?.();
-      }
-      catch (e) {
+      } catch (e) {
         log.debug({ msg: "failed to clear transient suggestion state", e: (e as Error).message });
       }
     }
