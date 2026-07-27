@@ -174,7 +174,7 @@ export const getGeneratorSuggestions = async (
     if (age <= (cache.ttl ?? 0)) return state.suggestions;
     if (cache.strategy !== "max-age") {
       if (state.inFlight == null) {
-        await refreshInBackground(state, generator, tokens, activeToken, cwd);
+        void refreshInBackground(state, generator, tokens, activeToken, cwd);
       }
       return state.suggestions;
     }

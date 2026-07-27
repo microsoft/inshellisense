@@ -185,7 +185,7 @@ test("does not reuse an aborted in-flight generation", async () => {
     },
   };
   const firstController = new AbortController();
-  const firstRequest = await getGeneratorSuggestions(generator, ["tool"], "", process.cwd(), false, firstController.signal).catch((error) => error);
+  const firstRequest = getGeneratorSuggestions(generator, ["tool"], "", process.cwd(), false, firstController.signal).catch((error) => error);
   firstController.abort();
 
   const current = await getGeneratorSuggestions(generator, ["tool"], "", process.cwd(), false, new AbortController().signal);
