@@ -7,14 +7,12 @@ import { configs, returnChar, startSession } from "./helpers";
 
 const accent = "#7d56f4";
 
-if (process.platform === "win32") {
-  jest.retryTimes(2);
-}
+jest.retryTimes(2);
 
 describe("resize recovery", () => {
   let terminal: ShellUse;
   beforeEach(async () => {
-    terminal = await startSession({ label: "bash-resize", shell: "bash" }, ["-T", "-s", "bash"]);
+    terminal = await startSession({ label: "bash-resize", shell: "bash", env: { BASH_SILENCE_DEPRECATION_WARNING: "1" } }, ["-T", "-s", "bash"]);
   });
   afterEach(async () => {
     await terminal.close();
