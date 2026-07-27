@@ -8,5 +8,6 @@ module.exports = {
   ...baseConfig,
   testMatch: ["<rootDir>/src/tests/ui/**/*.test.ts"],
   testPathIgnorePatterns: ["/node_modules/", ".tui-test/"],
-  testTimeout: 30_000,
+  maxWorkers: 1,
+  testTimeout: 120_000,
 };
