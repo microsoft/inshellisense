@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import log from "../utils/log.js";
 import { runTemplates } from "./template.js";
 import { buildExecuteShellCommand } from "./utils.js";
+import { endTiming, startTiming } from "../utils/performance.js";
 
 const getGeneratorContext = (cwd: string): Fig.GeneratorContext => {
   return {
@@ -16,48 +16,16 @@ const getGeneratorContext = (cwd: string): Fig.GeneratorContext => {
   };
 };
 
-type GeneratorScript = string[] | Fig.ExecuteCommandInput | undefined;
-type CachedSuggestions = { key: string; suggestions: Fig.Suggestion[]; expiresAt: number };
-
-const defaultCacheTTL = 30_000;
-const generatorCache = new WeakMap<Fig.Generator, CachedSuggestions>();
-
-const getCacheKey = (generator: Fig.Generator, script: GeneratorScript, cwd: string): string | undefined => {
-  const { cache } = generator;
-  if (cache == null) return;
-  const key = cache.cacheKey ?? (script != null ? JSON.stringify(script) : undefined);
-  if (key == null) return;
-  return cache.cacheByDirectory ? `${cwd}\u0000${key}` : key;
-};
-
-const getCachedSuggestions = (generator: Fig.Generator, script: GeneratorScript, cwd: string): Fig.Suggestion[] | undefined => {
-  const key = getCacheKey(generator, script, cwd);
-  const cached = generatorCache.get(generator);
-  if (key == null || cached == null) return;
-  if (cached.key != key || Date.now() >= cached.expiresAt) return;
-  return cached.suggestions;
-};
-
-const setCachedSuggestions = (generator: Fig.Generator, script: GeneratorScript, cwd: string, suggestions: Fig.Suggestion[]) => {
-  const key = getCacheKey(generator, script, cwd);
-  if (key == null) return;
-  generatorCache.set(generator, { key, suggestions, expiresAt: Date.now() + (generator.cache?.ttl ?? defaultCacheTTL) });
-};
-
-// TODO: add support for trigger & getQueryTerm
-export const runGenerator = async (generator: Fig.Generator, tokens: string[], cwd: string, signal?: AbortSignal): Promise<Fig.Suggestion[]> => {
-  // TODO: support trigger
-  signal?.throwIfAborted();
-  const { script, postProcess, scriptTimeout, splitOn, custom, template, filterTemplateSuggestions } = generator;
-
-  const suggestions = [];
+export const executeGenerator = async (generator: Fig.Generator, tokens: string[], cwd: string, signal?: AbortSignal): Promise<Fig.Suggestion[]> => {
+  const generatorTiming = startTiming();
   try {
-    const shellInput = typeof script === "function" ? script(tokens) : script;
-    const cachedSuggestions = getCachedSuggestions(generator, shellInput, cwd);
-    if (cachedSuggestions != null) return cachedSuggestions;
-
+    signal?.throwIfAborted();
+    const { script, postProcess, scriptTimeout, splitOn, custom, template, filterTemplateSuggestions } = generator;
     const executeShellCommand = buildExecuteShellCommand(scriptTimeout ?? 5000, signal);
-    if (shellInput) {
+    const suggestions: Fig.Suggestion[] = [];
+
+    if (script) {
+      const shellInput = typeof script === "function" ? script(tokens) : script;
       const scriptOutput = Array.isArray(shellInput)
         ? await executeShellCommand({ command: shellInput.at(0) ?? "", args: shellInput.slice(1), cwd })
         : await executeShellCommand({ ...shellInput, cwd });
@@ -66,7 +34,7 @@ export const runGenerator = async (generator: Fig.Generator, tokens: string[], c
       if (postProcess) {
         suggestions.push(...postProcess(scriptStdout, tokens));
       } else if (splitOn) {
-        suggestions.push(...scriptStdout.split(splitOn).map((s) => ({ name: s })));
+        suggestions.push(...scriptStdout.split(splitOn).map((name) => ({ name })));
       }
     }
 
@@ -76,20 +44,19 @@ export const runGenerator = async (generator: Fig.Generator, tokens: string[], c
 
     if (template != null) {
       const templateSuggestions = await runTemplates(template, cwd, signal);
-      if (filterTemplateSuggestions) {
-        suggestions.push(...filterTemplateSuggestions(templateSuggestions));
-      } else {
-        suggestions.push(...templateSuggestions);
-      }
+      suggestions.push(...(filterTemplateSuggestions ? filterTemplateSuggestions(templateSuggestions) : templateSuggestions));
     }
 
-    const generatedSuggestions = suggestions.filter((s) => s != null);
-    setCachedSuggestions(generator, shellInput, cwd, generatedSuggestions);
-    return generatedSuggestions;
-  } catch (e) {
-    if (e instanceof DOMException && e.name === "AbortError") throw e;
-    const err = typeof e === "string" ? e : e instanceof Error ? e.message : e;
-    log.debug({ msg: "generator failed", err, script, splitOn, template });
+    signal?.throwIfAborted();
+    return suggestions.filter((suggestion) => suggestion != null);
+  } finally {
+    endTiming("runtime.runGenerator", generatorTiming);
   }
-  return suggestions.filter((s) => s != null);
+};
+
+export const getGeneratorQueryTerm = (generator: Fig.Generator, token: string): string => {
+  if (typeof generator.getQueryTerm === "function") return generator.getQueryTerm(token);
+  if (generator.getQueryTerm == null) return token;
+  const delimiterIndex = token.lastIndexOf(generator.getQueryTerm);
+  return delimiterIndex === -1 ? token : token.slice(delimiterIndex + generator.getQueryTerm.length);
 };

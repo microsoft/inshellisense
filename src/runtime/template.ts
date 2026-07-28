@@ -1,20 +1,18 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import fsAsync from "node:fs/promises";
 import log from "../utils/log.js";
+import { readDirectory } from "./templateCache.js";
 
 const filepathsTemplate = async (cwd: string, signal?: AbortSignal): Promise<Fig.TemplateSuggestion[]> => {
-  signal?.throwIfAborted();
-  const files = await fsAsync.readdir(cwd, { withFileTypes: true });
+  const files = await readDirectory(cwd, signal);
   return files
     .filter((f) => f.isFile() || f.isDirectory())
     .map((f) => ({ name: f.name, priority: 55, context: { templateType: "filepaths" }, type: f.isDirectory() ? "folder" : "file" }));
 };
 
 const foldersTemplate = async (cwd: string, signal?: AbortSignal): Promise<Fig.TemplateSuggestion[]> => {
-  signal?.throwIfAborted();
-  const files = await fsAsync.readdir(cwd, { withFileTypes: true });
+  const files = await readDirectory(cwd, signal);
   return files
     .filter((f) => f.isDirectory())
     .map((f) => ({

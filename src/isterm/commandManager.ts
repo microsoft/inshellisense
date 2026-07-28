@@ -5,6 +5,7 @@ import convert from "color-convert";
 import { IBufferCell, IBufferLine, IMarker, Terminal } from "@xterm/headless";
 import { getShellPromptRewrites, Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
+import { endTiming, startTiming } from "../utils/performance.js";
 
 const rightPromptLookbackWidth = 5;
 const commandWhitespaceTerminationWidth = 4;
@@ -13,13 +14,13 @@ type TerminalCommand = {
   promptStartMarker?: IMarker;
   promptEndMarker?: IMarker;
   promptEndX?: number;
+  persistentOutput?: boolean;
 } & CommandState;
 
 export type CommandState = {
   promptText?: string;
   commandText?: string;
   suggestionsText?: string;
-  persistentOutput?: boolean;
   hasOutput?: boolean;
   cursorTerminated?: boolean;
 };
@@ -30,6 +31,9 @@ export class CommandManager {
   #acceptedCommandLines: Set<number>;
   #shell: Shell;
   #promptRewrites: boolean;
+  #state: CommandState = {};
+  #stateVersion = 0;
+  #suspended = false;
 
   constructor(terminal: Terminal, shell: Shell) {
     this.#terminal = terminal;
@@ -37,6 +41,10 @@ export class CommandManager {
     this.#activeCommand = {};
     this.#acceptedCommandLines = new Set();
     this.#promptRewrites = getShellPromptRewrites(shell);
+    this.#terminal.buffer.onBufferChange((buffer) => {
+      this.#suspended = buffer.type === "alternate";
+      this._syncStateSnapshot();
+    });
 
     this.#terminal.parser.registerCsiHandler({ final: "J" }, (params) => {
       if (params.at(0) == 3 || params.at(0) == 2) {
@@ -46,12 +54,16 @@ export class CommandManager {
     });
   }
   handlePromptStart() {
+    if (this.#suspended) return;
     this.#activeCommand = { promptStartMarker: this.#terminal.registerMarker(0), hasOutput: false, cursorTerminated: false };
+    this._syncStateSnapshot();
   }
 
   handlePromptEnd() {
+    if (this.#suspended) return;
     if (this.#hasBeenAccepted()) {
       this.#activeCommand = {};
+      this._syncStateSnapshot();
       return;
     }
 
@@ -77,6 +89,7 @@ export class CommandManager {
         this.#activeCommand.promptEndX = whitespaceIdx + 1;
       }
     }
+    this._syncStateSnapshot();
   }
 
   #hasBeenAccepted() {
@@ -109,18 +122,40 @@ export class CommandManager {
   }
 
   getState(): CommandState {
-    return {
-      promptText: this.#activeCommand.promptText,
-      commandText: this.#activeCommand.commandText,
-      suggestionsText: this.#activeCommand.suggestionsText,
-      hasOutput: this.#activeCommand.hasOutput,
-      cursorTerminated: this.#activeCommand.cursorTerminated,
-    };
+    return this.#state;
+  }
+
+  getStateVersion(): number {
+    return this.#stateVersion;
+  }
+
+  private _syncStateSnapshot(): void {
+    const state = this.#suspended
+      ? {}
+      : {
+          promptText: this.#activeCommand.promptText,
+          commandText: this.#activeCommand.commandText,
+          suggestionsText: this.#activeCommand.suggestionsText,
+          hasOutput: this.#activeCommand.hasOutput,
+          cursorTerminated: this.#activeCommand.cursorTerminated,
+        };
+    if (
+      state.promptText !== this.#state.promptText ||
+      state.commandText !== this.#state.commandText ||
+      state.suggestionsText !== this.#state.suggestionsText ||
+      state.hasOutput !== this.#state.hasOutput ||
+      state.cursorTerminated !== this.#state.cursorTerminated
+    ) {
+      this.#state = state;
+      this.#stateVersion += 1;
+    }
   }
 
   clearActiveCommand() {
+    if (this.#suspended) return;
     this.#acceptedCommandLines.add(this.#activeCommand.promptEndMarker?.line ?? -1);
     this.#activeCommand = {};
+    this._syncStateSnapshot();
   }
 
   private _getCommandLines(): IBufferLine[] {
@@ -194,41 +229,51 @@ export class CommandManager {
   }
 
   termSync() {
-    if (this.#activeCommand.promptEndMarker == null || this.#activeCommand.promptStartMarker == null) {
-      return;
+    const syncTiming = startTiming();
+    try {
+      if (this.#suspended) {
+        this._syncStateSnapshot();
+        return;
+      }
+      if (this.#activeCommand.promptEndMarker == null || this.#activeCommand.promptStartMarker == null) {
+        return;
+      }
+
+      const globalCursorPosition = this.#terminal.buffer.active.baseY + this.#terminal.buffer.active.cursorY;
+
+      if (this.#activeCommand.promptStartMarker.isDisposed || this.#activeCommand.promptEndMarker.isDisposed) {
+        log.debug({ msg: "markers disposed, re-registering" });
+        this.#activeCommand.promptStartMarker = this.#terminal.registerMarker(0);
+        this.#activeCommand.promptEndMarker = this.#terminal.registerMarker(0);
+      }
+
+      // if the prompt is set, now parse out the values from the terminal
+      if (this.#activeCommand.promptText != null) {
+        const commandLines = this._getCommandLines();
+        const hasOutput = this._getCommandOutputStatus(commandLines.length);
+
+        if (!this.#activeCommand.persistentOutput) {
+          const { suggestion, preCursorCommand, postCursorCommand } = this._getCommandText(commandLines);
+          this.#activeCommand.suggestionsText = suggestion;
+          this.#activeCommand.commandText = preCursorCommand + postCursorCommand.trim();
+          this.#activeCommand.cursorTerminated = postCursorCommand.trim() == "";
+        }
+
+        this.#activeCommand.persistentOutput = this.#activeCommand.hasOutput && hasOutput;
+        this.#activeCommand.hasOutput = hasOutput;
+      }
+
+      this._syncStateSnapshot();
+      log.debug({
+        msg: "cmd manager state",
+        ...this.#activeCommand,
+        promptEndMarker: this.#activeCommand.promptEndMarker?.line,
+        promptStartMarker: this.#activeCommand.promptStartMarker?.line,
+        cursorX: this.#terminal.buffer.active.cursorX,
+        cursorY: globalCursorPosition,
+      });
+    } finally {
+      endTiming("commandManager.termSync", syncTiming);
     }
-
-    const globalCursorPosition = this.#terminal.buffer.active.baseY + this.#terminal.buffer.active.cursorY;
-
-    if (this.#activeCommand.promptStartMarker.isDisposed || this.#activeCommand.promptEndMarker.isDisposed) {
-      log.debug({ msg: "markers disposed, re-registering" });
-      this.#activeCommand.promptStartMarker = this.#terminal.registerMarker(0);
-      this.#activeCommand.promptEndMarker = this.#terminal.registerMarker(0);
-    }
-
-    // if the prompt is set, now parse out the values from the terminal
-    if (this.#activeCommand.promptText != null) {
-      const commandLines = this._getCommandLines();
-      const { suggestion, preCursorCommand, postCursorCommand } = this._getCommandText(commandLines);
-      const command = preCursorCommand + postCursorCommand.trim();
-
-      const cursorAtEndOfInput = postCursorCommand.trim() == "";
-      const hasOutput = this._getCommandOutputStatus(commandLines.length);
-
-      this.#activeCommand.persistentOutput = this.#activeCommand.hasOutput && hasOutput;
-      this.#activeCommand.hasOutput = hasOutput;
-      this.#activeCommand.suggestionsText = suggestion;
-      this.#activeCommand.commandText = command;
-      this.#activeCommand.cursorTerminated = cursorAtEndOfInput;
-    }
-
-    log.debug({
-      msg: "cmd manager state",
-      ...this.#activeCommand,
-      promptEndMarker: this.#activeCommand.promptEndMarker?.line,
-      promptStartMarker: this.#activeCommand.promptStartMarker?.line,
-      cursorX: this.#terminal.buffer.active.cursorX,
-      cursorY: globalCursorPosition,
-    });
   }
 }

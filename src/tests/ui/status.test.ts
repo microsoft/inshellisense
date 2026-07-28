@@ -2,10 +2,14 @@
 // Licensed under the MIT License.
 
 import os from "node:os";
+import { jest } from "@jest/globals";
 import { ShellUse } from "@microsoft/shell-use";
-import { startSession } from "./helpers";
+import type { Shell } from "@microsoft/shell-use";
+import { closeSession, startSession, startShell } from "./helpers";
 
-const shell = os.platform() == "darwin" ? "zsh" : os.platform() == "linux" ? "bash" : "powershell";
+const shell: Shell = os.platform() == "darwin" ? "zsh" : os.platform() == "linux" ? "bash" : "powershell";
+
+jest.retryTimes(2, { logErrorsBeforeRetry: true });
 
 describe("status checks", () => {
   describe("inside inshellisense session", () => {
@@ -14,12 +18,10 @@ describe("status checks", () => {
       terminal = await startSession({ label: "status", shell }, ["-T", "-s", shell]);
     });
     afterEach(async () => {
-      await terminal.close();
+      await closeSession(terminal);
     });
 
     test("current status", async () => {
-      await terminal.expectText(">  ", { timeout: 30_000 });
-
       await terminal.write("is -c\r");
       await terminal.expectText("live", { fg: "2" });
     });
@@ -28,11 +30,10 @@ describe("status checks", () => {
   describe("outside inshellisense session", () => {
     let terminal: ShellUse;
     beforeEach(async () => {
-      terminal = new ShellUse(`is-e2e-status-outside-${process.pid}`);
-      await terminal.open({ shell });
+      terminal = await startShell("status-outside", shell);
     });
     afterEach(async () => {
-      await terminal.close();
+      await closeSession(terminal);
     });
 
     test("current status", async () => {

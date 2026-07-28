@@ -26,8 +26,6 @@ export const parseCommand = (command: string, shell: Shell): CommandToken[] => {
   return sanitizeTokens(tokens, shell);
 };
 
-export const getCommandCacheKey = (command: string, shell: Shell): string => JSON.stringify(parseCommand(command, shell));
-
 const sanitizeTokens = (cmdTokens: CommandToken[], shell: Shell): CommandToken[] => unwrapQuotedTokens(unescapeSpaceTokens(cmdTokens, shell), shell);
 
 // remove escapes around spaces
@@ -63,25 +61,28 @@ const lex = (command: string, shell: Shell): CommandToken[] => {
   let readingIdx = 0;
   let readingQuoteChar = "";
 
-  [...command].forEach((char, idx) => {
+  let offset = 0;
+  for (const char of command) {
+    const idx = offset;
+    offset += char.length;
     const reading = readingQuotedString || readingQuoteContinuedString || readingFlag || readingCmd;
     if (!reading && (char === `'` || char === `"` || char == "`")) {
       [readingQuotedString, readingIdx, readingQuoteChar] = [true, idx, char];
-      return;
+      continue;
     } else if (!reading && char === `-`) {
       [readingFlag, readingIdx] = [true, idx];
-      return;
+      continue;
     } else if (!reading && !spaceRegex.test(char)) {
       [readingCmd, readingIdx] = [true, idx];
-      return;
+      continue;
     }
 
-    if (readingQuotedString && char === readingQuoteChar && command.at(idx - 1) !== escapeChar && !spaceRegex.test(command.at(idx + 1) ?? " ")) {
+    if (readingQuotedString && char === readingQuoteChar && command.at(idx - 1) !== escapeChar && !spaceRegex.test(command.at(offset) ?? " ")) {
       readingQuotedString = false;
       readingQuoteContinuedString = true;
     } else if (readingQuotedString && char === readingQuoteChar && command.at(idx - 1) !== escapeChar) {
       readingQuotedString = false;
-      const complete = idx + 1 < command.length && spaceRegex.test(command[idx + 1]);
+      const complete = offset < command.length && spaceRegex.test(command[offset]);
       tokens.push({
         token: command.slice(readingIdx + 1, idx),
         tokenLength: wcswidth(command.slice(readingIdx + 1, idx)) + 2, // +2 for both quotes
@@ -116,7 +117,7 @@ const lex = (command: string, shell: Shell): CommandToken[] => {
         isOption: false,
       });
     }
-  });
+  }
 
   const reading = readingQuotedString || readingQuoteContinuedString || readingFlag || readingCmd;
   if (reading) {
