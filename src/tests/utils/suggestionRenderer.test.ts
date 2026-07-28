@@ -67,3 +67,28 @@ test("uses DEC cursor position sequences in JetBrains terminals", async () => {
     expect(data).not.toContain(ansi.cursorRestorePosition);
   });
 });
+
+test("passes data through on direction changes without visible suggestions", () => {
+  delete process.env.TERMINAL_EMULATOR;
+  const output: string[] = [];
+  const cursor = { cursorX: 0, cursorY: 20, remainingLines: 2, hidden: false, shift: 0 };
+  const term = {
+    cols: 80,
+    getCommandState: () => ({}),
+    getCursorState: () => ({ ...cursor }),
+    getPatch: () => "patch",
+    isAlternateBuffer: () => false,
+  } as unknown as ISTerm;
+  const suggestions = {
+    render: () => [],
+    suspend: async () => {},
+  } as unknown as SuggestionManager;
+  const renderer = new SuggestionRenderer(term, suggestions, (data) => output.push(data));
+
+  renderer.renderPtyData("frame-bottom", false);
+  cursor.cursorY = 2;
+  cursor.remainingLines = 20;
+  renderer.renderPtyData("frame-top", false);
+
+  expect(output).toEqual(["frame-bottom", "frame-top"]);
+});

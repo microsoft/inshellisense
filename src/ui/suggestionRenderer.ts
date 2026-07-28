@@ -87,7 +87,8 @@ export class SuggestionRenderer {
       return;
     }
 
-    if (this.#direction !== snapshot.layout.direction) {
+    // inline redrawing apps (ink based clis, progress bars, etc.) flip the direction on every frame, so only clear when a suggestion is rendered
+    if (this.#visible && this.#direction !== snapshot.layout.direction) {
       this.#clearPreviousDirection(snapshot);
     }
     this.#render(data, preserveDuringBackspaceEcho, snapshot);
