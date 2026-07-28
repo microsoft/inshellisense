@@ -3,6 +3,7 @@
 
 import { Suggestion, SuggestionBlob } from "../runtime/model.js";
 import { getSuggestions } from "../runtime/runtime.js";
+import { getCommandCacheKey } from "../runtime/parser.js";
 import type { ISTerm, ISTermPatch } from "../isterm/pty.js";
 import { renderBox, truncateText, truncateMultilineText } from "./utils.js";
 import chalk from "chalk";
@@ -31,7 +32,7 @@ type KeyPress = {
 
 export class SuggestionManager {
   #term: ISTerm;
-  #command: string;
+  #commandKey: string;
   #activeSuggestionIdx: number;
   #suggestBlob?: SuggestionBlob;
   #shell: Shell;
@@ -41,39 +42,46 @@ export class SuggestionManager {
   constructor(terminal: ISTerm, shell: Shell) {
     this.#term = terminal;
     this.#suggestBlob = { suggestions: [] };
-    this.#command = "";
+    this.#commandKey = "";
     this.#activeSuggestionIdx = 0;
     this.#shell = shell;
   }
 
-  private async _loadSuggestions(): Promise<void> {
-    this.#abortController?.abort();
+  private async _loadSuggestions(): Promise<boolean> {
     const commandState = this.#term.getCommandState();
     const commandText = commandState.commandText;
     if (!commandText) {
-      this.#command = "";
+      this.#commandKey = "";
     }
     if (!commandText || this.#hideSuggestions || commandState.hasOutput) {
+      this.#abortController?.abort();
       this.#suggestBlob = undefined;
       this.#activeSuggestionIdx = 0;
-      return;
+      return true;
     }
-    if (commandText == this.#command) {
-      return;
+    const commandKey = `${this.#term.cwd}\u0000${getCommandCacheKey(commandText, this.#shell)}`;
+    if (commandKey == this.#commandKey) {
+      return true;
     }
-    this.#abortController = new AbortController();
+    this.#commandKey = commandKey;
+    this.#abortController?.abort();
+    const abortController = new AbortController();
+    this.#abortController = abortController;
     try {
-      const suggestionBlob = await getSuggestions(commandText, this.#term.cwd, this.#shell, this.#abortController.signal);
-      this.#command = commandText;
+      const suggestionBlob = await getSuggestions(commandText, this.#term.cwd, this.#shell, abortController.signal);
+      if (abortController.signal.aborted) {
+        return false;
+      }
       this.#suggestBlob = suggestionBlob;
       this.#activeSuggestionIdx = 0;
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") {
         log.debug({ msg: "suggestion generation aborted", commandText, shell: this.#shell });
-        return;
+        return false;
       }
       throw e;
     }
+    return true;
   }
 
   private _renderArgumentDescription(description: string | undefined) {
@@ -113,7 +121,7 @@ export class SuggestionManager {
     return suggestionContent == null ? padding + suggestionWidth : padding;
   }
 
-  async exec(): Promise<void> {
+  async exec(): Promise<boolean> {
     return await this._loadSuggestions();
   }
 

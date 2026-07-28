@@ -14,13 +14,15 @@ export type ExecuteShellCommandTTYResult = {
   code: number | null;
 };
 
-const getExecutionShell = async (): Promise<undefined | string> => {
-  if (process.platform !== "win32") return;
-  try {
-    return await gitBashPath();
-  } catch (e) {
+let cachedExecutionShell: Promise<string | undefined> | undefined;
+
+const getExecutionShell = (): Promise<undefined | string> => {
+  if (process.platform !== "win32") return Promise.resolve(undefined);
+  cachedExecutionShell ??= gitBashPath().catch((e) => {
     log.debug({ msg: "failed to load posix shell for windows child_process.spawn, some generators might fail", error: e });
-  }
+    return undefined;
+  });
+  return cachedExecutionShell;
 };
 
 const bashSpecialCharacters = /[&|<>\s]/g;

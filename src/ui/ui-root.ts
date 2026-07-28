@@ -104,8 +104,10 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
     }
 
     hasSuggestion = _render(term, suggestionManager, data, handlingBackspace, hasSuggestion);
-    await suggestionManager.exec();
-    hasSuggestion = _render(term, suggestionManager, "", handlingBackspace, hasSuggestion);
+
+    if (await suggestionManager.exec()) {
+      hasSuggestion = _render(term, suggestionManager, "", handlingBackspace, hasSuggestion);
+    }
 
     handlingBackspace = false;
     direction = _suggestionLayout(term).direction;

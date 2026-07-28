@@ -26,6 +26,8 @@ export const parseCommand = (command: string, shell: Shell): CommandToken[] => {
   return sanitizeTokens(tokens, shell);
 };
 
+export const getCommandCacheKey = (command: string, shell: Shell): string => JSON.stringify(parseCommand(command, shell));
+
 const sanitizeTokens = (cmdTokens: CommandToken[], shell: Shell): CommandToken[] => unwrapQuotedTokens(unescapeSpaceTokens(cmdTokens, shell), shell);
 
 // remove escapes around spaces
