@@ -95,7 +95,9 @@ inshellisense supports the following shells:
 
 ## Configuration
 
-All configuration is done through a [toml](https://toml.io/) file. You can create this file at `~/.inshellisenserc` or, for XDG compliance, at `~/.config/inshellisense/rc.toml`. The [JSON schema](https://json-schema.org/) for the configuration file can be found [here](https://github.com/microsoft/inshellisense/blob/main/src/utils/config.ts).
+All configuration is done through a [toml](https://toml.io/) file. You can create this file at `~/.inshellisenserc` or `$XDG_CONFIG_HOME/inshellisense/rc.toml`. When `XDG_CONFIG_HOME` is unset, empty, or relative, the XDG configuration path defaults to `~/.config/inshellisense/rc.toml`. The [JSON schema](https://json-schema.org/) for the configuration file can be found [here](https://github.com/microsoft/inshellisense/blob/main/src/utils/config.ts).
+
+On Unix-like systems, setting `XDG_CONFIG_HOME` to an absolute path also stores generated resources under `$XDG_CONFIG_HOME/inshellisense`. An unset, empty, or relative value preserves the existing `~/.inshellisense` resource location; Windows always uses the existing location.
 
 ### Keybindings
 

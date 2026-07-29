@@ -9,7 +9,7 @@ import fs from "node:fs";
 import os from "node:os";
 import fsAsync from "node:fs/promises";
 import util from "node:util";
-import { shellResourcesPath, initResourcesPath } from "./constants.js";
+import { shellResourcesPath, initResourcesPath, xdgConfigHome } from "./constants.js";
 import childProcess from "node:child_process";
 import { KeyPressEvent } from "../ui/suggestionManager.js";
 import log from "./log.js";
@@ -272,22 +272,37 @@ export const endsWithPathSeparator = (dir: string, shell: Shell) => {
 // xonsh re-writes the prompt after accepting a command
 export const getShellPromptRewrites = (shell: Shell) => shell == Shell.Nushell || shell == Shell.Xonsh;
 
-export const getShellSourceCommand = (shell: Shell): string => {
+const quotePosixPath = (filePath: string) => `'${filePath.replaceAll("'", "'\\''")}'`;
+const quotePowerShellPath = (filePath: string) => `'${filePath.replaceAll("'", "''")}'`;
+
+const getShellInitPath = (shell: Shell): string | undefined => {
+  const configName = getShellConfigName(shell);
+  if (configName == null) return;
+  return xdgConfigHome == null ? `~/.inshellisense/init/${shell}/${configName}` : path.join(initResourcesPath, shell, configName);
+};
+
+export const getShellSourceCommand = (shell: Shell, initFilePath = getShellInitPath(shell)): string => {
+  if (initFilePath == null) return "";
+  const posixPath = initFilePath.startsWith("~/") ? initFilePath : quotePosixPath(initFilePath);
+
   switch (shell) {
     case Shell.Bash:
-      return `[ -f ~/.inshellisense/init/bash/init.sh ] && source ~/.inshellisense/init/bash/init.sh`;
+      return `[ -f ${posixPath} ] && source ${posixPath}`;
     case Shell.Powershell:
-      return `if ( Test-Path '~/.inshellisense/init/powershell/init.ps1' -PathType Leaf ) { . ~/.inshellisense/init/powershell/init.ps1 }`;
     case Shell.Pwsh:
-      return `if ( Test-Path '~/.inshellisense/init/pwsh/init.ps1' -PathType Leaf ) { . ~/.inshellisense/init/pwsh/init.ps1 }`;
+      return initFilePath.startsWith("~/")
+        ? `if ( Test-Path '${initFilePath}' -PathType Leaf ) { . ${initFilePath} }`
+        : `if ( Test-Path ${quotePowerShellPath(initFilePath)} -PathType Leaf ) { . ${quotePowerShellPath(initFilePath)} }`;
     case Shell.Zsh:
-      return `[[ -f ~/.inshellisense/init/zsh/init.zsh ]] && source ~/.inshellisense/init/zsh/init.zsh`;
+      return `[[ -f ${posixPath} ]] && source ${posixPath}`;
     case Shell.Fish:
-      return `test -f ~/.inshellisense/init/fish/init.fish && source ~/.inshellisense/init/fish/init.fish`;
+      return `test -f ${posixPath} && source ${posixPath}`;
     case Shell.Xonsh:
-      return `p"~/.inshellisense/init/xonsh/init.xsh".exists() && source "~/.inshellisense/init/xonsh/init.xsh"`;
+      return `p${JSON.stringify(initFilePath)}.exists() && source ${JSON.stringify(initFilePath)}`;
     case Shell.Nushell:
-      return `if ( '~/.inshellisense/init/nu/init.nu' | path exists ) { source ~/.inshellisense/init/nu/init.nu }`;
+      return initFilePath.startsWith("~/")
+        ? `if ( '${initFilePath}' | path exists ) { source ${initFilePath} }`
+        : `if ( ${JSON.stringify(initFilePath)} | path exists ) { source ${JSON.stringify(initFilePath)} }`;
   }
   return "";
 };
