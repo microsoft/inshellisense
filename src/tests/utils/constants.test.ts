@@ -12,7 +12,7 @@ describe("resolveXdgConfigHome", () => {
     expect(resolveXdgConfigHome(xdgConfigDirectory, "linux")).toBe(xdgConfigDirectory);
   });
 
-  test.each([undefined, "", "relative/xdg"])("ignores an unset, empty, or relative XDG config directory", (value) => {
+  test.each([undefined, "", "relative/xdg", "~/.config"])("ignores an unset, empty, or non-absolute XDG config directory", (value) => {
     expect(resolveXdgConfigHome(value, "linux")).toBeUndefined();
   });
 
