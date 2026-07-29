@@ -199,11 +199,15 @@ export const inferShell = async () => {
   return name != null ? supportedShells.find((shell) => name.includes(shell)) : undefined;
 };
 
-export const gitBashPath = async (): Promise<string> => {
+let cachedGitBashPath: Promise<string> | undefined;
+
+export const gitBashPath = (): Promise<string> => (cachedGitBashPath ??= getGitBashPath());
+
+const getGitBashPath = async (): Promise<string> => {
   const gitBashPaths = await getGitBashPaths();
-  for (const gitBashPath of gitBashPaths) {
-    if (fs.existsSync(gitBashPath)) {
-      return gitBashPath;
+  for (const candidatePath of gitBashPaths) {
+    if (fs.existsSync(candidatePath)) {
+      return candidatePath;
     }
   }
   throw new Error("unable to find a git bash executable installed");
