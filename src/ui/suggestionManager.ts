@@ -9,6 +9,7 @@ import { Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
 import { getConfig } from "../utils/config.js";
 import { calculateReplacement, applyReplacement } from "../runtime/replacement.js";
+import { getCommandCacheKey } from "../runtime/parser.js";
 import { initializeRuntime } from "../runtime/initialize.js";
 
 type SuggestionRuntime = Pick<Awaited<ReturnType<typeof initializeRuntime>>, "getSuggestions"> &
@@ -34,7 +35,7 @@ type KeyPress = {
 
 export class SuggestionManager {
   #term: ISTerm;
-  #command: string;
+  #commandKey: string;
   #activeSuggestionIdx: number;
   #suggestBlob?: SuggestionBlob;
   #shell: Shell;
@@ -45,7 +46,7 @@ export class SuggestionManager {
 
   constructor(terminal: ISTerm, shell: Shell, runtime?: Promise<SuggestionRuntime>) {
     this.#term = terminal;
-    this.#command = "";
+    this.#commandKey = "";
     this.#activeSuggestionIdx = 0;
     this.#shell = shell;
     this.#runtime = runtime;
@@ -67,9 +68,9 @@ export class SuggestionManager {
   }
 
   async suspend(): Promise<void> {
-    const commandCleared = this.#command.length !== 0 || this.#abortController != null;
+    const commandCleared = this.#commandKey.length !== 0 || this.#abortController != null;
     this.invalidate();
-    this.#command = "";
+    this.#commandKey = "";
     this.#suggestBlob = undefined;
     this.#activeSuggestionIdx = 0;
     this.#hideSuggestions = false;
@@ -84,14 +85,18 @@ export class SuggestionManager {
   }
 
   private async _loadSuggestions(): Promise<boolean> {
+    const commandState = this.#term.getCommandState();
+    const commandText = commandState.commandText;
+    const commandKey = commandText ? `${this.#term.cwd}\u0000${getCommandCacheKey(commandText, this.#shell)}` : "";
+    if (commandKey.length !== 0 && commandKey === this.#commandKey && !this.#hideSuggestions && !commandState.hasOutput) {
+      return false;
+    }
     // Aborting is cooperative; the version check also rejects generators that ignore cancellation.
     const ownVersion = ++this.#requestVersion;
     this.#abortController?.abort();
-    const commandState = this.#term.getCommandState();
-    const commandText = commandState.commandText;
     if (!commandText) {
-      const commandCleared = this.#command.length !== 0;
-      this.#command = "";
+      const commandCleared = this.#commandKey.length !== 0;
+      this.#commandKey = "";
       if (commandCleared) {
         const runtime = await this._getRuntime();
         runtime.clearTransientSuggestionState?.();
@@ -103,9 +108,6 @@ export class SuggestionManager {
       this.#activeSuggestionIdx = 0;
       return changed;
     }
-    if (commandText == this.#command) {
-      return false;
-    }
     const abortController = new AbortController();
     this.#abortController = abortController;
     try {
@@ -115,7 +117,7 @@ export class SuggestionManager {
       if (abortController.signal.aborted || ownVersion !== this.#requestVersion) {
         return false;
       }
-      this.#command = commandText;
+      this.#commandKey = commandKey;
       this.#suggestBlob = suggestionBlob;
       this.#activeSuggestionIdx = 0;
       return true;
