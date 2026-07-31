@@ -3,6 +3,7 @@
 
 import path from "node:path";
 import os from "node:os";
+import fs from "node:fs";
 
 const inshellisenseFolderName = "inshellisense";
 
@@ -10,8 +11,10 @@ export const resolveXdgConfigHome = (value: string | undefined, platform: NodeJS
   return platform !== "win32" && value != null && path.isAbsolute(value) ? value : undefined;
 };
 
-export const resolveResourcesPath = (homeDirectory: string, xdgConfigDirectory: string | undefined): string => {
-  return xdgConfigDirectory == null ? path.join(homeDirectory, `.${inshellisenseFolderName}`) : path.join(xdgConfigDirectory, inshellisenseFolderName);
+export const resolveResourcesPath = (homeDirectory: string, xdgConfigDirectory: string | undefined, hasLegacyResources: boolean): string => {
+  return xdgConfigDirectory == null || hasLegacyResources
+    ? path.join(homeDirectory, `.${inshellisenseFolderName}`)
+    : path.join(xdgConfigDirectory, inshellisenseFolderName);
 };
 
 export const resolveConfigFilePath = (homeDirectory: string, xdgConfigDirectory: string | undefined): string => {
@@ -20,8 +23,10 @@ export const resolveConfigFilePath = (homeDirectory: string, xdgConfigDirectory:
 };
 
 const homeDirectory = os.homedir();
+const legacyResourcesPath = path.join(homeDirectory, `.${inshellisenseFolderName}`);
 export const xdgConfigHome = resolveXdgConfigHome(process.env.XDG_CONFIG_HOME, process.platform);
-export const allResourcesPath = resolveResourcesPath(homeDirectory, xdgConfigHome);
+export const allResourcesPath = resolveResourcesPath(homeDirectory, xdgConfigHome, fs.existsSync(legacyResourcesPath));
+export const usesLegacyResources = allResourcesPath === legacyResourcesPath;
 export const xdgConfigPath = resolveConfigFilePath(homeDirectory, xdgConfigHome);
 export const loggingResourcesPath = path.join(allResourcesPath, "log");
 export const nativeResourcesPath = path.join(allResourcesPath, "native");

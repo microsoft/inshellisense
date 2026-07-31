@@ -9,7 +9,7 @@ import fs from "node:fs";
 import os from "node:os";
 import fsAsync from "node:fs/promises";
 import util from "node:util";
-import { shellResourcesPath, initResourcesPath, xdgConfigHome } from "./constants.js";
+import { shellResourcesPath, initResourcesPath, usesLegacyResources } from "./constants.js";
 import childProcess from "node:child_process";
 import { KeyPressEvent } from "../ui/suggestionManager.js";
 import log from "./log.js";
@@ -278,31 +278,32 @@ const quotePowerShellPath = (filePath: string) => `'${filePath.replaceAll("'", "
 const getShellInitPath = (shell: Shell): string | undefined => {
   const configName = getShellConfigName(shell);
   if (configName == null) return;
-  return xdgConfigHome == null ? `~/.inshellisense/init/${shell}/${configName}` : path.join(initResourcesPath, shell, configName);
+  return usesLegacyResources ? `~/.inshellisense/init/${shell}/${configName}` : path.join(initResourcesPath, shell, configName);
 };
 
-export const getShellSourceCommand = (shell: Shell, initFilePath = getShellInitPath(shell)): string => {
-  if (initFilePath == null) return "";
-  const posixPath = initFilePath.startsWith("~/") ? initFilePath : quotePosixPath(initFilePath);
+export const getShellSourceCommand = (shell: Shell, initFilePath?: string): string => {
+  const resolvedInitFilePath = initFilePath ?? getShellInitPath(shell);
+  if (resolvedInitFilePath == null) return "";
+  const posixPath = resolvedInitFilePath.startsWith("~/") ? resolvedInitFilePath : quotePosixPath(resolvedInitFilePath);
 
   switch (shell) {
     case Shell.Bash:
       return `[ -f ${posixPath} ] && source ${posixPath}`;
     case Shell.Powershell:
     case Shell.Pwsh:
-      return initFilePath.startsWith("~/")
-        ? `if ( Test-Path '${initFilePath}' -PathType Leaf ) { . ${initFilePath} }`
-        : `if ( Test-Path ${quotePowerShellPath(initFilePath)} -PathType Leaf ) { . ${quotePowerShellPath(initFilePath)} }`;
+      return resolvedInitFilePath.startsWith("~/")
+        ? `if ( Test-Path '${resolvedInitFilePath}' -PathType Leaf ) { . ${resolvedInitFilePath} }`
+        : `if ( Test-Path ${quotePowerShellPath(resolvedInitFilePath)} -PathType Leaf ) { . ${quotePowerShellPath(resolvedInitFilePath)} }`;
     case Shell.Zsh:
       return `[[ -f ${posixPath} ]] && source ${posixPath}`;
     case Shell.Fish:
       return `test -f ${posixPath} && source ${posixPath}`;
     case Shell.Xonsh:
-      return `p${JSON.stringify(initFilePath)}.exists() && source ${JSON.stringify(initFilePath)}`;
+      return `p${JSON.stringify(resolvedInitFilePath)}.exists() && source ${JSON.stringify(resolvedInitFilePath)}`;
     case Shell.Nushell:
-      return initFilePath.startsWith("~/")
-        ? `if ( '${initFilePath}' | path exists ) { source ${initFilePath} }`
-        : `if ( ${JSON.stringify(initFilePath)} | path exists ) { source ${JSON.stringify(initFilePath)} }`;
+      return resolvedInitFilePath.startsWith("~/")
+        ? `if ( '${resolvedInitFilePath}' | path exists ) { source ${resolvedInitFilePath} }`
+        : `if ( ${JSON.stringify(resolvedInitFilePath)} | path exists ) { source ${JSON.stringify(resolvedInitFilePath)} }`;
   }
   return "";
 };

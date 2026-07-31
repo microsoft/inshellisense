@@ -23,11 +23,15 @@ describe("resolveXdgConfigHome", () => {
 
 describe("resolveResourcesPath", () => {
   test("uses the legacy hidden directory without XDG_CONFIG_HOME", () => {
-    expect(resolveResourcesPath(homeDirectory, undefined)).toBe(path.join(homeDirectory, ".inshellisense"));
+    expect(resolveResourcesPath(homeDirectory, undefined, false)).toBe(path.join(homeDirectory, ".inshellisense"));
   });
 
-  test("uses an unhidden directory below XDG_CONFIG_HOME", () => {
-    expect(resolveResourcesPath(homeDirectory, xdgConfigDirectory)).toBe(path.join(xdgConfigDirectory, "inshellisense"));
+  test("uses an unhidden directory below XDG_CONFIG_HOME for a new installation", () => {
+    expect(resolveResourcesPath(homeDirectory, xdgConfigDirectory, false)).toBe(path.join(xdgConfigDirectory, "inshellisense"));
+  });
+
+  test("preserves an existing legacy resource directory", () => {
+    expect(resolveResourcesPath(homeDirectory, xdgConfigDirectory, true)).toBe(path.join(homeDirectory, ".inshellisense"));
   });
 });
 

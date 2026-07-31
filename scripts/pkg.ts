@@ -157,8 +157,9 @@ const applyBundlePatches = async (): Promise<void> => {
     'var dirs = ["build/Release", "build/Debug", "prebuilds/" + process.platform + "-" + process.arch];',
     `var os_1 = require("os");
     var path_1 = require("path");
+    var legacy_resources_dir = path_1.join(os_1.homedir(), ".inshellisense");
     var xdg_config_home = process.platform !== "win32" && path_1.isAbsolute(process.env.XDG_CONFIG_HOME || "") ? process.env.XDG_CONFIG_HOME : void 0;
-    var resources_dir = xdg_config_home ? path_1.join(xdg_config_home, "inshellisense") : path_1.join(os_1.homedir(), ".inshellisense");
+    var resources_dir = xdg_config_home && !require("fs").existsSync(legacy_resources_dir) ? path_1.join(xdg_config_home, "inshellisense") : legacy_resources_dir;
     var dirs = [path_1.join(resources_dir, "native"), "build/Release", "build/Debug", "prebuilds/" + process.platform + "-" + process.arch];`,
     "native locations",
   );
