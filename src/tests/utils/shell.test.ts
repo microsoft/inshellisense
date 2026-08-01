@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { getShellSourceCommand, Shell } from "../../utils/shell.js";
+import { getShellSourceCommand, hasLegacyShellConfig, Shell } from "../../utils/shell.js";
 
 describe("getShellSourceCommand", () => {
   test.each([
@@ -62,5 +62,23 @@ describe("getShellSourceCommand", () => {
   test("escapes shell-specific quote characters", () => {
     expect(getShellSourceCommand(Shell.Bash, "/tmp/user's config/init.sh")).toContain("'/tmp/user'\\''s config/init.sh'");
     expect(getShellSourceCommand(Shell.Pwsh, "/tmp/user's config/init.ps1")).toContain("'/tmp/user''s config/init.ps1'");
+  });
+});
+
+describe("hasLegacyShellConfig", () => {
+  test("detects the original shell plugin marker", () => {
+    expect(hasLegacyShellConfig("# inshellisense shell plugin", Shell.Zsh, false)).toBe(true);
+  });
+
+  test("detects the original generated plugin path", () => {
+    expect(hasLegacyShellConfig("source ~/.inshellisense/zsh/init.zsh", Shell.Zsh, false)).toBe(true);
+  });
+
+  test("detects the current legacy path after resources migrate", () => {
+    expect(hasLegacyShellConfig("source ~/.inshellisense/init/zsh/init.zsh", Shell.Zsh, true)).toBe(true);
+  });
+
+  test("allows the current legacy path before resources migrate", () => {
+    expect(hasLegacyShellConfig("source ~/.inshellisense/init/zsh/init.zsh", Shell.Zsh, false)).toBe(false);
   });
 });

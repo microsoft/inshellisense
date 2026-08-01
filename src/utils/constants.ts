@@ -11,10 +11,15 @@ export const resolveXdgConfigHome = (value: string | undefined, platform: NodeJS
   return platform !== "win32" && value != null && path.isAbsolute(value) ? value : undefined;
 };
 
-export const resolveResourcesPath = (homeDirectory: string, xdgConfigDirectory: string | undefined, hasLegacyResources: boolean): string => {
-  return xdgConfigDirectory == null || hasLegacyResources
+export const resolveXdgDataHome = (value: string | undefined, homeDirectory: string, platform: NodeJS.Platform): string | undefined => {
+  if (platform === "win32") return;
+  return value != null && path.isAbsolute(value) ? value : path.join(homeDirectory, ".local", "share");
+};
+
+export const resolveResourcesPath = (homeDirectory: string, xdgDataDirectory: string | undefined, hasLegacyResources: boolean): string => {
+  return xdgDataDirectory == null || hasLegacyResources
     ? path.join(homeDirectory, `.${inshellisenseFolderName}`)
-    : path.join(xdgConfigDirectory, inshellisenseFolderName);
+    : path.join(xdgDataDirectory, inshellisenseFolderName);
 };
 
 export const resolveConfigFilePath = (homeDirectory: string, xdgConfigDirectory: string | undefined): string => {
@@ -22,15 +27,27 @@ export const resolveConfigFilePath = (homeDirectory: string, xdgConfigDirectory:
   return path.join(configDirectory, inshellisenseFolderName, "rc.toml");
 };
 
+export const getResourcePaths = (resourcesPath: string) => ({
+  logging: path.join(resourcesPath, "log"),
+  native: path.join(resourcesPath, "native"),
+  shell: path.join(resourcesPath, "shell"),
+  spec: path.join(resourcesPath, "spec"),
+  init: path.join(resourcesPath, "init"),
+  version: path.join(resourcesPath, "version.txt"),
+});
+
 const homeDirectory = os.homedir();
 const legacyResourcesPath = path.join(homeDirectory, `.${inshellisenseFolderName}`);
 export const xdgConfigHome = resolveXdgConfigHome(process.env.XDG_CONFIG_HOME, process.platform);
-export const allResourcesPath = resolveResourcesPath(homeDirectory, xdgConfigHome, fs.existsSync(legacyResourcesPath));
+export const xdgDataHome = resolveXdgDataHome(process.env.XDG_DATA_HOME, homeDirectory, process.platform);
+export const preferredResourcesPath = resolveResourcesPath(homeDirectory, xdgDataHome, false);
+export const allResourcesPath = resolveResourcesPath(homeDirectory, xdgDataHome, fs.existsSync(legacyResourcesPath));
 export const usesLegacyResources = allResourcesPath === legacyResourcesPath;
 export const xdgConfigPath = resolveConfigFilePath(homeDirectory, xdgConfigHome);
-export const loggingResourcesPath = path.join(allResourcesPath, "log");
-export const nativeResourcesPath = path.join(allResourcesPath, "native");
-export const shellResourcesPath = path.join(allResourcesPath, "shell");
-export const specResourcesPath = path.join(allResourcesPath, "spec");
-export const initResourcesPath = path.join(allResourcesPath, "init");
-export const versionResourcePath = path.join(allResourcesPath, "version.txt");
+const resourcePaths = getResourcePaths(allResourcesPath);
+export const loggingResourcesPath = resourcePaths.logging;
+export const nativeResourcesPath = resourcePaths.native;
+export const shellResourcesPath = resourcePaths.shell;
+export const specResourcesPath = resourcePaths.spec;
+export const initResourcesPath = resourcePaths.init;
+export const versionResourcePath = resourcePaths.version;

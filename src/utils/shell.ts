@@ -72,15 +72,19 @@ export const checkLegacyConfigs = async (): Promise<Shell[]> => {
     const profilePath = await getProfilePath(shell);
     if (profilePath != null && fs.existsSync(profilePath)) {
       const profile = await fsAsync.readFile(profilePath, "utf8");
-      if (profile.includes("inshellisense shell plugin")) {
-        shellsWithLegacyConfig.push(shell);
-      }
-      if (profile.includes(`~/.inshellisense/${shell}/init.`)) {
-        shellsWithLegacyConfig.push(shell);
-      }
+      if (hasLegacyShellConfig(profile, shell, !usesLegacyResources)) shellsWithLegacyConfig.push(shell);
     }
   }
   return shellsWithLegacyConfig;
+};
+
+export const hasLegacyShellConfig = (profile: string, shell: Shell, resourcesMigrated: boolean): boolean => {
+  const configName = getShellConfigName(shell);
+  return (
+    profile.includes("inshellisense shell plugin") ||
+    profile.includes(`~/.inshellisense/${shell}/init.`) ||
+    (resourcesMigrated && configName != null && profile.includes(`~/.inshellisense/init/${shell}/${configName}`))
+  );
 };
 
 export const checkShellConfigPlugin = async () => {
@@ -124,12 +128,12 @@ const getProfilePath = async (shell: Shell): Promise<string | undefined> => {
   }
 };
 
-export const createShellConfigs = async () => {
+export const createShellConfigs = async (initResourcesDirectory = initResourcesPath) => {
   for (const shell of supportedShells) {
     const shellConfigName = getShellConfigName(shell);
     if (shellConfigName == null) continue;
-    await fsAsync.mkdir(path.join(initResourcesPath, shell), { recursive: true });
-    await fsAsync.writeFile(path.join(initResourcesPath, shell, shellConfigName), getShellConfig(shell));
+    await fsAsync.mkdir(path.join(initResourcesDirectory, shell), { recursive: true });
+    await fsAsync.writeFile(path.join(initResourcesDirectory, shell, shellConfigName), getShellConfig(shell));
   }
 };
 

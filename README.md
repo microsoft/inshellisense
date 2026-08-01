@@ -97,7 +97,7 @@ inshellisense supports the following shells:
 
 All configuration is done through a [toml](https://toml.io/) file. You can create this file at `~/.inshellisenserc` or `$XDG_CONFIG_HOME/inshellisense/rc.toml`. When `XDG_CONFIG_HOME` is unset, empty, or not an absolute path, the XDG configuration path defaults to `~/.config/inshellisense/rc.toml`. The [JSON schema](https://json-schema.org/) for the configuration file can be found [here](https://github.com/microsoft/inshellisense/blob/main/src/utils/config.ts).
 
-On new Unix-like installations, setting `XDG_CONFIG_HOME` to an absolute path also stores generated resources under `$XDG_CONFIG_HOME/inshellisense`. Existing installations continue using `~/.inshellisense` when that directory is present so current shell plugins keep working. An unset, empty, or non-absolute value also uses `~/.inshellisense`; Windows always uses the existing location.
+On new Unix-like installations, generated resources are stored under `$XDG_DATA_HOME/inshellisense`. When `XDG_DATA_HOME` is unset, empty, or non-absolute, it defaults to `~/.local/share` as defined by the XDG specification. Existing installations continue using `~/.inshellisense` when that directory is present so current shell plugins keep working; Windows also keeps using that location. Running `is reinit` migrates legacy resources to the XDG data directory.
 
 ### Keybindings
 

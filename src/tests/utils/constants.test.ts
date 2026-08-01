@@ -2,10 +2,11 @@
 // Licensed under the MIT License.
 
 import path from "node:path";
-import { resolveConfigFilePath, resolveResourcesPath, resolveXdgConfigHome } from "../../utils/constants.js";
+import { resolveConfigFilePath, resolveResourcesPath, resolveXdgConfigHome, resolveXdgDataHome } from "../../utils/constants.js";
 
 const homeDirectory = path.join(path.sep, "home", "tester");
 const xdgConfigDirectory = path.join(path.sep, "tmp", "xdg");
+const xdgDataDirectory = path.join(path.sep, "tmp", "xdg-data");
 
 describe("resolveXdgConfigHome", () => {
   test("uses an absolute XDG config directory on Unix", () => {
@@ -26,12 +27,26 @@ describe("resolveResourcesPath", () => {
     expect(resolveResourcesPath(homeDirectory, undefined, false)).toBe(path.join(homeDirectory, ".inshellisense"));
   });
 
-  test("uses an unhidden directory below XDG_CONFIG_HOME for a new installation", () => {
-    expect(resolveResourcesPath(homeDirectory, xdgConfigDirectory, false)).toBe(path.join(xdgConfigDirectory, "inshellisense"));
+  test("uses an unhidden directory below XDG_DATA_HOME for a new installation", () => {
+    expect(resolveResourcesPath(homeDirectory, xdgDataDirectory, false)).toBe(path.join(xdgDataDirectory, "inshellisense"));
   });
 
   test("preserves an existing legacy resource directory", () => {
-    expect(resolveResourcesPath(homeDirectory, xdgConfigDirectory, true)).toBe(path.join(homeDirectory, ".inshellisense"));
+    expect(resolveResourcesPath(homeDirectory, xdgDataDirectory, true)).toBe(path.join(homeDirectory, ".inshellisense"));
+  });
+});
+
+describe("resolveXdgDataHome", () => {
+  test("uses an absolute XDG data directory on Unix", () => {
+    expect(resolveXdgDataHome(xdgDataDirectory, homeDirectory, "linux")).toBe(xdgDataDirectory);
+  });
+
+  test.each([undefined, "", "relative/xdg", "~/.local/share"])("uses the XDG default for an unset, empty, or non-absolute data directory", (value) => {
+    expect(resolveXdgDataHome(value, homeDirectory, "linux")).toBe(path.join(homeDirectory, ".local", "share"));
+  });
+
+  test("preserves the legacy location on Windows", () => {
+    expect(resolveXdgDataHome(xdgDataDirectory, homeDirectory, "win32")).toBeUndefined();
   });
 });
 
