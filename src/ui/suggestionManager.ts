@@ -20,7 +20,6 @@ const suggestionWidth = 40;
 const descriptionWidth = 30;
 const descriptionHeight = 5;
 const borderWidth = 2;
-const activeSuggestionBackgroundColor = "#7D56F4";
 export const getMaxLines = () => borderWidth + Math.max(getMaxSuggestions(), descriptionHeight) + 1; // accounts when there is a unhandled newline at the end of the command
 export const MIN_WIDTH = borderWidth + descriptionWidth;
 
@@ -149,7 +148,7 @@ export class SuggestionManager {
       suggestions.map((suggestion, idx) => {
         const suggestionText = `${suggestion.icon} ${suggestion.name}`;
         const truncatedSuggestion = truncateText(suggestionText, suggestionWidth - 2);
-        return idx == activeSuggestionIdx ? chalk.bgHex(activeSuggestionBackgroundColor)(truncatedSuggestion) : truncatedSuggestion;
+        return idx == activeSuggestionIdx ? chalk.bgHex(getConfig().activeSuggestionBackgroundColor)(truncatedSuggestion) : truncatedSuggestion;
       }),
       suggestionWidth,
     );

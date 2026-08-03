@@ -9,11 +9,14 @@
 ### Installation
 
 **npm (recommended)**
+
 ```shell
 npm install -g @microsoft/inshellisense
 is init
 ```
+
 **homebrew (macOS/linux)**
+
 ```shell
 brew tap microsoft/inshellisense https://github.com/microsoft/inshellisense
 brew install inshellisense
@@ -140,11 +143,17 @@ useNerdFont = true
 
 You can change the maximum number of suggestions displayed in the autocomplete list at one time in your config file:
 
-
 ```toml
 maxSuggestions = 10
 ```
 
+### Active Suggestion Background Color
+
+You can customize the active suggestion's background with a `#RRGGBB` hex color.
+
+```toml
+activeSuggestionBackgroundColor = "#2E7D32"
+```
 
 ## Unsupported Specs
 

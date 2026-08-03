@@ -32,6 +32,7 @@ type Config = {
   useAliases: boolean;
   useNerdFont: boolean;
   maxSuggestions?: number;
+  activeSuggestionBackgroundColor: string;
 };
 
 const bindingSchema: JSONSchemaType<Binding> = {
@@ -87,6 +88,12 @@ const configSchema = {
       nullable: true,
       default: 5,
     },
+    activeSuggestionBackgroundColor: {
+      type: "string",
+      nullable: true,
+      pattern: "^#[0-9A-Fa-f]{6}$",
+      default: "#7D56F4",
+    },
   },
   additionalProperties: false,
 };
@@ -110,6 +117,7 @@ let globalConfig: Config = {
   },
   useAliases: false,
   useNerdFont: false,
+  activeSuggestionBackgroundColor: "#7D56F4",
 };
 
 export const getConfig = (): Config => globalConfig;
@@ -140,6 +148,7 @@ export const loadConfig = async (program: Command) => {
         useAliases: config.useAliases ?? false,
         useNerdFont: config?.useNerdFont ?? false,
         maxSuggestions: config?.maxSuggestions ?? 5,
+        activeSuggestionBackgroundColor: config?.activeSuggestionBackgroundColor ?? "#7D56F4",
       };
     }
   }
