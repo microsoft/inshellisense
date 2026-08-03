@@ -29,6 +29,7 @@ export const resetLine = CSI + "2K";
 export const enableWin32InputMode = CSI + "?9001h";
 export const disableWin32InputMode = CSI + "?9001l";
 export const resetToInitialState = ESC + "c"; // RIS - Reset to Initial State
+export const index = ESC + "D"; // IND - move down a row keeping the column (avoids newline auto-return, windows terminal default)
 export const cursorBackward = (count = 1) => CSI + count + "D";
 export const cursorForward = (count = 1) => CSI + count + "C";
 export const cursorTo = ({ x, y }: { x?: number; y?: number }) => {
