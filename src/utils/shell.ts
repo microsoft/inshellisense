@@ -9,7 +9,7 @@ import fs from "node:fs";
 import os from "node:os";
 import fsAsync from "node:fs/promises";
 import util from "node:util";
-import { shellResourcesPath, initResourcesPath, usesLegacyResources } from "./constants.js";
+import { shellResourcesPath, initResourcesPath, usesLegacyResources, xdgConfigPath } from "./constants.js";
 import childProcess from "node:child_process";
 import { KeyPressEvent } from "../ui/suggestionManager.js";
 import log from "./log.js";
@@ -68,22 +68,25 @@ export const checkShellConfigs = (): Shell[] => {
 
 export const checkLegacyConfigs = async (): Promise<Shell[]> => {
   const shellsWithLegacyConfig: Shell[] = [];
+  const flagLegacyResourcePlugin = shouldFlagLegacyResourcePlugin(usesLegacyResources, fs.existsSync(xdgConfigPath));
   for (const shell of supportedShells) {
     const profilePath = await getProfilePath(shell);
     if (profilePath != null && fs.existsSync(profilePath)) {
       const profile = await fsAsync.readFile(profilePath, "utf8");
-      if (hasLegacyShellConfig(profile, shell, !usesLegacyResources)) shellsWithLegacyConfig.push(shell);
+      if (hasLegacyShellConfig(profile, shell, flagLegacyResourcePlugin)) shellsWithLegacyConfig.push(shell);
     }
   }
   return shellsWithLegacyConfig;
 };
 
-export const hasLegacyShellConfig = (profile: string, shell: Shell, resourcesMigrated: boolean): boolean => {
+export const shouldFlagLegacyResourcePlugin = (usesLegacyResources: boolean, hasXdgConfig: boolean): boolean => !usesLegacyResources || hasXdgConfig;
+
+export const hasLegacyShellConfig = (profile: string, shell: Shell, flagLegacyResourcePlugin: boolean): boolean => {
   const configName = getShellConfigName(shell);
   return (
     profile.includes("inshellisense shell plugin") ||
     profile.includes(`~/.inshellisense/${shell}/init.`) ||
-    (resourcesMigrated && configName != null && profile.includes(`~/.inshellisense/init/${shell}/${configName}`))
+    (flagLegacyResourcePlugin && configName != null && profile.includes(`~/.inshellisense/init/${shell}/${configName}`))
   );
 };
 

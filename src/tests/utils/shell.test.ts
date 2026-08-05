@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { getShellSourceCommand, hasLegacyShellConfig, Shell } from "../../utils/shell.js";
+import { getShellSourceCommand, hasLegacyShellConfig, Shell, shouldFlagLegacyResourcePlugin } from "../../utils/shell.js";
 
 describe("getShellSourceCommand", () => {
   test.each([
@@ -74,11 +74,21 @@ describe("hasLegacyShellConfig", () => {
     expect(hasLegacyShellConfig("source ~/.inshellisense/zsh/init.zsh", Shell.Zsh, false)).toBe(true);
   });
 
-  test("detects the current legacy path after resources migrate", () => {
+  test("detects the current path when it should be treated as legacy", () => {
     expect(hasLegacyShellConfig("source ~/.inshellisense/init/zsh/init.zsh", Shell.Zsh, true)).toBe(true);
   });
 
-  test("allows the current legacy path before resources migrate", () => {
+  test("allows the current path while legacy resources remain current", () => {
     expect(hasLegacyShellConfig("source ~/.inshellisense/init/zsh/init.zsh", Shell.Zsh, false)).toBe(false);
+  });
+});
+
+describe("shouldFlagLegacyResourcePlugin", () => {
+  test.each([
+    ["legacy resources without an XDG config", true, false, false],
+    ["migrated resources without an XDG config", false, false, true],
+    ["legacy resources with an XDG config", true, true, true],
+  ])("%s", (_case, usesLegacyResources, hasXdgConfig, expected) => {
+    expect(shouldFlagLegacyResourcePlugin(usesLegacyResources, hasXdgConfig)).toBe(expected);
   });
 });
