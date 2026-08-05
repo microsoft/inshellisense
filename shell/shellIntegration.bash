@@ -16,9 +16,15 @@ else
 	fi
 fi
 
-if [ -r ~/.inshellisense/shell/bash-preexec.sh ]; then
-    . ~/.inshellisense/shell/bash-preexec.sh
+__is_shell_source="${BASH_SOURCE[0]}"
+if command -v cygpath > /dev/null 2>&1; then
+	__is_shell_source=$(cygpath -u "$__is_shell_source")
 fi
+
+if [ -r "${__is_shell_source%/*}/bash-preexec.sh" ]; then
+	. "${__is_shell_source%/*}/bash-preexec.sh"
+fi
+unset __is_shell_source
 
 __is_prompt_start() {
 	builtin printf '\e]6973;PS\a'

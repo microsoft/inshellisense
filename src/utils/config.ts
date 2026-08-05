@@ -8,7 +8,7 @@ import fsAsync from "node:fs/promises";
 import toml from "toml";
 import _Ajv, { JSONSchemaType } from "ajv";
 import { Command } from "commander";
-import { allResourcesPath } from "./constants.js";
+import { allResourcesPath, xdgConfigPath } from "./constants.js";
 
 const Ajv = _Ajv as unknown as typeof _Ajv.default;
 const ajv = new Ajv();
@@ -99,11 +99,9 @@ const configSchema = {
 };
 
 const rcFile = ".inshellisenserc";
-const xdgFile = "rc.toml";
 const rcPath = path.join(os.homedir(), rcFile);
-const xdgPath = path.join(os.homedir(), ".config", "inshellisense", xdgFile);
 
-const configPaths = [rcPath, xdgPath];
+const configPaths = [rcPath, xdgConfigPath];
 
 let globalConfig: Config = {
   bindings: {

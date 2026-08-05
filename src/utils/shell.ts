@@ -9,7 +9,7 @@ import fs from "node:fs";
 import os from "node:os";
 import fsAsync from "node:fs/promises";
 import util from "node:util";
-import { shellResourcesPath, initResourcesPath } from "./constants.js";
+import { shellResourcesPath, initResourcesPath, usesLegacyResources, xdgConfigPath } from "./constants.js";
 import childProcess from "node:child_process";
 import { KeyPressEvent } from "../ui/suggestionManager.js";
 import log from "./log.js";
@@ -68,19 +68,26 @@ export const checkShellConfigs = (): Shell[] => {
 
 export const checkLegacyConfigs = async (): Promise<Shell[]> => {
   const shellsWithLegacyConfig: Shell[] = [];
+  const flagLegacyResourcePlugin = shouldFlagLegacyResourcePlugin(usesLegacyResources, fs.existsSync(xdgConfigPath));
   for (const shell of supportedShells) {
     const profilePath = await getProfilePath(shell);
     if (profilePath != null && fs.existsSync(profilePath)) {
       const profile = await fsAsync.readFile(profilePath, "utf8");
-      if (profile.includes("inshellisense shell plugin")) {
-        shellsWithLegacyConfig.push(shell);
-      }
-      if (profile.includes(`~/.inshellisense/${shell}/init.`)) {
-        shellsWithLegacyConfig.push(shell);
-      }
+      if (hasLegacyShellConfig(profile, shell, flagLegacyResourcePlugin)) shellsWithLegacyConfig.push(shell);
     }
   }
   return shellsWithLegacyConfig;
+};
+
+export const shouldFlagLegacyResourcePlugin = (usesLegacyResources: boolean, hasXdgConfig: boolean): boolean => !usesLegacyResources || hasXdgConfig;
+
+export const hasLegacyShellConfig = (profile: string, shell: Shell, flagLegacyResourcePlugin: boolean): boolean => {
+  const configName = getShellConfigName(shell);
+  return (
+    profile.includes("inshellisense shell plugin") ||
+    profile.includes(`~/.inshellisense/${shell}/init.`) ||
+    (flagLegacyResourcePlugin && configName != null && profile.includes(`~/.inshellisense/init/${shell}/${configName}`))
+  );
 };
 
 export const checkShellConfigPlugin = async () => {
@@ -124,12 +131,12 @@ const getProfilePath = async (shell: Shell): Promise<string | undefined> => {
   }
 };
 
-export const createShellConfigs = async () => {
+export const createShellConfigs = async (initResourcesDirectory = initResourcesPath) => {
   for (const shell of supportedShells) {
     const shellConfigName = getShellConfigName(shell);
     if (shellConfigName == null) continue;
-    await fsAsync.mkdir(path.join(initResourcesPath, shell), { recursive: true });
-    await fsAsync.writeFile(path.join(initResourcesPath, shell, shellConfigName), getShellConfig(shell));
+    await fsAsync.mkdir(path.join(initResourcesDirectory, shell), { recursive: true });
+    await fsAsync.writeFile(path.join(initResourcesDirectory, shell, shellConfigName), getShellConfig(shell));
   }
 };
 
@@ -276,22 +283,38 @@ export const endsWithPathSeparator = (dir: string, shell: Shell) => {
 // xonsh re-writes the prompt after accepting a command
 export const getShellPromptRewrites = (shell: Shell) => shell == Shell.Nushell || shell == Shell.Xonsh;
 
-export const getShellSourceCommand = (shell: Shell): string => {
+const quotePosixPath = (filePath: string) => `'${filePath.replaceAll("'", "'\\''")}'`;
+const quotePowerShellPath = (filePath: string) => `'${filePath.replaceAll("'", "''")}'`;
+
+const getShellInitPath = (shell: Shell): string | undefined => {
+  const configName = getShellConfigName(shell);
+  if (configName == null) return;
+  return usesLegacyResources ? `~/.inshellisense/init/${shell}/${configName}` : path.join(initResourcesPath, shell, configName);
+};
+
+export const getShellSourceCommand = (shell: Shell, initFilePath?: string): string => {
+  const resolvedInitFilePath = initFilePath ?? getShellInitPath(shell);
+  if (resolvedInitFilePath == null) return "";
+  const posixPath = resolvedInitFilePath.startsWith("~/") ? resolvedInitFilePath : quotePosixPath(resolvedInitFilePath);
+
   switch (shell) {
     case Shell.Bash:
-      return `[ -f ~/.inshellisense/init/bash/init.sh ] && source ~/.inshellisense/init/bash/init.sh`;
+      return `[ -f ${posixPath} ] && source ${posixPath}`;
     case Shell.Powershell:
-      return `if ( Test-Path '~/.inshellisense/init/powershell/init.ps1' -PathType Leaf ) { . ~/.inshellisense/init/powershell/init.ps1 }`;
     case Shell.Pwsh:
-      return `if ( Test-Path '~/.inshellisense/init/pwsh/init.ps1' -PathType Leaf ) { . ~/.inshellisense/init/pwsh/init.ps1 }`;
+      return resolvedInitFilePath.startsWith("~/")
+        ? `if ( Test-Path '${resolvedInitFilePath}' -PathType Leaf ) { . ${resolvedInitFilePath} }`
+        : `if ( Test-Path ${quotePowerShellPath(resolvedInitFilePath)} -PathType Leaf ) { . ${quotePowerShellPath(resolvedInitFilePath)} }`;
     case Shell.Zsh:
-      return `[[ -f ~/.inshellisense/init/zsh/init.zsh ]] && source ~/.inshellisense/init/zsh/init.zsh`;
+      return `[[ -f ${posixPath} ]] && source ${posixPath}`;
     case Shell.Fish:
-      return `test -f ~/.inshellisense/init/fish/init.fish && source ~/.inshellisense/init/fish/init.fish`;
+      return `test -f ${posixPath} && source ${posixPath}`;
     case Shell.Xonsh:
-      return `p"~/.inshellisense/init/xonsh/init.xsh".exists() && source "~/.inshellisense/init/xonsh/init.xsh"`;
+      return `p${JSON.stringify(resolvedInitFilePath)}.exists() && source ${JSON.stringify(resolvedInitFilePath)}`;
     case Shell.Nushell:
-      return `if ( '~/.inshellisense/init/nu/init.nu' | path exists ) { source ~/.inshellisense/init/nu/init.nu }`;
+      return resolvedInitFilePath.startsWith("~/")
+        ? `if ( '${resolvedInitFilePath}' | path exists ) { source ${resolvedInitFilePath} }`
+        : `if ( ${JSON.stringify(resolvedInitFilePath)} | path exists ) { source ${JSON.stringify(resolvedInitFilePath)} }`;
   }
   return "";
 };
