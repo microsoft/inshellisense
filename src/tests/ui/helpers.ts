@@ -6,7 +6,8 @@ import path from "node:path";
 import fs from "node:fs";
 import url from "node:url";
 import { ShellUse } from "@microsoft/shell-use";
-import type { ExpectTextOptions, Shell, WaitTextOptions } from "@microsoft/shell-use";
+import { trackTerminal, untrackTerminal } from "@microsoft/shell-use/test";
+import type { Shell } from "@microsoft/shell-use";
 
 export type ShellConfig = {
   label: string;
@@ -37,21 +38,7 @@ const buildEntry = path.resolve(path.dirname(url.fileURLToPath(import.meta.url))
 const expectTextTimeout = 30_000;
 const idleTimeout = 15_000;
 const promptTimeout = 20_000;
-const startupAttempts = 3;
-
-class E2EShellUse extends ShellUse {
-  override expectText(text: string, opts: ExpectTextOptions = {}): Promise<void> {
-    return super.expectText(text, { timeout: expectTextTimeout, ...opts });
-  }
-
-  override waitText(text: string, opts: WaitTextOptions = {}): Promise<void> {
-    return super.waitText(text, { timeout: expectTextTimeout, ...opts });
-  }
-
-  override waitIdle(opts: { timeout?: number } = {}): Promise<void> {
-    return super.waitIdle({ timeout: idleTimeout, ...opts });
-  }
-}
+const timeouts = { text: expectTextTimeout, idle: idleTimeout };
 
 export const expectPrompt = async (terminal: ShellUse, timeout = promptTimeout): Promise<void> => {
   await terminal.expectText(">  ", { timeout });
@@ -59,38 +46,43 @@ export const expectPrompt = async (terminal: ShellUse, timeout = promptTimeout):
 };
 
 export const closeSession = async (terminal: ShellUse | undefined): Promise<void> => {
-  try {
-    await terminal?.close();
-  } catch {
-    /*empty*/
+  if (terminal) {
+    await terminal.closeQuiet();
+    untrackTerminal(terminal);
   }
 };
 
-let counter = 0;
-const nextSessionName = (label: string) => `is-e2e-${label}-${process.pid}-${counter++}`;
 const baseEnv = { ISTERM: "0", ISTERM_TESTING: "0" };
-const withStartupRetries = async (label: string, start: (terminal: ShellUse) => Promise<void>): Promise<ShellUse> => {
-  let lastError: unknown;
-  for (let attempt = 0; attempt < startupAttempts; attempt++) {
-    const terminal = new E2EShellUse(nextSessionName(label));
-    try {
-      await start(terminal);
-      return terminal;
-    } catch (e) {
-      lastError = e;
-      await closeSession(terminal);
-    }
-  }
-  throw lastError;
+const ephemeralTerminal = (): ShellUse => {
+  const terminal = ShellUse.ephemeral(undefined, { timeouts });
+  trackTerminal(terminal);
+  return terminal;
 };
 
-export const startSession = (config: ShellConfig, args: string[], cols = 80, rows = 30): Promise<ShellUse> =>
-  withStartupRetries(config.label, async (terminal) => {
-    await terminal.run("node", [buildEntry, ...args], { cols, rows, env: { ...baseEnv, ...config.env } });
+export const startSession = async (config: ShellConfig, args: string[], cols = 80, rows = 30): Promise<ShellUse> => {
+  const terminal = ephemeralTerminal();
+  try {
+    await terminal.run("node", [buildEntry, ...args], {
+      cols,
+      rows,
+      env: { ...baseEnv, ...config.env },
+      retries: 2,
+    });
     await expectPrompt(terminal);
-  });
+    return terminal;
+  } catch (error) {
+    await closeSession(terminal);
+    throw error;
+  }
+};
 
-export const startShell = (label: string, shell: Shell): Promise<ShellUse> =>
-  withStartupRetries(label, async (terminal) => {
-    await terminal.open({ shell, env: baseEnv });
-  });
+export const startShell = async (shell: Shell): Promise<ShellUse> => {
+  const terminal = ephemeralTerminal();
+  try {
+    await terminal.open({ shell, env: baseEnv, retries: 2 });
+    return terminal;
+  } catch (error) {
+    await closeSession(terminal);
+    throw error;
+  }
+};

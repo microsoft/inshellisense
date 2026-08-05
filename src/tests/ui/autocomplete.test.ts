@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 import { jest } from "@jest/globals";
-import { ShellUse } from "@microsoft/shell-use";
+import { terminalSnapshot } from "@microsoft/shell-use/test";
+import type { ShellUse } from "@microsoft/shell-use/test";
 import { closeSession, configs, expectPrompt, returnChar, startSession } from "./helpers";
 
 const accent = "#7d56f4";
@@ -22,21 +23,21 @@ describe("resize recovery", () => {
     await terminal.type("git st");
     await terminal.expectText("stage");
     await terminal.waitIdle();
-    const initialView = (await terminal.text()).trimEnd();
+    const initialView = terminalSnapshot(await terminal.text());
     expect(initialView).toMatchSnapshot("initial 80 column view");
 
     await terminal.resize(40, 30);
     await terminal.expectText("┘", { not: true });
-    expect((await terminal.text()).trimEnd()).toMatchSnapshot("40 column view");
+    expect(terminalSnapshot(await terminal.text())).toMatchSnapshot("40 column view");
 
     await terminal.resize(21, 30);
     await terminal.expectText("┘", { not: true });
-    expect((await terminal.text()).trimEnd()).toMatchSnapshot("21 column view");
+    expect(terminalSnapshot(await terminal.text())).toMatchSnapshot("21 column view");
 
     await terminal.resize(80, 30);
     await terminal.waitIdle();
     await terminal.expectText("stage");
-    const restoredView = (await terminal.text()).trimEnd();
+    const restoredView = terminalSnapshot(await terminal.text());
     expect(restoredView).toMatchSnapshot("restored 80 column view");
     expect(restoredView).toBe(initialView);
   });

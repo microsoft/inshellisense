@@ -7,17 +7,17 @@ exports[`resize recovery restores input and suggestions after becoming too narro
 exports[`resize recovery restores input and suggestions after becoming too narrow: initial 80 column view 1`] = `
 "> git st
         ┌──────────────────────────────────────┐┌────────────────────────────┐
-        │📦  stage                              ││Add file contents to the    │
-        │📦  status                             ││staging area                │
-        │📦  stash                              │└────────────────────────────┘
+        │📦 stage                              ││Add file contents to the    │
+        │📦 status                             ││staging area                │
+        │📦 stash                              │└────────────────────────────┘
         └──────────────────────────────────────┘"
 `;
 
 exports[`resize recovery restores input and suggestions after becoming too narrow: restored 80 column view 1`] = `
 "> git st
         ┌──────────────────────────────────────┐┌────────────────────────────┐
-        │📦  stage                              ││Add file contents to the    │
-        │📦  status                             ││staging area                │
-        │📦  stash                              │└────────────────────────────┘
+        │📦 stage                              ││Add file contents to the    │
+        │📦 status                             ││staging area                │
+        │📦 stash                              │└────────────────────────────┘
         └──────────────────────────────────────┘"
 `;

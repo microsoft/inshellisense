@@ -3,7 +3,7 @@
 
 import os from "node:os";
 import { jest } from "@jest/globals";
-import { ShellUse } from "@microsoft/shell-use";
+import type { ShellUse } from "@microsoft/shell-use/test";
 import type { Shell } from "@microsoft/shell-use";
 import { closeSession, startSession, startShell } from "./helpers";
 
@@ -30,7 +30,7 @@ describe("status checks", () => {
   describe("outside inshellisense session", () => {
     let terminal: ShellUse;
     beforeEach(async () => {
-      terminal = await startShell("status-outside", shell);
+      terminal = await startShell(shell);
     });
     afterEach(async () => {
       await closeSession(terminal);
