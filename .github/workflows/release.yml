@@ -79,7 +79,7 @@ jobs:
     needs: [validate, build]
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       id-token: write
     steps:
       - uses: actions/checkout@v6
@@ -106,6 +106,12 @@ jobs:
 
       - name: Package base package
         run: npm run package:base
+
+      - name: Upload packages to release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" ./pkg/microsoft-inshellisense-*.tgz --clobber
 
       - name: Publish packages
         shell: bash
