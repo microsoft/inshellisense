@@ -109,9 +109,9 @@ You can customize the keybindings for inshellisense by adding a `bindings` secti
 ```toml
 [bindings.acceptSuggestion]
 key = "tab"
-# shift and ctrl are optional and default to false
+# shift and control are optional and default to false
 shift = false
-ctrl = false
+control = false
 
 [bindings.nextSuggestion]
 key = "down"
