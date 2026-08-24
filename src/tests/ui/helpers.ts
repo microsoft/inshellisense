@@ -5,9 +5,9 @@ import os from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import url from "node:url";
-import { ShellUse } from "@microsoft/shell-use";
-import { trackTerminal, untrackTerminal } from "@microsoft/shell-use/test";
-import type { Shell } from "@microsoft/shell-use";
+import type { TuiTest } from "@microsoft/tui-test";
+import { createTerminal, untrackTerminal } from "@microsoft/tui-test/test";
+import type { Shell } from "@microsoft/tui-test";
 
 export type ShellConfig = {
   label: string;
@@ -40,12 +40,12 @@ const idleTimeout = 15_000;
 const promptTimeout = 20_000;
 const timeouts = { text: expectTextTimeout, idle: idleTimeout };
 
-export const expectPrompt = async (terminal: ShellUse, timeout = promptTimeout): Promise<void> => {
+export const expectPrompt = async (terminal: TuiTest, timeout = promptTimeout): Promise<void> => {
   await terminal.expectText(">  ", { timeout });
   await terminal.waitIdle();
 };
 
-export const closeSession = async (terminal: ShellUse | undefined): Promise<void> => {
+export const closeSession = async (terminal: TuiTest | undefined): Promise<void> => {
   if (terminal) {
     await terminal.closeQuiet();
     untrackTerminal(terminal);
@@ -53,21 +53,17 @@ export const closeSession = async (terminal: ShellUse | undefined): Promise<void
 };
 
 const baseEnv = { ISTERM: "0", ISTERM_TESTING: "0" };
-const ephemeralTerminal = (): ShellUse => {
-  const terminal = ShellUse.ephemeral(undefined, { timeouts });
-  trackTerminal(terminal);
-  return terminal;
-};
 
-export const startSession = async (config: ShellConfig, args: string[], cols = 80, rows = 30): Promise<ShellUse> => {
-  const terminal = ephemeralTerminal();
+export const startSession = async (config: ShellConfig, args: string[], cols = 80, rows = 30): Promise<TuiTest> => {
+  const terminal = await createTerminal({
+    program: ["node", buildEntry, ...args],
+    cols,
+    rows,
+    env: { ...baseEnv, ...config.env },
+    timeouts,
+    retries: 2,
+  });
   try {
-    await terminal.run("node", [buildEntry, ...args], {
-      cols,
-      rows,
-      env: { ...baseEnv, ...config.env },
-      retries: 2,
-    });
     await expectPrompt(terminal);
     return terminal;
   } catch (error) {
@@ -76,13 +72,4 @@ export const startSession = async (config: ShellConfig, args: string[], cols = 8
   }
 };
 
-export const startShell = async (shell: Shell): Promise<ShellUse> => {
-  const terminal = ephemeralTerminal();
-  try {
-    await terminal.open({ shell, env: baseEnv, retries: 2 });
-    return terminal;
-  } catch (error) {
-    await closeSession(terminal);
-    throw error;
-  }
-};
+export const startShell = async (shell: Shell): Promise<TuiTest> => createTerminal({ shell, env: baseEnv, timeouts, retries: 2 });

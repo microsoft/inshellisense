@@ -3,8 +3,8 @@
 
 import os from "node:os";
 import { jest } from "@jest/globals";
-import type { ShellUse } from "@microsoft/shell-use/test";
-import type { Shell } from "@microsoft/shell-use";
+import type { TuiTest } from "@microsoft/tui-test/test";
+import type { Shell } from "@microsoft/tui-test";
 import { closeSession, startSession, startShell } from "./helpers";
 
 const shell: Shell = os.platform() == "darwin" ? "zsh" : os.platform() == "linux" ? "bash" : "powershell";
@@ -13,7 +13,7 @@ jest.retryTimes(2, { logErrorsBeforeRetry: true });
 
 describe("status checks", () => {
   describe("inside inshellisense session", () => {
-    let terminal: ShellUse;
+    let terminal: TuiTest;
     beforeEach(async () => {
       terminal = await startSession({ label: "status", shell }, ["-T", "-s", shell]);
     });
@@ -28,7 +28,7 @@ describe("status checks", () => {
   });
 
   describe("outside inshellisense session", () => {
-    let terminal: ShellUse;
+    let terminal: TuiTest;
     beforeEach(async () => {
       terminal = await startShell(shell);
     });
