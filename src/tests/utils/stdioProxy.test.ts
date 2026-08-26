@@ -9,7 +9,7 @@ const createRouter = () => {
   const keypresses: string[] = [];
   const toggles: boolean[] = [];
   const proxy = new StdioProxy({
-    onCursorPositionReport: (data) => responses.push(data),
+    onTerminalResponse: (data) => responses.push(data),
     onWin32InputMode: (enabled) => toggles.push(enabled),
   });
   proxy.onKeypress((_value, key) => keypresses.push(key.sequence));
@@ -19,6 +19,7 @@ const createRouter = () => {
 test("consumes cursor-position reports without creating keypresses", () => {
   const { keypresses, responses, proxy } = createRouter();
 
+  proxy.handleOutput("\u001B[6n");
   proxy.handleInput(Buffer.from("\u001B[2;7R"));
 
   expect(responses).toEqual(["\u001B[2;7R"]);
@@ -28,8 +29,20 @@ test("consumes cursor-position reports without creating keypresses", () => {
 test("handles cursor-position reports split across chunks", () => {
   const { keypresses, responses, proxy } = createRouter();
 
+  proxy.handleOutput("\u001B[6n");
   proxy.handleInput(Buffer.from("\u001B[2;"));
   proxy.handleInput(Buffer.from("7R"));
+
+  expect(responses).toEqual(["\u001B[2;7R"]);
+  expect(keypresses).toEqual([]);
+});
+
+test("handles cursor-position reports split after escape", () => {
+  const { keypresses, responses, proxy } = createRouter();
+
+  proxy.handleOutput("\u001B[6n");
+  proxy.handleInput(Buffer.from("\u001B"));
+  proxy.handleInput(Buffer.from("[2;7R"));
 
   expect(responses).toEqual(["\u001B[2;7R"]);
   expect(keypresses).toEqual([]);
@@ -38,10 +51,82 @@ test("handles cursor-position reports split across chunks", () => {
 test("consumes private cursor-position reports", () => {
   const { keypresses, responses, proxy } = createRouter();
 
+  proxy.handleOutput("\u001B[?6n");
   proxy.handleInput(Buffer.from("\u001B[?2;7R"));
 
   expect(responses).toEqual(["\u001B[?2;7R"]);
   expect(keypresses).toEqual([]);
+});
+
+test.each([
+  ["foreground", "\u001B]10;?\u0007", "\u001B]10;rgb:ffff/ffff/ffff\u0007"],
+  ["background", "\u001B]11;?\u0007", "\u001B]11;rgb:0000/0000/0000\u0007"],
+  ["cursor", "\u001B]12;?\u001B\\", "\u001B]12;rgb:ffff/ffff/ffff\u001B\\"],
+])("routes requested %s color reports without creating keypresses", (_name, query, response) => {
+  const { keypresses, responses, proxy } = createRouter();
+
+  expect(proxy.handleOutput(query)).toBe(query);
+  proxy.handleInput(Buffer.from(response));
+
+  expect(responses).toEqual([response]);
+  expect(keypresses).toEqual([]);
+});
+
+test("handles color queries and reports split across chunks", () => {
+  const { keypresses, responses, proxy } = createRouter();
+  const response = "\u001B]11;rgb:0000/0000/0000\u001B\\";
+
+  expect(proxy.handleOutput("\u001B]11;")).toBe("\u001B]11;");
+  expect(proxy.handleOutput("?\u001B\\")).toBe("?\u001B\\");
+  proxy.handleInput(Buffer.from("\u001B]11;rgb:0000/"));
+  proxy.handleInput(Buffer.from("0000/0000\u001B"));
+  proxy.handleInput(Buffer.from("\\"));
+
+  expect(responses).toEqual([response]);
+  expect(keypresses).toEqual([]);
+});
+
+test("handles color reports split after escape", () => {
+  const { keypresses, responses, proxy } = createRouter();
+  const response = "\u001B]11;rgb:0000/0000/0000\u0007";
+
+  proxy.handleOutput("\u001B]11;?\u0007");
+  proxy.handleInput(Buffer.from("\u001B"));
+  proxy.handleInput(Buffer.from("]11;rgb:0000/0000/0000\u0007"));
+
+  expect(responses).toEqual([response]);
+  expect(keypresses).toEqual([]);
+});
+
+test("discards unsolicited color reports instead of treating them as keypresses", () => {
+  const { keypresses, responses, proxy } = createRouter();
+
+  proxy.handleInput(Buffer.from("\u001B]11;rgb:0000/0000/0000\u0007"));
+
+  expect(responses).toEqual([]);
+  expect(keypresses).toEqual([]);
+});
+
+test("routes only the color report matching a pending query", () => {
+  const { keypresses, responses, proxy } = createRouter();
+  const background = "\u001B]11;rgb:0000/0000/0000\u0007";
+
+  proxy.handleOutput("\u001B]11;?\u0007");
+  proxy.handleInput(Buffer.from("\u001B]10;rgb:ffff/ffff/ffff\u0007"));
+  proxy.handleInput(Buffer.from(background));
+
+  expect(responses).toEqual([background]);
+  expect(keypresses).toEqual([]);
+});
+
+test("finishes draining as soon as pending terminal reports arrive", async () => {
+  const { proxy } = createRouter();
+  proxy.handleOutput("\u001B]11;?\u0007");
+
+  const drained = proxy.waitForPendingTerminalResponses();
+  proxy.handleInput(Buffer.from("\u001B]11;rgb:0000/0000/0000\u0007"));
+
+  await expect(drained).resolves.toBeUndefined();
 });
 
 test("keeps regular CSI key sequences in readline", () => {
@@ -51,6 +136,15 @@ test("keeps regular CSI key sequences in readline", () => {
 
   expect(responses).toEqual([]);
   expect(keypresses).toEqual(["\u001B[A"]);
+});
+
+test("keeps alt closing-bracket in readline when no color report is pending", () => {
+  const { keypresses, responses, proxy } = createRouter();
+
+  proxy.handleInput(Buffer.from("\u001B]"));
+
+  expect(responses).toEqual([]);
+  expect(keypresses).toEqual(["\u001B]"]);
 });
 
 test("captures outbound Win32 input mode toggles", () => {
