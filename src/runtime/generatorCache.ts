@@ -103,9 +103,15 @@ const waitForDebounce = async (signal?: AbortSignal): Promise<void> => {
   });
 };
 
-const executeGeneratorSafely = async (generator: Fig.Generator, tokens: string[], cwd: string, signal?: AbortSignal): Promise<GeneratorResult> => {
+const executeGeneratorSafely = async (
+  generator: Fig.Generator,
+  tokens: string[],
+  activeToken: string,
+  cwd: string,
+  signal?: AbortSignal,
+): Promise<GeneratorResult> => {
   try {
-    return { suggestions: await executeGenerator(generator, tokens, cwd, signal), cacheable: true };
+    return { suggestions: await executeGenerator(generator, tokens, activeToken, cwd, signal), cacheable: true };
   } catch (error) {
     if (signal?.aborted) signal.throwIfAborted();
     const err = typeof error === "string" ? error : error instanceof Error ? error.message : error;
@@ -129,7 +135,7 @@ const generate = async (
   const generationVersion = ++state.generationVersion;
   const generation = (async (): Promise<CompletedGeneration> => {
     if (debounce) await waitForDebounce(signal);
-    const result = await executeGeneratorSafely(generator, tokens, cwd, signal);
+    const result = await executeGeneratorSafely(generator, tokens, activeToken, cwd, signal);
     return { ...result, current: state.generationVersion === generationVersion };
   })();
   state.inFlight = { key: generationKey, promise: generation, signal };
