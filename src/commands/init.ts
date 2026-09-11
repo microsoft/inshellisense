@@ -10,7 +10,11 @@ const supportedShells = shells.join(", ");
 
 const action = (program: Command) => async (shell: string | undefined) => {
   await createShellConfigs();
-  unpackResources();
+  try {
+    await unpackResources();
+  } catch (error) {
+    program.error(`Failed to unpack resources: ${error instanceof Error ? error.message : String(error)}`, { exitCode: 1 });
+  }
 
   if (shell == null) {
     await render();
