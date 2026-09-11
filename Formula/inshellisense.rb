@@ -1,30 +1,30 @@
 class Inshellisense < Formula
   desc "IDE style command line auto complete"
   homepage "https://github.com/microsoft/inshellisense"
-  version "0.0.3"
+  version "0.0.4"
   license "MIT"
 
   on_macos do
     on_arm do
-      url "https://github.com/microsoft/inshellisense/releases/download/0.0.3/microsoft-inshellisense-darwin-arm64-0.0.3.tgz"
-      sha256 "a5ad5eead7a363aec1695dddbb6f64044710599ab46b32d77c64cc813bd5a855"
+      url "https://github.com/microsoft/inshellisense/releases/download/0.0.4/microsoft-inshellisense-darwin-arm64-0.0.4.tgz"
+      sha256 "91e13ed5f8e3a247833dcf3bff5a6180b357e75f9e828626b7bd600735f8c6a2"
     end
 
     on_intel do
-      url "https://github.com/microsoft/inshellisense/releases/download/0.0.3/microsoft-inshellisense-darwin-x64-0.0.3.tgz"
-      sha256 "7595b771ed4e9085affb1ab364d2f7cdca8efb22bf7578299a2e538570ba2131"
+      url "https://github.com/microsoft/inshellisense/releases/download/0.0.4/microsoft-inshellisense-darwin-x64-0.0.4.tgz"
+      sha256 "81a8968c82629dd480061857195f6cca13d6fef57d948edb2a08e014dd7ad7f2"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/microsoft/inshellisense/releases/download/0.0.3/microsoft-inshellisense-linux-arm64-0.0.3.tgz"
-      sha256 "f3c9dda9b97fb8ecb87e2ac216b2c3fd49619a4bbc3e9944e7d6088157d55abd"
+      url "https://github.com/microsoft/inshellisense/releases/download/0.0.4/microsoft-inshellisense-linux-arm64-0.0.4.tgz"
+      sha256 "93d9cdb4e78b4ced584af69ab7a97d24aa0a35a174729e04d3e2efd9c5e4a19a"
     end
 
     on_intel do
-      url "https://github.com/microsoft/inshellisense/releases/download/0.0.3/microsoft-inshellisense-linux-x64-0.0.3.tgz"
-      sha256 "fd784d550986f54ac8428c1b813397d7f7cee60ca4381afda406b03936f434f2"
+      url "https://github.com/microsoft/inshellisense/releases/download/0.0.4/microsoft-inshellisense-linux-x64-0.0.4.tgz"
+      sha256 "5953406744227a285e98056e70fd9d2e59802ba77ea7757c21c32cc56f90ad5f"
     end
   end
 
