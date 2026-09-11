@@ -4,10 +4,83 @@
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
-import { getShellSourceCommand, hasLegacyShellConfig, Shell, shouldFlagLegacyResourcePlugin, zdotdir } from "../../utils/shell.js";
+import fs from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { getShellConfig, getShellSourceCommand, hasLegacyShellConfig, Shell, shouldFlagLegacyResourcePlugin, zdotdir } from "../../utils/shell.js";
 
 test("uses a process-specific ZDOTDIR", () => {
   expect(zdotdir).toBe(path.join(os.tmpdir(), `is-zsh-${process.pid}`));
+});
+
+const zshDescribe = process.platform === "win32" ? describe.skip : describe;
+
+zshDescribe("zsh initialization", () => {
+  let configDirectory: string;
+
+  beforeAll(async () => {
+    configDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "is-zsh-init-test-"));
+    await fs.writeFile(path.join(configDirectory, ".zshrc"), `is() { print -r -- "wrapped $*"; }\n${getShellConfig(Shell.Zsh)}\n`);
+  });
+
+  afterAll(async () => {
+    await fs.rm(configDirectory, { recursive: true, force: true });
+  });
+
+  test.each([
+    { name: "runs interactive commands", args: ["-i", "-c", "print -r -- reached"], stdout: "reached\n" },
+    { name: "runs interactive login commands", args: ["-l", "-i", "-c", "print -r -- reached"], stdout: "reached\n" },
+    { name: "runs commands with combined login flags", args: ["-li", "-c", "print -r -- reached"], stdout: "reached\n" },
+    { name: "runs commands with combined command flags", args: ["-ilc", "print -r -- reached"], stdout: "reached\n" },
+    {
+      name: "runs commands with additional shell options",
+      args: ["-o", "extendedglob", "-ilc", "print -r -- reached"],
+      stdout: "reached\n",
+    },
+    { name: "does not wrap empty interactive commands", args: ["-ic", ""], stdout: "" },
+    { name: "does not wrap empty interactive login commands", args: ["-lic", ""], stdout: "" },
+    { name: "wraps interactive shells", args: ["-i"], stdout: "wrapped -s zsh\n" },
+    { name: "wraps interactive login shells", args: ["-li"], stdout: "wrapped -s zsh --login\n" },
+    {
+      name: "does not wrap existing inshellisense sessions",
+      args: ["-i"],
+      env: { ISTERM: "1" },
+      input: "print -r -- reached\nexit\n",
+      stdout: "reached\n",
+    },
+    {
+      name: "does not wrap VS Code environment resolution",
+      args: ["-i"],
+      env: { VSCODE_RESOLVING_ENVIRONMENT: "1" },
+      input: "print -r -- reached\nexit\n",
+      stdout: "reached\n",
+    },
+    {
+      name: "does not wrap non-interactive shells",
+      args: [],
+      input: 'source "$ZDOTDIR/.zshrc"\nprint -r -- reached\n',
+      stdout: "reached\n",
+    },
+  ])("$name", ({ args, env, input, stdout }) => {
+    // Disable line editing so interactive zsh reads the piped input instead of the controlling terminal.
+    const result = spawnSync("zsh", ["-d", "+Z", ...args], {
+      env: {
+        ...process.env,
+        HOME: configDirectory,
+        ZDOTDIR: configDirectory,
+        ISTERM: "",
+        VSCODE_RESOLVING_ENVIRONMENT: "",
+        ZSH_EXECUTION_STRING: undefined,
+        ...env,
+      },
+      input,
+      encoding: "utf8",
+      timeout: 5_000,
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe(stdout);
+  });
 });
 
 describe("getShellSourceCommand", () => {

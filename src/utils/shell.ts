@@ -327,7 +327,7 @@ export const getShellSourceCommand = (shell: Shell, initFilePath?: string): stri
 export const getShellConfig = (shell: Shell): string => {
   switch (shell) {
     case Shell.Zsh:
-      return `if [[ -z "\${ISTERM}" && $- = *i* && $- != *c* && -z "\${VSCODE_RESOLVING_ENVIRONMENT}" ]]; then
+      return `if [[ -z "\${ISTERM}" && $- = *i* && \${+ZSH_EXECUTION_STRING} -eq 0 && -z "\${VSCODE_RESOLVING_ENVIRONMENT}" ]]; then
   if [[ -o login ]]; then
     is -s zsh --login ; exit
   else

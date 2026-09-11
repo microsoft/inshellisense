@@ -37,7 +37,7 @@ After completing the installation, run `is doctor` to verify your installation w
 
 ### Shell Plugin
 
-If you'd like to automatically start inshellisense when you open your shell, run the respective command for your shell. After running the command, inshellisense will automatically open when you start any new shell session:
+If you'd like to automatically start inshellisense when you open your shell, run the respective command for your shell. The bash and zsh plugins skip command-string invocations (`-c`), even with interactive or login flags, so applications can read your shell environment without starting inshellisense.
 
 ```shell
 # bash
