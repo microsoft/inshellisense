@@ -70,6 +70,7 @@ export class ISTerm implements IPty {
   readonly #shell: Shell;
   #pendingData: string[] = [];
   #pendingCursorPositionReports = 0;
+  readonly #pendingTerminalColorReports = new Map<number, number>();
 
   constructor({ shell, cols, rows, env, shellTarget, shellArgs, underTest, login }: ISTermOptions & { shellTarget: string }) {
     this.#pty = pty.spawn(shellTarget, shellArgs ?? [], {
@@ -98,6 +99,12 @@ export class ISTerm implements IPty {
       if (params.at(0) === 6) this.#pendingCursorPositionReports += 1;
       return false;
     });
+    for (const selector of [10, 11, 12]) {
+      this.#term.parser.registerOscHandler(selector, (data) => {
+        if (data === "?") this.#pendingTerminalColorReports.set(selector, (this.#pendingTerminalColorReports.get(selector) ?? 0) + 1);
+        return false;
+      });
+    }
 
     this.#ptyEmitter = new EventEmitter();
     this.#term.parser.registerOscHandler(IsTermOscPs, (data) => this._handleIsSequence(data));
@@ -241,6 +248,17 @@ export class ISTerm implements IPty {
   consumeCursorPositionQuery(): boolean {
     if (this.#pendingCursorPositionReports === 0) return false;
     this.#pendingCursorPositionReports -= 1;
+    return true;
+  }
+
+  consumeTerminalColorQuery(selector: number): boolean {
+    const pending = this.#pendingTerminalColorReports.get(selector) ?? 0;
+    if (pending === 0) return false;
+    if (pending === 1) {
+      this.#pendingTerminalColorReports.delete(selector);
+    } else {
+      this.#pendingTerminalColorReports.set(selector, pending - 1);
+    }
     return true;
   }
 
