@@ -4,10 +4,45 @@
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
-import { getShellSourceCommand, hasLegacyShellConfig, Shell, shouldFlagLegacyResourcePlugin, zdotdir } from "../../utils/shell.js";
+import fs from "node:fs/promises";
+import {
+  bashLoginHome,
+  getBashLoginEnvironment,
+  getShellSourceCommand,
+  hasLegacyShellConfig,
+  setupBashLoginShell,
+  Shell,
+  shouldFlagLegacyResourcePlugin,
+  zdotdir,
+} from "../../utils/shell.js";
 
 test("uses a process-specific ZDOTDIR", () => {
   expect(zdotdir).toBe(path.join(os.tmpdir(), `is-zsh-${process.pid}`));
+});
+
+test("uses a process-specific Bash login home", () => {
+  expect(bashLoginHome).toBe(path.join(os.tmpdir(), `is-bash-${process.pid}`));
+});
+
+test("preserves the user home while starting Bash from the login trampoline", () => {
+  expect(getBashLoginEnvironment({ HOME: "/home/user" }, "/tmp/is-bash", "linux")).toMatchObject({
+    HOME: "/tmp/is-bash",
+    ISTERM_USER_HOME: "/home/user",
+  });
+  expect(getBashLoginEnvironment({ HOME: "C:\\Users\\user" }, "C:\\Temp\\is-bash", "win32")).toMatchObject({
+    HOME: "/c/Temp/is-bash",
+    ISTERM_USER_HOME: "/c/Users/user",
+  });
+});
+
+test("creates the Bash login trampoline with its integration dependencies", async () => {
+  const loginHome = await fs.mkdtemp(path.join(os.tmpdir(), "is-bash-test-"));
+  try {
+    await setupBashLoginShell(loginHome, path.resolve("shell"));
+    await expect(fs.readdir(loginHome)).resolves.toEqual(expect.arrayContaining([".bash_profile", "bash-preexec.sh", "shellIntegration.bash"]));
+  } finally {
+    await fs.rm(loginHome, { recursive: true, force: true });
+  }
 });
 
 describe("getShellSourceCommand", () => {
