@@ -6,14 +6,16 @@ import { StdioProxy } from "../../ui/stdioProxy.js";
 
 const createRouter = () => {
   const responses: string[] = [];
+  const colorResponses: Array<[number, string]> = [];
   const keypresses: string[] = [];
   const toggles: boolean[] = [];
   const proxy = new StdioProxy({
     onCursorPositionReport: (data) => responses.push(data),
+    onTerminalColorReport: (selector, data) => colorResponses.push([selector, data]),
     onWin32InputMode: (enabled) => toggles.push(enabled),
   });
   proxy.onKeypress((_value, key) => keypresses.push(key.sequence));
-  return { keypresses, proxy, responses, toggles };
+  return { colorResponses, keypresses, proxy, responses, toggles };
 };
 
 test("consumes cursor-position reports without creating keypresses", () => {
@@ -42,6 +44,48 @@ test("consumes private cursor-position reports", () => {
 
   expect(responses).toEqual(["\u001B[?2;7R"]);
   expect(keypresses).toEqual([]);
+});
+
+test("routes terminal color reports without creating keypresses", () => {
+  const { colorResponses, keypresses, proxy } = createRouter();
+
+  proxy.handleInput(Buffer.from("\u001B]11;rgb:2828/2828/2828\u001B\\"));
+  proxy.handleInput(Buffer.from("\u001B]10;rgb:ffff/ffff/ffff\u0007"));
+
+  expect(colorResponses).toEqual([
+    [11, "\u001B]11;rgb:2828/2828/2828\u001B\\"],
+    [10, "\u001B]10;rgb:ffff/ffff/ffff\u0007"],
+  ]);
+  expect(keypresses).toEqual([]);
+});
+
+test("handles terminal color reports split across chunks", () => {
+  const { colorResponses, keypresses, proxy } = createRouter();
+
+  proxy.handleInput(Buffer.from("\u001B]12;rgb:aaaa/"));
+  proxy.handleInput(Buffer.from("bbbb/cccc\u001B"));
+  proxy.handleInput(Buffer.from("\\"));
+
+  expect(colorResponses).toEqual([[12, "\u001B]12;rgb:aaaa/bbbb/cccc\u001B\\"]]);
+  expect(keypresses).toEqual([]);
+});
+
+test("keeps regular input after a terminal color report", () => {
+  const { colorResponses, keypresses, proxy } = createRouter();
+
+  proxy.handleInput(Buffer.from("\u001B]11;rgb:0000/0000/0000\u0007a"));
+
+  expect(colorResponses).toEqual([[11, "\u001B]11;rgb:0000/0000/0000\u0007"]]);
+  expect(keypresses).toEqual(["a"]);
+});
+
+test("keeps unrelated OSC input in readline", () => {
+  const { colorResponses, keypresses, proxy } = createRouter();
+
+  proxy.handleInput(Buffer.from("\u001B]52;c;clipboard\u0007"));
+
+  expect(colorResponses).toEqual([]);
+  expect(keypresses.length).toBeGreaterThan(0);
 });
 
 test("keeps regular CSI key sequences in readline", () => {
