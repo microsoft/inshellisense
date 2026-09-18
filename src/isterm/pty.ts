@@ -31,7 +31,19 @@ import { endTiming, startTiming } from "../utils/performance.js";
 
 const ISTermOnDataEvent = "data";
 const ISTermOnBufferChangeEvent = "bufferChange";
+const terminalColorSelectors = [10, 11, 12] as const;
 type BufferType = "active" | "normal";
+type TerminalColorSelector = (typeof terminalColorSelectors)[number];
+
+export const getTerminalColorQuerySelectors = (initialSelector: TerminalColorSelector, data: string): TerminalColorSelector[] => {
+  const querySelectors: TerminalColorSelector[] = [];
+  for (const [offset, parameter] of data.split(";").entries()) {
+    const selector = initialSelector + offset;
+    if (selector > 12) break;
+    if (parameter === "?") querySelectors.push(selector as TerminalColorSelector);
+  }
+  return querySelectors;
+};
 
 type ISTermOptions = {
   env?: { [key: string]: string | undefined };
@@ -99,9 +111,11 @@ export class ISTerm implements IPty {
       if (params.at(0) === 6) this.#pendingCursorPositionReports += 1;
       return false;
     });
-    for (const selector of [10, 11, 12]) {
+    for (const selector of terminalColorSelectors) {
       this.#term.parser.registerOscHandler(selector, (data) => {
-        if (data === "?") this.#pendingTerminalColorReports.set(selector, (this.#pendingTerminalColorReports.get(selector) ?? 0) + 1);
+        for (const querySelector of getTerminalColorQuerySelectors(selector, data)) {
+          this.#pendingTerminalColorReports.set(querySelector, (this.#pendingTerminalColorReports.get(querySelector) ?? 0) + 1);
+        }
         return false;
       });
     }
