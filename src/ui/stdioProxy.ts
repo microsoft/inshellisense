@@ -13,7 +13,9 @@ const cursorPositionReport = new RegExp("\\u001B\\[\\??\\d+;\\d+R", "g");
 // eslint-disable-next-line no-control-regex
 const partialCursorPositionReport = new RegExp("\\u001B\\[\\??\\d*(?:;\\d*)?$");
 // eslint-disable-next-line no-control-regex
-const terminalColorReport = new RegExp("\\u001B\\](1[012]);[^\\u0007\\u001B]*(?:\\u0007|\\u001B\\\\)", "g");
+const terminalColorReport = new RegExp("\\u001B\\](1[012]);[^\\u0007\\u001B]*(?:\\u0007|\\u001B\\\\)");
+// eslint-disable-next-line no-control-regex
+const terminalReport = new RegExp(`${cursorPositionReport.source}|${terminalColorReport.source}`, "g");
 // eslint-disable-next-line no-control-regex
 const partialTerminalColorReport = new RegExp("\\u001B\\](?:1(?:[012])?)?(?:;[^\\u0007\\u001B]*)?(?:\\u001B)?$");
 // blocks win32 input mode, the kitty keyboard protocol and xterm modifyOtherKeys from upgrading input & breaking node's readline
@@ -104,15 +106,14 @@ export class StdioProxy {
   #routeInput(input: string): void {
     this.#pendingInput = input.match(partialCursorPositionReport)?.[0] ?? input.match(partialTerminalColorReport)?.[0] ?? "";
     const completeInput = this.#pendingInput.length === 0 ? input : input.slice(0, -this.#pendingInput.length);
-    const keypressInput = completeInput
-      .replace(cursorPositionReport, (response) => {
+    const keypressInput = completeInput.replace(terminalReport, (response, selector?: string) => {
+      if (selector == null) {
         this.#onCursorPositionReport(response);
-        return "";
-      })
-      .replace(terminalColorReport, (response, selector: string) => {
+      } else {
         this.#onTerminalColorReport(Number(selector), response);
-        return "";
-      });
+      }
+      return "";
+    });
     if (keypressInput.length !== 0) this.#keypressInput.write(keypressInput);
   }
 }

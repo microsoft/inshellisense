@@ -18,6 +18,18 @@ const createRouter = () => {
   return { colorResponses, keypresses, proxy, responses, toggles };
 };
 
+test("preserves the order of mixed terminal reports", () => {
+  const routed: string[] = [];
+  const proxy = new StdioProxy({
+    onCursorPositionReport: (data) => routed.push(data),
+    onTerminalColorReport: (_selector, data) => routed.push(data),
+  });
+
+  proxy.handleInput(Buffer.from("\u001B]11;rgb:2828/2828/2828\u001B\\\u001B[42;1R"));
+
+  expect(routed).toEqual(["\u001B]11;rgb:2828/2828/2828\u001B\\", "\u001B[42;1R"]);
+});
+
 test("consumes cursor-position reports without creating keypresses", () => {
   const { keypresses, responses, proxy } = createRouter();
 
