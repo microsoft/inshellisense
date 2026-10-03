@@ -40,8 +40,27 @@ const idleTimeout = 15_000;
 const promptTimeout = 20_000;
 const timeouts = { text: expectTextTimeout, idle: idleTimeout };
 
+type ExpectTextOptions = {
+  strict?: boolean;
+  not?: boolean;
+  fg?: string;
+  bg?: string;
+  timeout?: number;
+};
+
+export const expectText = async (terminal: TuiTest, text: string, options: ExpectTextOptions = {}): Promise<void> => {
+  let locator = terminal.getByText(text);
+  if (options.fg || options.bg) {
+    locator = locator.getByStyle({ foreground: options.fg, background: options.bg });
+  }
+  if (options.strict !== false) {
+    locator = locator.unique();
+  }
+  await locator.expect({ not: options.not, timeout: options.timeout });
+};
+
 export const expectPrompt = async (terminal: TuiTest, timeout = promptTimeout): Promise<void> => {
-  await terminal.expectText(">  ", { timeout });
+  await expectText(terminal, ">  ", { timeout });
   await terminal.waitIdle();
 };
 

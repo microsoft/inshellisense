@@ -5,7 +5,7 @@ import os from "node:os";
 import { jest } from "@jest/globals";
 import type { TuiTest } from "@microsoft/tui-test/test";
 import type { Shell } from "@microsoft/tui-test";
-import { closeSession, startSession, startShell } from "./helpers";
+import { closeSession, expectText, startSession, startShell } from "./helpers";
 
 const shell: Shell = os.platform() == "darwin" ? "zsh" : os.platform() == "linux" ? "bash" : "powershell";
 
@@ -23,7 +23,7 @@ describe("status checks", () => {
 
     test("current status", async () => {
       await terminal.write("is -c\r");
-      await terminal.expectText("live", { fg: "2" });
+      await expectText(terminal, "live", { fg: "2" });
     });
   });
 
@@ -38,7 +38,7 @@ describe("status checks", () => {
 
     test("current status", async () => {
       await terminal.write("is -c\r");
-      await terminal.expectText("not found", { fg: "1" });
+      await expectText(terminal, "not found", { fg: "1" });
     });
   });
 });
