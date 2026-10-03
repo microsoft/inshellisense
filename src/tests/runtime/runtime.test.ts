@@ -5,8 +5,9 @@ import fs from "node:fs";
 
 import { getSuggestions } from "../../runtime/runtime.js";
 import { Shell } from "../../utils/shell.js";
-import { SuggestionIcons } from "../../runtime/suggestion.js";
+import { NerdFontIcons, SuggestionIcons } from "../../runtime/suggestion.js";
 import { unpackResources } from "../../utils/node.js";
+import { getConfig } from "../../utils/config.js";
 
 const testData = [
   { name: "partialPrefixFilter", command: "git sta" },
@@ -112,4 +113,17 @@ describe(`getCommandSuggestions`, () => {
       expect(icons).toEqual(expect.arrayContaining(expectedIcons ?? []));
     });
   });
+});
+
+test("top-level commands use Nerd Font icons when enabled", async () => {
+  const config = getConfig();
+  const previous = config.useNerdFont;
+  config.useNerdFont = true;
+  try {
+    const suggestions = await getSuggestions("git", process.cwd(), Shell.Bash);
+    const git = suggestions?.suggestions.find((suggestion) => suggestion.name === "git");
+    expect(git?.icon).toBe(NerdFontIcons.git);
+  } finally {
+    config.useNerdFont = previous;
+  }
 });
