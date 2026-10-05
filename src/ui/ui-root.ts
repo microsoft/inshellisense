@@ -37,7 +37,8 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
       }
     },
   });
-  const handleInput = (data: Buffer | string) => stdio.handleInput(data);
+  const forwardInput = (data: string) => term.write(data);
+  const handleInput = (data: Buffer | string) => stdio.handleInput(data, term.isAlternateBuffer() ? forwardInput : undefined);
   process.stdin.on("data", handleInput);
   writeOutput(ansi.clearTerminal);
 
