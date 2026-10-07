@@ -5,18 +5,24 @@ import { runTemplates } from "./template.js";
 import { buildExecuteShellCommand } from "./utils.js";
 import { endTiming, startTiming } from "../utils/performance.js";
 
-const getGeneratorContext = (cwd: string): Fig.GeneratorContext => {
+const getGeneratorContext = (cwd: string, searchTerm: string): Fig.GeneratorContext => {
   return {
     environmentVariables: Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] != null)),
     currentWorkingDirectory: cwd,
     currentProcess: "", // TODO: define current process
     sshPrefix: "", // deprecated, should be empty
     isDangerous: false,
-    searchTerm: "", // TODO: define search term
+    searchTerm,
   };
 };
 
-export const executeGenerator = async (generator: Fig.Generator, tokens: string[], cwd: string, signal?: AbortSignal): Promise<Fig.Suggestion[]> => {
+export const executeGenerator = async (
+  generator: Fig.Generator,
+  tokens: string[],
+  searchTerm: string,
+  cwd: string,
+  signal?: AbortSignal,
+): Promise<Fig.Suggestion[]> => {
   const generatorTiming = startTiming();
   try {
     signal?.throwIfAborted();
@@ -39,7 +45,7 @@ export const executeGenerator = async (generator: Fig.Generator, tokens: string[
     }
 
     if (custom) {
-      suggestions.push(...(await custom(tokens, executeShellCommand, getGeneratorContext(cwd))));
+      suggestions.push(...(await custom(tokens, executeShellCommand, getGeneratorContext(cwd, searchTerm))));
     }
 
     if (template != null) {
