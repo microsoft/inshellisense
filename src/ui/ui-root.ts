@@ -27,14 +27,13 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   const renderer = new SuggestionRenderer(term, suggestions, writeOutput);
   let commandStateVersion = term.getCommandStateVersion();
   let backspaceEchoPending = false;
+  let termExited = false;
 
   const stdinStartedInRawMode = process.stdin.isRaw;
   if (process.stdin.isTTY) process.stdin.setRawMode(true);
   const stdio = new StdioProxy({
-    onCursorPositionReport: (data) => {
-      if (term.consumeCursorPositionQuery()) {
-        term.write(data);
-      }
+    onTerminalResponse: (data) => {
+      if (!termExited) term.write(data);
     },
   });
   const handleInput = (data: Buffer | string) => stdio.handleInput(data);
@@ -79,6 +78,7 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   });
 
   stdio.onKeypress((...keyPress: KeyPressEvent) => {
+    if (termExited) return;
     const press = keyPress[1];
     if (term.isAlternateBuffer()) {
       term.write(press.name === "backspace" ? getBackspaceSequence(keyPress, shell) : press.sequence);
@@ -99,11 +99,15 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   });
 
   term.onExit(({ exitCode }) => {
-    process.stdin.removeListener("data", handleInput);
-    writeOutput(stdio.dispose());
-    if (!stdinStartedInRawMode) process.stdin.setRawMode(false);
-    process.stdout.write(resetToInitialState);
-    process.exit(exitCode);
+    termExited = true;
+    void (async () => {
+      await stdio.waitForPendingTerminalResponses();
+      process.stdin.removeListener("data", handleInput);
+      writeOutput(stdio.dispose());
+      if (!stdinStartedInRawMode) process.stdin.setRawMode(false);
+      process.stdout.write(resetToInitialState);
+      process.exit(exitCode);
+    })();
   });
 
   process.stdout.on("resize", () => {
