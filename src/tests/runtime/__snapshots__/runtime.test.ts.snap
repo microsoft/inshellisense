@@ -701,6 +701,91 @@ exports[`parseCommand pathNestedSuggestion 1`] = `
 }
 `;
 
+exports[`parseCommand pathPrefixMatchesRankedFirst 1`] = `
+{
+  "activeToken": {
+    "complete": false,
+    "isOption": false,
+    "token": "s",
+    "tokenLength": 1,
+  },
+  "suggestions": [
+    {
+      "allNames": [
+        "src/",
+      ],
+      "description": undefined,
+      "hidden": undefined,
+      "icon": "📁",
+      "insertValue": "src/",
+      "name": "src",
+      "priority": 60,
+      "type": "folder",
+    },
+    {
+      "allNames": [
+        "shell/",
+      ],
+      "description": undefined,
+      "hidden": undefined,
+      "icon": "📁",
+      "insertValue": "shell/",
+      "name": "shell",
+      "priority": 60,
+      "type": "folder",
+    },
+    {
+      "allNames": [
+        "scripts/",
+      ],
+      "description": undefined,
+      "hidden": undefined,
+      "icon": "📁",
+      "insertValue": "scripts/",
+      "name": "scripts",
+      "priority": 60,
+      "type": "folder",
+    },
+    {
+      "allNames": [
+        "docs/",
+      ],
+      "description": undefined,
+      "hidden": undefined,
+      "icon": "📁",
+      "insertValue": "docs/",
+      "name": "docs",
+      "priority": 60,
+      "type": "folder",
+    },
+    {
+      "allNames": [
+        ".husky/",
+      ],
+      "description": undefined,
+      "hidden": undefined,
+      "icon": "📁",
+      "insertValue": ".husky/",
+      "name": ".husky",
+      "priority": 60,
+      "type": "folder",
+    },
+    {
+      "allNames": [
+        "node_modules/",
+      ],
+      "description": undefined,
+      "hidden": undefined,
+      "icon": "📁",
+      "insertValue": "node_modules/",
+      "name": "node_modules",
+      "priority": 60,
+      "type": "folder",
+    },
+  ],
+}
+`;
+
 exports[`parseCommand pathSuggestion 1`] = `
 {
   "activeToken": {
@@ -739,13 +824,13 @@ exports[`parseCommand pathWithFileFilteredSuggestion 1`] = `
   "suggestions": [
     {
       "allNames": [
-        "shellIntegration.bash",
+        "shellIntegration.nu",
       ],
       "description": undefined,
       "hidden": undefined,
       "icon": "📄",
-      "insertValue": "shell/shellIntegration.bash",
-      "name": "shellIntegration.bash",
+      "insertValue": "shell/shellIntegration.nu",
+      "name": "shellIntegration.nu",
       "priority": 55,
       "type": "file",
     },
