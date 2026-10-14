@@ -3,6 +3,7 @@
 
 import { CommandToken } from "./parser.js";
 import { Suggestion } from "./model.js";
+import { wcswidth } from "../utils/unicode.js";
 
 export type ReplacementAction = {
   backspaceCount: number;
@@ -15,6 +16,11 @@ const commonPrefixLength = (a: string, b: string): number => {
   return i;
 };
 
+// Shells delete one character per backspace, but tokenLength is a display width in which wide
+// characters (e.g. CJK) count as 2. Quotes and escapes are single-width, so the difference between
+// the width and the character count of the token text is exactly the extra width to remove.
+const typedCharCount = (token: CommandToken): number => token.tokenLength - (wcswidth(token.token) - Array.from(token.token).length);
+
 export const calculateReplacement = (token: CommandToken | undefined, suggestion: Suggestion): ReplacementAction | undefined => {
   const suggestionText = suggestion.insertValue ?? suggestion.name + " ";
 
@@ -24,10 +30,10 @@ export const calculateReplacement = (token: CommandToken | undefined, suggestion
   }
 
   const typedText = token.token;
-  const tokenDisplayWidth = token.tokenLength;
+  const tokenCharCount = typedCharCount(token);
 
   if (suggestion.insertValue != null && suggestion.insertValue !== suggestion.name) {
-    return { backspaceCount: tokenDisplayWidth, insertText: suggestionText };
+    return { backspaceCount: tokenCharCount, insertText: suggestionText };
   }
 
   const target = suggestion.name + " ";
@@ -39,7 +45,7 @@ export const calculateReplacement = (token: CommandToken | undefined, suggestion
     return { backspaceCount: 0, insertText: remaining };
   }
 
-  return { backspaceCount: tokenDisplayWidth, insertText: target };
+  return { backspaceCount: tokenCharCount, insertText: target };
 };
 
 export const applyReplacement = (action: ReplacementAction): string => {

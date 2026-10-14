@@ -64,10 +64,17 @@ describe("calculateReplacement", () => {
       insertText: "好 ",
     });
   });
-  test("wide-char divergent uses display width for backspace", () => {
+  test("wide-char divergent uses character count for backspace", () => {
+    // shells delete one character per backspace regardless of its display width
     expect(calculateReplacement(makeToken({ token: "你", tokenLength: 2 }), makeSuggestion({ name: "世界" }))).toEqual({
-      backspaceCount: 2,
+      backspaceCount: 1,
       insertText: "世界 ",
+    });
+  });
+  test("mixed-width divergent deletes one backspace per character", () => {
+    expect(calculateReplacement(makeToken({ token: "a你", tokenLength: 3 }), makeSuggestion({ name: "b" }))).toEqual({
+      backspaceCount: 2,
+      insertText: "b ",
     });
   });
   test("option prefix appends remaining", () => {
