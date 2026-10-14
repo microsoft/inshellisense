@@ -42,13 +42,21 @@ type QuoteChar = `"` | `'` | "`";
 
 const isQuoted = (value: string | undefined, quoteChar: QuoteChar): boolean => (value?.startsWith(quoteChar) && value?.endsWith(quoteChar)) ?? false;
 
-const quoteString = (value: string, quoteChar: QuoteChar): string => {
+const isPowerShell = (shell: Shell): boolean => shell == Shell.Pwsh || shell == Shell.Powershell;
+
+// characters that PowerShell interprets in argument mode; '@' and '#' only matter at the start of an argument
+const pwshSpecialCharacters = /[\s'"`$&|;,(){}<>]|^[@#]/;
+
+const quoteString = (value: string, quoteChar: QuoteChar, shell: Shell): string => {
   if (isQuoted(value, quoteChar)) return value;
+  // PowerShell single-quoted strings are literal; an embedded single quote is written as two single quotes
+  if (isPowerShell(shell)) return `'${value.replaceAll("'", "''")}'`;
   const escapedValue = value.replaceAll(`\\${quoteChar}`, quoteChar).replaceAll(quoteChar, `\\${quoteChar}`);
   return `${quoteChar}${escapedValue}${quoteChar}`;
 };
 
-const needsQuoted = (value: string, quoteChar: QuoteChar): boolean => isQuoted(value, quoteChar) || value.includes(" ");
+const needsQuoted = (value: string, quoteChar: QuoteChar, shell: Shell): boolean =>
+  isQuoted(value, quoteChar) || (isPowerShell(shell) ? pwshSpecialCharacters.test(value) : value.includes(" "));
 
 const getShellQuoteChar = (shell: Shell): QuoteChar => {
   switch (shell) {
@@ -85,7 +93,7 @@ export const getShellWhitespaceEscapeChar = (shell: Shell): string => {
 };
 
 export const escapePath = (value: string | undefined, shell: Shell): string | undefined =>
-  value != null && needsQuoted(value, getShellQuoteChar(shell)) ? quoteString(value, getShellQuoteChar(shell)) : value;
+  value != null && needsQuoted(value, getShellQuoteChar(shell), shell) ? quoteString(value, getShellQuoteChar(shell), shell) : value;
 
 export const buildExecuteShellCommand =
   (timeout: number, signal?: AbortSignal): Fig.ExecuteCommandFunction =>
