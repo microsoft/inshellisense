@@ -36,6 +36,7 @@ export class SuggestionManager {
   #term: ISTerm;
   #commandKey: string;
   #activeSuggestionIdx: number;
+  #suggestionSelected = false;
   #suggestBlob?: SuggestionBlob;
   #shell: Shell;
   #hideSuggestions: boolean = false;
@@ -72,6 +73,7 @@ export class SuggestionManager {
     this.#commandKey = "";
     this.#suggestBlob = undefined;
     this.#activeSuggestionIdx = 0;
+    this.#suggestionSelected = false;
     this.#hideSuggestions = false;
     if (commandCleared) {
       try {
@@ -105,6 +107,7 @@ export class SuggestionManager {
       const changed = this.#suggestBlob != null || this.#activeSuggestionIdx !== 0;
       this.#suggestBlob = undefined;
       this.#activeSuggestionIdx = 0;
+      this.#suggestionSelected = false;
       return changed;
     }
     const abortController = new AbortController();
@@ -119,6 +122,7 @@ export class SuggestionManager {
       this.#commandKey = commandKey;
       this.#suggestBlob = suggestionBlob;
       this.#activeSuggestionIdx = 0;
+      this.#suggestionSelected = false;
       return true;
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
@@ -220,10 +224,15 @@ export class SuggestionManager {
   }
 
   update(keyPress: KeyPress, allowBindings = true): boolean {
-    const { name, shift, ctrl } = keyPress;
-    if (name == "return") {
-      this.#term.clearCommand(); // clear the current command on enter
+    const handled = this.#handleKeyPress(keyPress, allowBindings);
+    if (!handled && keyPress.name == "return") {
+      this.#term.clearCommand(); // clear the current command on enter, unless enter was consumed by a binding
     }
+    return handled;
+  }
+
+  #handleKeyPress(keyPress: KeyPress, allowBindings: boolean): boolean {
+    const { name, shift, ctrl } = keyPress;
 
     // if suggestions are hidden, keep them hidden until during command navigation
     if (this.#hideSuggestions) {
@@ -245,11 +254,17 @@ export class SuggestionManager {
       this.#hideSuggestions = true;
     } else if (name == prevKey && shift == !!prevShift && ctrl == !!prevCtrl) {
       this.#activeSuggestionIdx = Math.max(0, this.#activeSuggestionIdx - 1);
+      this.#suggestionSelected = true;
     } else if (name == nextKey && shift == !!nextShift && ctrl == !!nextCtrl) {
       this.#activeSuggestionIdx = Math.min(this.#activeSuggestionIdx + 1, (this.#suggestBlob?.suggestions.length ?? 1) - 1);
+      this.#suggestionSelected = true;
     } else if (name == acceptKey && shift == !!acceptShift && ctrl == !!acceptCtrl) {
       const suggestion = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx);
       if (suggestion == null || this.#suggestBlob?.suggestions.length == 0) {
+        return false;
+      }
+      // enter on an empty token runs the command unless a suggestion was explicitly selected
+      if (name == "return" && !this.#suggestionSelected && !this.#suggestBlob?.activeToken?.token) {
         return false;
       }
       const action = calculateReplacement(this.#suggestBlob?.activeToken, suggestion);
@@ -257,7 +272,7 @@ export class SuggestionManager {
         return false;
       }
       this.#term.write(applyReplacement(action));
-    } else if (name == "return" || (name == "c" && ctrl)) {
+    } else if (name == "c" && ctrl) {
       this.#term.clearCommand();
       return false;
     } else {

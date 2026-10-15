@@ -5,6 +5,7 @@ import type { ISTerm } from "../../isterm/pty.js";
 import type { SuggestionBlob } from "../../runtime/model.js";
 import { Shell } from "../../utils/shell.js";
 import { SuggestionManager } from "../../ui/suggestionManager.js";
+import { getConfig } from "../../utils/config.js";
 
 const deferred = <T>() => {
   let resolve!: (value: T) => void;
@@ -113,4 +114,74 @@ test("does not consume suggestion bindings when the UI is hidden", async () => {
 
   expect(manager.update({ name: "tab", sequence: "\t", shift: false, ctrl: false }, false)).toBe(false);
   expect(writes).toEqual([]);
+});
+
+describe("enter as the accept binding", () => {
+  let previousAcceptBinding: ReturnType<typeof getConfig>["bindings"]["acceptSuggestion"];
+
+  beforeEach(() => {
+    previousAcceptBinding = getConfig().bindings.acceptSuggestion;
+    getConfig().bindings.acceptSuggestion = { key: "return" };
+  });
+
+  afterEach(() => {
+    getConfig().bindings.acceptSuggestion = previousAcceptBinding;
+  });
+
+  const setup = async (commandText: string, token: string) => {
+    const writes: string[] = [];
+    let clearCommandCalls = 0;
+    const terminal = {
+      cwd: process.cwd(),
+      cols: 80,
+      write: (data: string) => writes.push(data),
+      clearCommand: () => {
+        clearCommandCalls += 1;
+      },
+      getCommandState: () => ({ commandText, cursorTerminated: true, hasOutput: false }),
+      getCursorState: () => ({ cursorX: 0 }),
+    } as unknown as ISTerm;
+    const runtime = Promise.resolve({
+      getSuggestions: async () => ({ ...blob("checkout"), activeToken: { token, tokenLength: token.length, complete: false, isOption: false } }),
+      clearTransientSuggestionState: () => {},
+    });
+    const manager = new SuggestionManager(terminal, Shell.Bash, runtime);
+    await manager.exec();
+    return { manager, writes, clearCommandCalls: () => clearCommandCalls };
+  };
+
+  const enter = { name: "return", sequence: "\r", shift: false, ctrl: false };
+
+  test("keeps tracking the command when enter accepts a suggestion", async () => {
+    const { manager, writes, clearCommandCalls } = await setup("git chec", "chec");
+
+    expect(manager.update(enter, true)).toBe(true);
+    expect(writes).not.toEqual([]);
+    expect(clearCommandCalls()).toBe(0);
+  });
+
+  test("clears the command when enter is not consumed by a binding", async () => {
+    const { manager, writes, clearCommandCalls } = await setup("git chec", "chec");
+
+    expect(manager.update(enter, false)).toBe(false);
+    expect(writes).toEqual([]);
+    expect(clearCommandCalls()).toBe(1);
+  });
+
+  test("runs the command when enter is pressed on an empty token without a selection", async () => {
+    const { manager, writes, clearCommandCalls } = await setup("git checkout ", "");
+
+    expect(manager.update(enter, true)).toBe(false);
+    expect(writes).toEqual([]);
+    expect(clearCommandCalls()).toBe(1);
+  });
+
+  test("accepts the selected suggestion when enter is pressed on an empty token after navigating", async () => {
+    const { manager, writes, clearCommandCalls } = await setup("git checkout ", "");
+
+    manager.update({ name: "down", sequence: "\u001b[B", shift: false, ctrl: false }, true);
+    expect(manager.update(enter, true)).toBe(true);
+    expect(writes).not.toEqual([]);
+    expect(clearCommandCalls()).toBe(0);
+  });
 });
