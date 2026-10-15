@@ -4,7 +4,10 @@
 import { jest } from "@jest/globals";
 
 import { clearGeneratorState, clearImplicitGeneratorState, getGeneratorSuggestions } from "../../runtime/generatorCache.js";
-import { getGeneratorQueryTerm } from "../../runtime/generator.js";
+import { executeGenerator, getGeneratorQueryTerm } from "../../runtime/generator.js";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 const deferred = <T>() => {
   let resolve!: (value: T) => void;
@@ -209,4 +212,39 @@ test("reuses a generator when a path query moves past a delimiter", async () => 
   await getGeneratorSuggestions(generator, ["tool", "folder/e"], "folder/e", process.cwd(), false);
 
   expect(calls).toBe(1);
+});
+
+describe("custom generator executeShellCommand", () => {
+  const nodeGenerator = (script: string, cwd?: string): Fig.Generator => ({
+    custom: async (_tokens, executeShellCommand) => {
+      const { stdout } = await executeShellCommand({ command: process.execPath, args: ["-e", script], cwd });
+      return [{ name: stdout }];
+    },
+  });
+
+  test("runs in the generator's cwd when the generator does not pass one", async () => {
+    const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "generator-cwd-")));
+    try {
+      const [suggestion] = await executeGenerator(nodeGenerator("process.stdout.write(process.cwd())"), [], dir);
+      expect(suggestion.name).toBe(dir);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("keeps a cwd passed by the generator", async () => {
+    const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "generator-cwd-")));
+    try {
+      const [suggestion] = await executeGenerator(nodeGenerator("process.stdout.write(process.cwd())", dir), [], os.tmpdir());
+      expect(suggestion.name).toBe(dir);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("cleans output like Fig: CRLF to LF, no leading or trailing newlines", async () => {
+    const script = String.raw`process.stdout.write("\r\n\n  a\r\nb  \r\n\n")`;
+    const [suggestion] = await executeGenerator(nodeGenerator(script), [], process.cwd());
+    expect(suggestion.name).toBe("  a\nb  ");
+  });
 });

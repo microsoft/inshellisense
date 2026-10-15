@@ -16,6 +16,18 @@ const getGeneratorContext = (cwd: string): Fig.GeneratorContext => {
   };
 };
 
+// Matches Fig's cleanOutput: CRLF becomes LF, the cursor-show sequence and leading/trailing newlines are removed.
+const cleanOutput = (output: string): string => output.replaceAll("\r\n", "\n").replaceAll("\u001b[?25h", "").replace(/^\n+/, "").replace(/\n+$/, "");
+
+// Custom generators call executeShellCommand themselves. Like Fig, run their commands in the generator's
+// working directory unless they pass one, and give them cleaned output (e.g. `npm prefix` without a trailing newline).
+const buildCustomExecuteCommand =
+  (executeShellCommand: Fig.ExecuteCommandFunction, cwd: string): Fig.ExecuteCommandFunction =>
+  async (input) => {
+    const output = await executeShellCommand({ ...input, cwd: input.cwd ?? cwd });
+    return { ...output, stdout: cleanOutput(output.stdout), stderr: cleanOutput(output.stderr) };
+  };
+
 export const executeGenerator = async (generator: Fig.Generator, tokens: string[], cwd: string, signal?: AbortSignal): Promise<Fig.Suggestion[]> => {
   const generatorTiming = startTiming();
   try {
@@ -39,7 +51,7 @@ export const executeGenerator = async (generator: Fig.Generator, tokens: string[
     }
 
     if (custom) {
-      suggestions.push(...(await custom(tokens, executeShellCommand, getGeneratorContext(cwd))));
+      suggestions.push(...(await custom(tokens, buildCustomExecuteCommand(executeShellCommand, cwd), getGeneratorContext(cwd))));
     }
 
     if (template != null) {
