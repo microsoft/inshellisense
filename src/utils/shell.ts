@@ -11,7 +11,6 @@ import fsAsync from "node:fs/promises";
 import util from "node:util";
 import { shellResourcesPath, initResourcesPath, usesLegacyResources, xdgConfigPath } from "./constants.js";
 import childProcess from "node:child_process";
-import { KeyPressEvent } from "../ui/suggestionManager.js";
 import log from "./log.js";
 
 const exec = util.promisify(childProcess.exec);
@@ -260,8 +259,8 @@ const getGitBashPaths = async (): Promise<string[]> => {
   return gitBashPaths;
 };
 
-export const getBackspaceSequence = (press: KeyPressEvent, shell: Shell) =>
-  shell === Shell.Pwsh || shell === Shell.Powershell || shell === Shell.Cmd || shell === Shell.Nushell ? "\u007F" : press[1].sequence;
+export const getBackspaceSequence = (input: string, shell: Shell) =>
+  shell === Shell.Pwsh || shell === Shell.Powershell || shell === Shell.Cmd || shell === Shell.Nushell ? input.replaceAll("\u0008", "\u007F") : input;
 
 export const getPathSeparator = (shell: Shell) => (shell == Shell.Bash || shell == Shell.Xonsh || shell == Shell.Nushell ? "/" : path.sep);
 

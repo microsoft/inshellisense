@@ -4,10 +4,18 @@
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
-import { getShellSourceCommand, hasLegacyShellConfig, Shell, shouldFlagLegacyResourcePlugin, zdotdir } from "../../utils/shell.js";
+import { getBackspaceSequence, getShellSourceCommand, hasLegacyShellConfig, Shell, shouldFlagLegacyResourcePlugin, zdotdir } from "../../utils/shell.js";
 
 test("uses a process-specific ZDOTDIR", () => {
   expect(zdotdir).toBe(path.join(os.tmpdir(), `is-zsh-${process.pid}`));
+});
+
+test.each([Shell.Pwsh, Shell.Powershell, Shell.Cmd, Shell.Nushell])("normalizes backspace without dropping other raw %s input", (shell) => {
+  expect(getBackspaceSequence("\u001Ba\u0008b\u007F\r", shell)).toBe("\u001Ba\u007Fb\u007F\r");
+});
+
+test.each([Shell.Bash, Shell.Zsh, Shell.Fish, Shell.Xonsh])("preserves raw %s backspace input", (shell) => {
+  expect(getBackspaceSequence("\u001Ba\u0008b\u007F\r", shell)).toBe("\u001Ba\u0008b\u007F\r");
 });
 
 describe("getShellSourceCommand", () => {
