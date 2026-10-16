@@ -21,10 +21,6 @@ const terminalResponseLifetime = 1_000;
 const terminalQueries: TerminalQuery[] = [
   { kind: "cursor-position", sequence: `${ESC}[6n` },
   { kind: "cursor-position", sequence: `${ESC}[?6n` },
-  ...([10, 11, 12] as const).flatMap((color) => [
-    { kind: `color-${color}` as const, sequence: `${ESC}]${color};?${BEL}` },
-    { kind: `color-${color}` as const, sequence: `${ESC}]${color};?${ESC}\\` },
-  ]),
 ];
 // blocks win32 input mode, the kitty keyboard protocol and xterm modifyOtherKeys from upgrading input & breaking node's readline
 // eslint-disable-next-line no-control-regex
@@ -97,6 +93,13 @@ const getPartialTerminalQuery = (input: string): string => {
       if (suffix.length > partial.length && suffix.length < sequence.length && sequence.startsWith(suffix)) {
         partial = suffix;
       }
+    }
+  }
+  for (let start = input.indexOf(ESC); start !== -1; start = input.indexOf(ESC, start + 1)) {
+    if (parseColorResponse(input, start).state === "partial") {
+      const suffix = input.slice(start);
+      if (suffix.length > partial.length) partial = suffix;
+      break;
     }
   }
   return partial;
@@ -218,6 +221,10 @@ export class StdioProxy {
       keypressInput += input.slice(index, sequenceStart);
       const match = parseTerminalResponse(input, sequenceStart);
       if (match.state === "complete") {
+        if (keypressInput.length !== 0) {
+          this.#keypressInput.write(keypressInput);
+          keypressInput = "";
+        }
         const response = input.slice(sequenceStart, match.end);
         if (this.#consumeTerminalQuery(match.kind)) this.#onTerminalResponse(response);
         index = match.end;
@@ -238,19 +245,33 @@ export class StdioProxy {
   }
 
   #trackTerminalQueries(data: string): void {
+    this.#pruneTerminalQueries();
     const input = this.#pendingQueryOutput + data;
     this.#pendingQueryOutput = getPartialTerminalQuery(input);
     const completeInput = this.#pendingQueryOutput.length === 0 ? input : input.slice(0, -this.#pendingQueryOutput.length);
     const createdAt = Date.now();
+    const track = (kind: TerminalResponseKind) => {
+      const pending = this.#pendingTerminalQueries.get(kind) ?? [];
+      pending.push(createdAt);
+      this.#pendingTerminalQueries.set(kind, pending);
+    };
 
     for (const { kind, sequence } of terminalQueries) {
       let index = completeInput.indexOf(sequence);
       while (index !== -1) {
-        const pending = this.#pendingTerminalQueries.get(kind) ?? [];
-        pending.push(createdAt);
-        this.#pendingTerminalQueries.set(kind, pending);
+        track(kind);
         index = completeInput.indexOf(sequence, index + sequence.length);
       }
+    }
+    for (let start = completeInput.indexOf(ESC); start !== -1; start = completeInput.indexOf(ESC, start + 1)) {
+      const match = parseColorResponse(completeInput, start);
+      if (match.state !== "complete") continue;
+      const sequence = completeInput.slice(start, match.end);
+      const [selector, ...parameters] = sequence.slice(2, sequence.endsWith(BEL) ? -1 : -2).split(";");
+      for (const color of [10, 11, 12] as const) {
+        if (parameters[color - Number(selector)] === "?") track(`color-${color}`);
+      }
+      start = match.end - 1;
     }
   }
 

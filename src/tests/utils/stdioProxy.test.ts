@@ -86,6 +86,48 @@ test("handles color queries and reports split across chunks", () => {
   expect(keypresses).toEqual([]);
 });
 
+test.each(["\u0007", "\u001B\\"])("tracks compound color queries at every chunk boundary with terminator %j", (terminator) => {
+  const query = `\u001B]10;?;?;?${terminator}`;
+  const reports = [10, 11, 12].map((color) => `\u001B]${color};rgb:ffff/ffff/ffff${terminator}`);
+  for (let split = 1; split < query.length; split++) {
+    const { keypresses, responses, proxy } = createRouter();
+    proxy.handleOutput(query.slice(0, split));
+    proxy.handleOutput(query.slice(split));
+    proxy.handleInput(reports.join(""));
+
+    expect(responses).toEqual(reports);
+    expect(keypresses).toEqual([]);
+    proxy.dispose();
+  }
+});
+
+test("tracks only queried colors in a compound setting and ignores unsupported selectors", () => {
+  const { responses, proxy } = createRouter();
+  const foreground = "\u001B]10;rgb:ffff/ffff/ffff\u0007";
+  const background = "\u001B]11;rgb:0000/0000/0000\u0007";
+
+  proxy.handleOutput("\u001B]10;rgb:ffff/ffff/ffff;?\u0007");
+  proxy.handleOutput("\u001B]12;rgb:ffff/ffff/ffff;?\u0007");
+  proxy.handleInput(foreground + background);
+
+  expect(responses).toEqual([background]);
+  proxy.dispose();
+});
+
+test("preserves ordinary input order around mixed terminal responses", () => {
+  const routed: string[] = [];
+  const proxy = new StdioProxy({ onTerminalResponse: (data) => routed.push(data) });
+  proxy.onKeypress((_value, key) => routed.push(key.sequence));
+  const color = "\u001B]11;rgb:0000/0000/0000\u0007";
+  const cursor = "\u001B[2;7R";
+
+  proxy.handleOutput("\u001B]11;?\u0007\u001B[6n");
+  proxy.handleInput(`a${color}b${cursor}c`);
+
+  expect(routed).toEqual(["a", color, "b", cursor, "c"]);
+  proxy.dispose();
+});
+
 test("handles color reports split after escape", () => {
   const { keypresses, responses, proxy } = createRouter();
   const response = "\u001B]11;rgb:0000/0000/0000\u0007";
