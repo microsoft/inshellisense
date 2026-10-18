@@ -126,6 +126,37 @@ const getSuggestionPriority = (suggestion: Fig.Suggestion): number => {
   return suggestion.priority ?? 50;
 };
 
+// How well a name matches the text typed so far: 3 = exact, 2 = prefix, 1 = substring, 0 = fuzzy only.
+const getMatchRelevance = (name: string, partialCmd: string): number => {
+  const haystack = name.toLowerCase();
+  const needle = partialCmd.toLowerCase();
+  if (haystack === needle) return 3;
+  const matchIndex = haystack.indexOf(needle);
+  if (matchIndex === 0) return 2;
+  if (matchIndex > 0) return 1;
+  return 0;
+};
+
+// Sorts by priority, then ranks file and folder suggestions within a priority band by match quality,
+// shorter names and alphabetically. Paths only swap places with other paths, so subcommands, options
+// and spec-authored suggestions keep their source order.
+const sortSuggestions = (suggestions: Suggestion[], partialCmd: string | undefined): Suggestion[] => {
+  const sorted = suggestions.sort((a, b) => b.priority - a.priority);
+  if (!partialCmd) return sorted;
+  const pathIndexes = sorted.flatMap((s, i) => (getPathy(s.type) ? [i] : []));
+  const rankedPaths = pathIndexes
+    .map((i) => sorted[i])
+    .sort(
+      (a, b) =>
+        b.priority - a.priority ||
+        getMatchRelevance(b.name, partialCmd) - getMatchRelevance(a.name, partialCmd) ||
+        a.name.length - b.name.length ||
+        a.name.localeCompare(b.name),
+    );
+  pathIndexes.forEach((sortedIndex, rank) => (sorted[sortedIndex] = rankedPaths[rank]));
+  return sorted;
+};
+
 function filter<T extends Fig.BaseSuggestion & { name?: Fig.SingleOrArray<string>; type?: Fig.SuggestionType | undefined }>(
   suggestions: T[],
   filterStrategy: FilterStrategy | undefined,
@@ -367,15 +398,7 @@ export const getSubcommandDrivenRecommendation = async (
       removeEmptySuggestion(
         removeHiddenSuggestions(
           removeHomeDirectorySuggestion(
-            removeAcceptedSuggestions(
-              adjustPathSuggestions(
-                suggestions.sort((a, b) => b.priority - a.priority),
-                partialToken,
-                lastToken,
-                shell,
-              ),
-              acceptedTokens,
-            ),
+            removeAcceptedSuggestions(adjustPathSuggestions(sortSuggestions(suggestions, partialCmd), partialToken, lastToken, shell), acceptedTokens),
             allTokens,
           ),
           partialToken,
@@ -422,15 +445,7 @@ export const getArgDrivenRecommendation = async (
       removeEmptySuggestion(
         removeHiddenSuggestions(
           removeHomeDirectorySuggestion(
-            removeAcceptedSuggestions(
-              adjustPathSuggestions(
-                suggestions.sort((a, b) => b.priority - a.priority),
-                partialToken,
-                lastToken,
-                shell,
-              ),
-              acceptedTokens,
-            ),
+            removeAcceptedSuggestions(adjustPathSuggestions(sortSuggestions(suggestions, partialCmd), partialToken, lastToken, shell), acceptedTokens),
             allTokens,
           ),
           partialToken,

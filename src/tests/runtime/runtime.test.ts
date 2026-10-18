@@ -32,6 +32,7 @@ const testData = [
   { name: "pathNestedSuggestion", command: "source .github/work" },
   { name: "pathWithFileSuggestion", command: "source shell/", maxSuggestions: 1 },
   { name: "pathWithFileFilteredSuggestion", command: "source shell/shellIntegration.", maxSuggestions: 1 },
+  { name: "pathPrefixMatchesRankedFirst", command: "cd s" },
 ];
 
 beforeAll(async () => await unpackResources());
