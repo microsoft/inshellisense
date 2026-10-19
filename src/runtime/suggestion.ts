@@ -60,7 +60,7 @@ export const NerdFontIcons = {
   yarn: "\ue8ec",
 };
 
-const getIcon = (icon: string | undefined, suggestionType: Fig.SuggestionType | undefined): string => {
+export const getIcon = (icon: string | undefined, suggestionType: Fig.SuggestionType | undefined): string => {
   // eslint-disable-next-line no-control-regex
   if (icon && /[^\u0000-\u00ff]/.test(icon)) {
     return icon;

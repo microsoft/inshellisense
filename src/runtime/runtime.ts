@@ -9,7 +9,7 @@ import figSpecList, {
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseCommand, CommandToken } from "./parser.js";
-import { getArgDrivenRecommendation, getSubcommandDrivenRecommendation, SuggestionIcons } from "./suggestion.js";
+import { getArgDrivenRecommendation, getIcon, getSubcommandDrivenRecommendation } from "./suggestion.js";
 import { Suggestion, SuggestionBlob } from "./model.js";
 import { buildExecuteShellCommand, resolveCwd } from "./utils.js";
 import { Shell } from "../utils/shell.js";
@@ -445,7 +445,7 @@ const runCommand = async (token: CommandToken): Promise<SuggestionBlob | undefin
             name: alias,
             type: "shortcut",
             allNames: [alias],
-            icon: SuggestionIcons.Shortcut,
+            icon: getIcon(`fig://icon?type=${alias}`, "shortcut"),
             priority: 100,
           }) as Suggestion,
       ),
@@ -455,7 +455,7 @@ const runCommand = async (token: CommandToken): Promise<SuggestionBlob | undefin
             name: spec,
             type: "subcommand",
             allNames: [spec],
-            icon: SuggestionIcons.Subcommand,
+            icon: getIcon(`fig://icon?type=${spec}`, "subcommand"),
             priority: 40,
           }) as Suggestion,
       ),
