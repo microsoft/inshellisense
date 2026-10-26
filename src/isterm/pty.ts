@@ -22,16 +22,34 @@ interface ICellData extends IBufferCell {
 import { CommandManager, CommandState } from "./commandManager.js";
 import log from "../utils/log.js";
 import { gitBashPath } from "../utils/shell.js";
-import styles from "ansi-styles";
 import * as ansi from "../utils/ansi.js";
 import { Command } from "commander";
 import which from "which";
 import { shellResourcesPath } from "../utils/constants.js";
 import { endTiming, startTiming } from "../utils/performance.js";
 
+export const trueColorSequence = (layer: 38 | 48, color: number): string => {
+  const red = (color >> 16) & 0xff;
+  const green = (color >> 8) & 0xff;
+  const blue = color & 0xff;
+  return `\x1b[${layer};2;${red};${green};${blue}m`;
+};
+
 const ISTermOnDataEvent = "data";
 const ISTermOnBufferChangeEvent = "bufferChange";
+const terminalColorSelectors = [10, 11, 12] as const;
 type BufferType = "active" | "normal";
+type TerminalColorSelector = (typeof terminalColorSelectors)[number];
+
+export const getTerminalColorQuerySelectors = (initialSelector: TerminalColorSelector, data: string): TerminalColorSelector[] => {
+  const querySelectors: TerminalColorSelector[] = [];
+  for (const [offset, parameter] of data.split(";").entries()) {
+    const selector = initialSelector + offset;
+    if (selector > 12) break;
+    if (parameter === "?") querySelectors.push(selector as TerminalColorSelector);
+  }
+  return querySelectors;
+};
 
 type ISTermOptions = {
   env?: { [key: string]: string | undefined };
@@ -70,6 +88,7 @@ export class ISTerm implements IPty {
   readonly #shell: Shell;
   #pendingData: string[] = [];
   #pendingCursorPositionReports = 0;
+  readonly #pendingTerminalColorReports = new Map<number, number>();
 
   constructor({ shell, cols, rows, env, shellTarget, shellArgs, underTest, login }: ISTermOptions & { shellTarget: string }) {
     this.#pty = pty.spawn(shellTarget, shellArgs ?? [], {
@@ -98,6 +117,14 @@ export class ISTerm implements IPty {
       if (params.at(0) === 6) this.#pendingCursorPositionReports += 1;
       return false;
     });
+    for (const selector of terminalColorSelectors) {
+      this.#term.parser.registerOscHandler(selector, (data) => {
+        for (const querySelector of getTerminalColorQuerySelectors(selector, data)) {
+          this.#pendingTerminalColorReports.set(querySelector, (this.#pendingTerminalColorReports.get(querySelector) ?? 0) + 1);
+        }
+        return false;
+      });
+    }
 
     this.#ptyEmitter = new EventEmitter();
     this.#term.parser.registerOscHandler(IsTermOscPs, (data) => this._handleIsSequence(data));
@@ -244,6 +271,17 @@ export class ISTerm implements IPty {
     return true;
   }
 
+  consumeTerminalColorQuery(selector: number): boolean {
+    const pending = this.#pendingTerminalColorReports.get(selector) ?? 0;
+    if (pending === 0) return false;
+    if (pending === 1) {
+      this.#pendingTerminalColorReports.delete(selector);
+    } else {
+      this.#pendingTerminalColorReports.set(selector, pending - 1);
+    }
+    return true;
+  }
+
   isAlternateBuffer(): boolean {
     return this.#term.buffer.active.type === "alternate";
   }
@@ -313,7 +351,7 @@ export class ISTerm implements IPty {
     } else if (cell.isBgPalette()) {
       bgAnsi = `\x1b[48;5;${cell.getBgColor()}m`;
     } else {
-      bgAnsi = `\x1b[48;5;${styles.hexToAnsi256(cell.getBgColor().toString(16))}m`;
+      bgAnsi = trueColorSequence(48, cell.getBgColor());
     }
 
     let fgAnsi = "";
@@ -322,7 +360,7 @@ export class ISTerm implements IPty {
     } else if (cell.isFgPalette()) {
       fgAnsi = `\x1b[38;5;${cell.getFgColor()}m`;
     } else {
-      fgAnsi = `\x1b[38;5;${styles.hexToAnsi256(cell.getFgColor().toString(16))}m`;
+      fgAnsi = trueColorSequence(38, cell.getFgColor());
     }
     return bgAnsi + fgAnsi;
   }
