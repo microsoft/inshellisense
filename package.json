@@ -55,6 +55,7 @@
     "commander": "^11.0.0",
     "find-process": "^1.4.7",
     "node-pty": "1.2.0-beta.8",
+    "smol-toml": "^1.9.1",
     "strip-ansi": "^7.1.0",
     "toml": "^3.0.0",
     "uuid": "^11.1.0",

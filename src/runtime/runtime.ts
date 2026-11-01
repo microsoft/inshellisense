@@ -19,6 +19,7 @@ import log from "../utils/log.js";
 import { specResourcesPath } from "../utils/constants.js";
 import { endTiming, startTiming } from "../utils/performance.js";
 import { clearImplicitGeneratorState } from "./generatorCache.js";
+import { bundledSpecs } from "../specs/index.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- recursive type, setting as any
 const specSet: any = {};
@@ -50,6 +51,8 @@ function loadSpecsSet(speclist: string[], versionedSpeclist: string[], specsPath
 }
 
 loadSpecsSet(speclist as string[], versionedSpeclist, specResourcesPath);
+Object.assign(specSet, bundledSpecs);
+specNames = [...new Set([...specNames, ...Object.keys(bundledSpecs)])].sort();
 
 const loadedSpecs: { [key: string]: Fig.Spec } = {};
 
@@ -65,8 +68,8 @@ const loadSpec = async (cmd: CommandToken[], signal?: AbortSignal): Promise<Fig.
   if (specSet[rootToken.token]) {
     signal?.throwIfAborted();
     const specPath = specSet[rootToken.token];
-    const importPath = path.isAbsolute(specPath) ? pathToFileURL(specPath).href : specPath;
-    const spec = (await import(importPath)).default;
+    const importPath = typeof specPath === "function" ? undefined : path.isAbsolute(specPath) ? pathToFileURL(specPath).href : specPath;
+    const spec = (importPath ? await import(importPath) : await specPath()).default;
     loadedSpecs[rootToken.token] = spec;
     return spec;
   }
