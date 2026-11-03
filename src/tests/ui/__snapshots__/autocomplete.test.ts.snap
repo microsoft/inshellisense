@@ -1,8 +1,58 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`resize recovery restores input and suggestions after becoming too narrow: 21 column view 1`] = `"> git st"`;
+exports[`resize recovery restores input and suggestions after becoming too narrow: 21 column view 1`] = `
+"> git st
+┌───────────────────┐
+│📦 stage           │
+│📦 status          │
+│📦 stash           │
+└───────────────────┘
+┌───────────────────┐
+│Add file contents  │
+│to the staging area│
+└───────────────────┘"
+`;
 
-exports[`resize recovery restores input and suggestions after becoming too narrow: 40 column view 1`] = `"> git st"`;
+exports[`resize recovery restores input and suggestions after becoming too narrow: 21 columns with a truncated description 1`] = `
+"> git st
+┌───────────────────┐
+│📦 stage           │
+│📦 status          │
+│📦 stash           │
+└───────────────────┘
+┌───────────────────┐
+│Add file contents …│
+└───────────────────┘"
+`;
+
+exports[`resize recovery restores input and suggestions after becoming too narrow: 21 columns with two suggestions 1`] = `
+"> git st
+┌───────────────────┐
+│📦 stage           │
+│📦 status          │
+└───────────────────┘"
+`;
+
+exports[`resize recovery restores input and suggestions after becoming too narrow: 21 columns without room for a description 1`] = `
+"> git st
+┌───────────────────┐
+│📦 stage           │
+│📦 status          │
+│📦 stash           │
+└───────────────────┘"
+`;
+
+exports[`resize recovery restores input and suggestions after becoming too narrow: 40 column view 1`] = `
+"> git st
+┌──────────────────────────────────────┐
+│📦 stage                              │
+│📦 status                             │
+│📦 stash                              │
+└──────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│Add file contents to the staging area │
+└──────────────────────────────────────┘"
+`;
 
 exports[`resize recovery restores input and suggestions after becoming too narrow: initial 80 column view 1`] = `
 "> git st

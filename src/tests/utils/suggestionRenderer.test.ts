@@ -6,7 +6,9 @@ import ansi from "ansi-escapes";
 import type { ISTerm } from "../../isterm/pty.js";
 import * as dec from "../../utils/dec.js";
 import { SuggestionRenderer } from "../../ui/suggestionRenderer.js";
-import type { SuggestionManager } from "../../ui/suggestionManager.js";
+import { SuggestionManager } from "../../ui/suggestionManager.js";
+import { Shell } from "../../utils/shell.js";
+import stripAnsi from "strip-ansi";
 
 const originalTerminalEmulator = process.env.TERMINAL_EMULATOR;
 
@@ -91,4 +93,65 @@ test("passes data through on direction changes without visible suggestions", () 
   renderer.renderPtyData("frame-top", false);
 
   expect(output).toEqual(["frame-bottom", "frame-top"]);
+});
+
+test.each(["above", "below"] as const)("renders a short adaptive menu %s the cursor", async (direction) => {
+  const output: string[] = [];
+  const term = {
+    cwd: process.cwd(),
+    cols: 21,
+    getCommandState: () => ({ commandText: "g", cursorTerminated: true, hasOutput: false }),
+    getCursorState: () => ({ cursorX: 20, cursorY: direction === "above" ? 3 : 0, remainingLines: direction === "below" ? 3 : 0, hidden: false, shift: 0 }),
+    getPatch: (_height: number, patches: ReturnType<SuggestionManager["render"]>) => patches.map(({ data }) => data).join("\n"),
+    isAlternateBuffer: () => false,
+  } as unknown as ISTerm;
+  const suggestions = new SuggestionManager(
+    term,
+    Shell.Bash,
+    Promise.resolve({
+      getSuggestions: async () => ({ suggestions: ["first", "second", "third"].map((name) => ({ name, allNames: [name], icon: "*", priority: 50 })) }),
+    }),
+  );
+  await suggestions.exec();
+  const renderer = new SuggestionRenderer(term, suggestions, (data) => output.push(data));
+
+  renderer.renderSuggestionUpdate(false);
+
+  expect(renderer.hasVisibleSuggestions).toBe(true);
+  expect(stripAnsi(output.join(""))).toContain("first");
+  expect(stripAnsi(output.join(""))).not.toContain("second");
+  expect(stripAnsi(output.join(""))).toContain("┘");
+});
+
+test("uses the available space above for a stacked description", async () => {
+  const output: string[] = [];
+  const term = {
+    cwd: process.cwd(),
+    cols: 50,
+    getCommandState: () => ({ commandText: "g", cursorTerminated: true, hasOutput: false }),
+    getCursorState: () => ({ cursorX: 0, cursorY: 14, remainingLines: 8, hidden: false, shift: 0 }),
+    getPatch: (_height: number, patches: ReturnType<SuggestionManager["render"]>) => patches.map(({ data }) => data).join("\n"),
+    isAlternateBuffer: () => false,
+  } as unknown as ISTerm;
+  const suggestions = new SuggestionManager(
+    term,
+    Shell.Bash,
+    Promise.resolve({
+      getSuggestions: async () => ({
+        suggestions: Array.from({ length: 5 }, (_, index) => ({
+          name: `item-${index}`,
+          allNames: [`item-${index}`],
+          icon: "*",
+          priority: 50,
+          description: "description",
+        })),
+      }),
+    }),
+  );
+  await suggestions.exec();
+  const renderer = new SuggestionRenderer(term, suggestions, (data) => output.push(data));
+
+  renderer.renderSuggestionUpdate(false);
+
+  expect(stripAnsi(output.join(""))).toContain("description");
 });

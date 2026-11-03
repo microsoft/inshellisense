@@ -5,6 +5,9 @@ import type { ISTerm } from "../../isterm/pty.js";
 import type { SuggestionBlob } from "../../runtime/model.js";
 import { Shell } from "../../utils/shell.js";
 import { SuggestionManager } from "../../ui/suggestionManager.js";
+import stripAnsi from "strip-ansi";
+import { wcswidth } from "../../utils/unicode.js";
+import { getConfig } from "../../utils/config.js";
 
 const deferred = <T>() => {
   let resolve!: (value: T) => void;
@@ -113,4 +116,180 @@ test("does not consume suggestion bindings when the UI is hidden", async () => {
 
   expect(manager.update({ name: "tab", sequence: "\t", shift: false, ctrl: false }, false)).toBe(false);
   expect(writes).toEqual([]);
+});
+
+describe("adaptive suggestion layout", () => {
+  const createManager = async (suggestionBlob: SuggestionBlob, cols = 80) => {
+    const writes: string[] = [];
+    const terminal = {
+      cwd: process.cwd(),
+      cols,
+      write: (data: string) => writes.push(data),
+      getCommandState: () => ({ commandText: "git ", cursorTerminated: true, hasOutput: false }),
+    } as unknown as ISTerm;
+    const manager = new SuggestionManager(terminal, Shell.Bash, Promise.resolve({ getSuggestions: async () => suggestionBlob }));
+    await manager.exec();
+    const press = (binding: "nextSuggestion" | "previousSuggestion" | "acceptSuggestion") => {
+      const { key, shift, control } = getConfig().bindings[binding];
+      return manager.update({ name: key, sequence: "", shift: !!shift, ctrl: !!control });
+    };
+    return { manager, terminal, writes, press };
+  };
+
+  const items = (): SuggestionBlob => ({
+    suggestions: Array.from({ length: 8 }, (_, index) => ({
+      name: `item-${index}`,
+      allNames: [`item-${index}`],
+      icon: "*",
+      priority: 50,
+      description: `details-${index}`,
+    })),
+  });
+
+  const text = (patches: ReturnType<SuggestionManager["render"]>) => patches.map(({ data }) => stripAnsi(data)).join("\n");
+
+  const expectFits = (patches: ReturnType<SuggestionManager["render"]>, cols: number, lines: number) => {
+    expect(patches.length).toBeGreaterThan(0);
+    expect(patches.length).toBeLessThanOrEqual(lines);
+    for (const patch of patches) {
+      expect(patch.startX).toBeGreaterThanOrEqual(0);
+      expect(patch.startX + patch.length).toBeLessThanOrEqual(cols);
+      expect(wcswidth(stripAnsi(patch.data))).toBe(patch.length);
+    }
+  };
+
+  test.each([3, 21, 40, 69, 70, 80])("fits %i columns near the right edge", async (cols) => {
+    const { manager } = await createManager(items(), cols);
+    const patches = manager.render("below", cols - 1, 7);
+
+    expectFits(patches, cols, 7);
+    expect(text(patches).includes("details-0")).toBe(cols >= 70);
+    expect(text(patches)).toContain("┌");
+    expect(text(patches)).toContain("┘");
+    if (cols >= 10) expect(text(patches)).toContain("item-0");
+  });
+
+  test.each(["above", "below"] as const)("keeps keyboard selection visible with a short menu %s the cursor", async (direction) => {
+    const { manager, press, writes } = await createManager(items(), 40);
+    expect(text(manager.render(direction, 0, 4))).toContain("item-0");
+    for (let index = 0; index < 5; index++) press("nextSuggestion");
+
+    const patches = manager.render(direction, 0, 4);
+    expectFits(patches, 40, 4);
+    expect(text(patches)).toContain("item-5");
+    expect(text(patches)).not.toContain("item-0");
+    press("acceptSuggestion");
+    expect(writes).toEqual(["item-5 "]);
+
+    for (let index = 0; index < 4; index++) press("previousSuggestion");
+    expect(text(manager.render(direction, 0, 4))).toContain("item-1");
+  });
+
+  test("inserts the full suggestion when its label is truncated", async () => {
+    const name = "a-very-long-suggestion-name";
+    const { manager, press, writes } = await createManager(blob(name), 10);
+    const patches = manager.render("below", 0, 3);
+    expectFits(patches, 10, 3);
+    expect(text(patches)).toContain("…");
+    expect(text(patches)).not.toContain(name);
+    press("acceptSuggestion");
+    expect(writes).toEqual([`${name} `]);
+  });
+
+  test.each([
+    [2, 7],
+    [80, 2],
+  ])("hides the menu safely with only %i columns and %i lines", async (cols, lines) => {
+    const { manager } = await createManager(items(), cols);
+    expect(manager.render("below", 0, lines)).toEqual([]);
+  });
+
+  test("fits a standalone argument description into a narrow terminal", async () => {
+    const { manager } = await createManager({ suggestions: [], argumentDescription: "A long argument description that must be truncated" }, 12);
+    const patches = manager.render("above", 11, 3);
+    expectFits(patches, 12, 3);
+    expect(text(patches)).toContain("…");
+  });
+
+  test("truncates wide characters and emoji by terminal cell width", async () => {
+    const { manager } = await createManager(blob("美国人🚀美国人🚀美国人"), 11);
+    const patches = manager.render("below", 10, 3);
+    expectFits(patches, 11, 3);
+    expect(text(patches)).toContain("…");
+  });
+
+  test("fits wide characters in a minimal standalone description", async () => {
+    const { manager } = await createManager({ suggestions: [], argumentDescription: "美国人🚀" }, 3);
+    const patches = manager.render("below", 2, 3);
+    expectFits(patches, 3, 3);
+    expect(text(patches)).toContain("…");
+  });
+
+  test.each([21, 69])("stacks the description below the complete list at %i columns", async (cols) => {
+    const { manager } = await createManager(items(), cols);
+    const patches = manager.render("below", cols - 1, 10);
+
+    expectFits(patches, cols, 10);
+    expect(patches).toHaveLength(10);
+    expect(text(patches.slice(0, 7))).toContain("item-4");
+    expect(text(patches.slice(0, 7))).not.toContain("details-0");
+    expect(text(patches.slice(7))).toContain("details-0");
+    expect(patches.every(({ length }) => length === Math.min(40, cols))).toBe(true);
+  });
+
+  test.each([9, 10])("keeps all list rows when %i lines are available for a stacked description", async (lines) => {
+    const { manager } = await createManager(items(), 21);
+    const patches = manager.render("below", 0, lines);
+
+    expectFits(patches, 21, lines);
+    expect(text(patches)).toContain("item-4");
+    expect(text(patches).includes("details-0")).toBe(lines === 10);
+    expect(patches).toHaveLength(lines === 10 ? 10 : 7);
+  });
+
+  test("places a truncated description after the list", async () => {
+    const description = "Long description ".repeat(30);
+    const suggestionBlob = items();
+    suggestionBlob.suggestions[0].description = description;
+    const { manager } = await createManager(suggestionBlob, 21);
+    const patches = manager.render("below", 20, 11);
+
+    expectFits(patches, 21, 11);
+    expect(patches).toHaveLength(11);
+    expect(text(patches.slice(0, 7))).toContain("item-0");
+    expect(text(patches.slice(0, 7))).toContain("item-4");
+    expect(text(patches.slice(7))).toContain("Long description");
+    expect(text(patches.slice(7))).toContain("…");
+  });
+
+  test("caps a stacked description at five content lines", async () => {
+    const suggestionBlob = items();
+    suggestionBlob.suggestions[0].description = "Long description ".repeat(30);
+    const { manager } = await createManager(suggestionBlob, 21);
+    const patches = manager.render("below", 0, 20);
+
+    expectFits(patches, 21, 20);
+    expect(patches).toHaveLength(14);
+    expect(text(patches.slice(7))).toContain("…");
+  });
+
+  test("keeps the selected description through stacked, hidden, and side-by-side layouts", async () => {
+    const { manager, terminal, press, writes } = await createManager(items());
+    for (let index = 0; index < 6; index++) press("nextSuggestion");
+    expect(text(manager.render("below", 0, 10))).toContain("details-6");
+
+    terminal.cols = 21;
+    const stacked = manager.render("above", 20, 10);
+    expectFits(stacked, 21, 10);
+    expect(text(stacked.slice(0, 5))).toContain("item-6");
+    expect(text(stacked.slice(5))).toContain("details-6");
+
+    const hidden = text(manager.render("above", 20, 7));
+    expect(hidden).not.toContain("details-6");
+    expect(hidden).toContain("item-6");
+    terminal.cols = 80;
+    expect(text(manager.render("below", 0, 7))).toContain("details-6");
+    press("acceptSuggestion");
+    expect(writes).toEqual(["item-6 "]);
+  });
 });
