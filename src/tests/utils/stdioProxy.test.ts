@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { jest } from "@jest/globals";
+
 import { disableWin32InputMode, enableWin32InputMode, index } from "../../utils/ansi.js";
 import { StdioProxy } from "../../ui/stdioProxy.js";
 
@@ -15,6 +17,63 @@ const createRouter = () => {
   proxy.onKeypress((_value, key) => keypresses.push(key.sequence));
   return { keypresses, proxy, responses, toggles };
 };
+
+test("forwards raw Escape immediately without creating a keypress", () => {
+  const { keypresses, proxy } = createRouter();
+  const forwarded: string[] = [];
+
+  proxy.handleInput("\u001B", (data) => forwarded.push(data));
+
+  expect(forwarded).toEqual(["\u001B"]);
+  expect(keypresses).toEqual([]);
+  proxy.dispose();
+});
+
+test("transfers an incomplete key to the raw route without a delayed duplicate", async () => {
+  jest.useFakeTimers();
+  const { keypresses, proxy } = createRouter();
+  const forwarded: string[] = [];
+  try {
+    proxy.handleInput("a\u001B");
+    proxy.handleInput("[A", (data) => forwarded.push(data));
+    await jest.advanceTimersByTimeAsync(1_000);
+    proxy.handleInput("\u001B[D");
+
+    expect(forwarded).toEqual(["\u001B[A"]);
+    expect(keypresses).toEqual(["a", "\u001B[D"]);
+  } finally {
+    proxy.dispose();
+    jest.useRealTimers();
+  }
+});
+
+test("keeps cursor reports separate from raw input across chunks", () => {
+  const { keypresses, proxy, responses } = createRouter();
+  const forwarded: string[] = [];
+  const forward = (data: string) => forwarded.push(data);
+
+  proxy.handleInput("a\u001B[2;", forward);
+  proxy.handleInput("7Rb", forward);
+
+  expect(forwarded).toEqual(["a", "b"]);
+  expect(responses).toEqual(["\u001B[2;7R"]);
+  expect(keypresses).toEqual([]);
+  proxy.dispose();
+});
+
+test("preserves split UTF-8 input on the raw route", () => {
+  const { keypresses, proxy } = createRouter();
+  const forwarded: string[] = [];
+  const input = Buffer.from("\u{1F680}");
+  const forward = (data: string) => forwarded.push(data);
+
+  proxy.handleInput(input.subarray(0, 2), forward);
+  proxy.handleInput(input.subarray(2), forward);
+
+  expect(forwarded).toEqual(["\u{1F680}"]);
+  expect(keypresses).toEqual([]);
+  proxy.dispose();
+});
 
 test("consumes cursor-position reports without creating keypresses", () => {
   const { keypresses, responses, proxy } = createRouter();

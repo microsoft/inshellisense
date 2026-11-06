@@ -48,7 +48,9 @@ type StdioProxyOptions = {
 };
 
 export class StdioProxy {
-  readonly #keypressInput = new PassThrough();
+  readonly #keypressListeners: ((...event: KeyPressEvent) => void)[] = [];
+  #pendingKeypressInput = "";
+  #keypressInput = this.#createKeypressInput();
   #decoder = new StringDecoder("utf8");
   readonly #onCursorPositionReport: (data: string) => void;
   readonly #onWin32InputMode: (enabled: boolean) => void;
@@ -58,17 +60,16 @@ export class StdioProxy {
   constructor({ onCursorPositionReport = () => {}, onWin32InputMode = () => {} }: StdioProxyOptions = {}) {
     this.#onCursorPositionReport = onCursorPositionReport;
     this.#onWin32InputMode = onWin32InputMode;
-    readline.emitKeypressEvents(this.#keypressInput as unknown as NodeJS.ReadStream);
   }
 
   onKeypress(listener: (...event: KeyPressEvent) => void): void {
-    this.#keypressInput.on("keypress", listener);
+    this.#keypressListeners.push(listener);
   }
 
-  handleInput(data: Buffer | string): void {
+  handleInput(data: Buffer | string, forwardInput?: (data: string) => void): void {
     const decoded = Buffer.isBuffer(data) ? this.#decoder.write(data) : this.#decoder.end() + data;
     if (!Buffer.isBuffer(data)) this.#decoder = new StringDecoder("utf8");
-    this.#routeInput(this.#pendingInput + decoded);
+    this.#routeInput(this.#pendingInput + decoded, forwardInput);
   }
 
   handleOutput(data: string): string {
@@ -94,13 +95,36 @@ export class StdioProxy {
     return pendingOutput;
   }
 
-  #routeInput(input: string): void {
+  #createKeypressInput(): PassThrough {
+    const input = new PassThrough();
+    readline.emitKeypressEvents(input as unknown as NodeJS.ReadStream);
+    input.on("keypress", (...event: KeyPressEvent) => {
+      this.#pendingKeypressInput = this.#pendingKeypressInput.slice(event[1].sequence.length);
+      this.#keypressListeners.forEach((listener) => listener(...event));
+    });
+    return input;
+  }
+
+  #routeInput(input: string, forwardInput?: (data: string) => void): void {
     this.#pendingInput = input.match(partialCursorPositionReport)?.[0] ?? "";
     const completeInput = this.#pendingInput.length === 0 ? input : input.slice(0, -this.#pendingInput.length);
     const keypressInput = completeInput.replace(cursorPositionReport, (response) => {
       this.#onCursorPositionReport(response);
       return "";
     });
-    if (keypressInput.length !== 0) this.#keypressInput.write(keypressInput);
+    if (forwardInput != null) {
+      const pending = this.#pendingKeypressInput;
+      if (pending.length !== 0) {
+        // Forward incomplete keys in order, without leaving readline's Escape timer active on this route.
+        this.#keypressInput.removeAllListeners("keypress");
+        this.#keypressInput.destroy();
+        this.#pendingKeypressInput = "";
+        this.#keypressInput = this.#createKeypressInput();
+      }
+      if (pending.length + keypressInput.length !== 0) forwardInput(pending + keypressInput);
+    } else if (keypressInput.length !== 0) {
+      this.#pendingKeypressInput += keypressInput;
+      this.#keypressInput.write(keypressInput);
+    }
   }
 }
