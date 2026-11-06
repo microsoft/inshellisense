@@ -36,6 +36,11 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
         term.write(data);
       }
     },
+    onTerminalColorReport: (selector, data) => {
+      if (term.consumeTerminalColorQuery(selector)) {
+        term.write(data);
+      }
+    },
   });
   const handleInput = (data: Buffer | string) => stdio.handleInput(data);
   process.stdin.on("data", handleInput);
