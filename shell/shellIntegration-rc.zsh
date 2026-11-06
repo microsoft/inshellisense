@@ -1,5 +1,10 @@
 autoload -U add-zsh-hook
 
+# /etc/zshrc on macOS defaults HISTFILE to $ZDOTDIR/.zsh_history, which is this session's temporary directory
+if [[ $HISTFILE == "$ZDOTDIR/.zsh_history" ]]; then
+	HISTFILE=$USER_ZDOTDIR/.zsh_history
+fi
+
 if [[ -f $USER_ZDOTDIR/.zshrc ]]; then
 	ZDOTDIR=$USER_ZDOTDIR
 	. $USER_ZDOTDIR/.zshrc
