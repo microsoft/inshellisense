@@ -53,6 +53,25 @@ export const aliasSupportedShells = [Shell.Bash, Shell.Zsh];
 
 export const userZdotdir = process.env?.ZDOTDIR ?? os.homedir() ?? `~`;
 export const zdotdir = path.join(os.tmpdir(), `is-zsh-${process.pid}`);
+export const bashLoginHome = path.join(os.tmpdir(), `is-bash-${process.pid}`);
+
+const toBashPath = (filePath: string, platform: NodeJS.Platform): string => {
+  if (platform !== "win32") return filePath;
+  return filePath.replaceAll("\\", "/").replace(/^([A-Za-z]):/, (_match, drive: string) => `/${drive.toLowerCase()}`);
+};
+
+export const getBashLoginEnvironment = (
+  env: Record<string, string | undefined>,
+  loginHome = bashLoginHome,
+  platform: NodeJS.Platform = process.platform,
+): Record<string, string | undefined> => {
+  const userHome = env.HOME || os.homedir();
+  return {
+    ...env,
+    HOME: toBashPath(loginHome, platform),
+    ISTERM_USER_HOME: toBashPath(userHome, platform),
+  };
+};
 
 export const checkShellConfigs = (): Shell[] => {
   const shellsWithoutConfigs: Shell[] = [];
@@ -161,6 +180,20 @@ const getShellConfigName = (shell: Shell) => {
 };
 
 let zshDotfilesCleanupRegistered = false;
+let bashLoginCleanupRegistered = false;
+
+export const setupBashLoginShell = async (loginHome = bashLoginHome, resourcesPath = shellResourcesPath) => {
+  await fsAsync.mkdir(loginHome, { recursive: true });
+  if (loginHome === bashLoginHome && !bashLoginCleanupRegistered) {
+    process.once("exit", () => fs.rmSync(bashLoginHome, { recursive: true, force: true }));
+    bashLoginCleanupRegistered = true;
+  }
+  await Promise.all([
+    fsAsync.cp(path.join(resourcesPath, "shellIntegration-profile.bash"), path.join(loginHome, ".bash_profile"), { force: true }),
+    fsAsync.cp(path.join(resourcesPath, "shellIntegration.bash"), path.join(loginHome, "shellIntegration.bash"), { force: true }),
+    fsAsync.cp(path.join(resourcesPath, "bash-preexec.sh"), path.join(loginHome, "bash-preexec.sh"), { force: true }),
+  ]);
+};
 
 export const setupZshDotfiles = async () => {
   await fsAsync.mkdir(zdotdir, { recursive: true });
