@@ -120,7 +120,7 @@ export const getSuggestions = async (cmd: string, cwd: string, shell: Shell, sig
     signal?.throwIfAborted();
     const spec = await loadSpec(activeCmd, signal);
     if (spec == null) return;
-    const subcommand = getSubcommand(spec);
+    const subcommand = await getGeneratedSubcommand(spec, activeCmd, cwd, signal);
     if (subcommand == null) return;
 
     signal?.throwIfAborted();
@@ -183,6 +183,34 @@ const getSubcommand = (spec?: Fig.Spec): Fig.Subcommand | undefined => {
     return;
   }
   return spec;
+};
+
+const getGeneratedSubcommand = async (spec: Fig.Spec, tokens: CommandToken[], cwd: string, signal?: AbortSignal): Promise<Fig.Subcommand | undefined> => {
+  const subcommand = getSubcommand(spec);
+  if (!subcommand?.generateSpec) return subcommand;
+
+  signal?.throwIfAborted();
+  const executeShellCommand = buildExecuteShellCommand(5000, signal);
+  try {
+    const generated = getSubcommand(
+      await subcommand.generateSpec(
+        tokens.map((token) => token.token),
+        (command) => executeShellCommand({ ...command, cwd: command.cwd ?? cwd }),
+      ),
+    );
+    signal?.throwIfAborted();
+    if (generated == null) return subcommand;
+    return {
+      ...subcommand,
+      ...generated,
+      subcommands: [...(subcommand.subcommands ?? []), ...(generated.subcommands ?? [])],
+      options: [...(subcommand.options ?? []), ...(generated.options ?? [])],
+    };
+  } catch (error) {
+    signal?.throwIfAborted();
+    log.debug({ msg: "failed to generate spec, falling back to static completions", command: tokens[0]?.token, error });
+    return subcommand;
+  }
 };
 
 const genSubcommand = async (command: string, parentCommand: Fig.Subcommand, signal?: AbortSignal): Promise<Fig.Subcommand | undefined> => {
@@ -356,7 +384,7 @@ const runArg = async (
     }
     const spec = await loadSpec(tokens, signal);
     if (spec == null) return;
-    const subcommand = getSubcommand(spec);
+    const subcommand = await getGeneratedSubcommand(spec, tokens, cwd, signal);
     if (subcommand == null) return;
     return runSubcommand(tokens.slice(1), allTokens, subcommand, cwd, shell, undefined, undefined, undefined, undefined, signal);
   }
