@@ -99,7 +99,6 @@ export class StdioProxy {
 
   #createKeypressInput(): PassThrough {
     const input = new PassThrough();
-    // Node reads the timeout from its Interface argument without requiring a line editor.
     readline.emitKeypressEvents(input, { escapeCodeTimeout: ESCAPE_CODE_TIMEOUT } as unknown as readline.Interface);
     input.on("keypress", (...event: KeyPressEvent) => {
       this.#pendingKeypressInput = this.#pendingKeypressInput.slice(event[1].sequence.length);
