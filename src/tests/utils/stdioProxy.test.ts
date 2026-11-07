@@ -87,6 +87,7 @@ test("keeps cursor reports separate from raw input across chunks", () => {
   const forwarded: string[] = [];
   const forward = (data: string) => forwarded.push(data);
 
+  proxy.handleOutput("\u001B[6n");
   proxy.handleInput("a\u001B[2;", forward);
   proxy.handleInput("7Rb", forward);
 
@@ -208,18 +209,85 @@ test("tracks only queried colors in a compound setting and ignores unsupported s
   proxy.dispose();
 });
 
-test("preserves ordinary input order around mixed terminal responses", () => {
+test.each(["keypress", "raw"])("preserves %s input order around mixed terminal responses", (route) => {
   const routed: string[] = [];
+  const keypresses: string[] = [];
   const proxy = new StdioProxy({ onTerminalResponse: (data) => routed.push(data) });
-  proxy.onKeypress((_value, key) => routed.push(key.sequence));
+  proxy.onKeypress((_value, key) => {
+    keypresses.push(key.sequence);
+    routed.push(key.sequence);
+  });
   const color = "\u001B]11;rgb:0000/0000/0000\u0007";
   const cursor = "\u001B[2;7R";
 
   proxy.handleOutput("\u001B]11;?\u0007\u001B[6n");
-  proxy.handleInput(`a${color}b${cursor}c`);
+  proxy.handleInput(`a${color}b${cursor}c`, route === "raw" ? (data) => routed.push(data) : undefined);
 
   expect(routed).toEqual(["a", color, "b", cursor, "c"]);
+  expect(keypresses).toEqual(route === "raw" ? [] : ["a", "b", "c"]);
   proxy.dispose();
+});
+
+test("transfers a pending key before a terminal response on the raw route", async () => {
+  const routed: string[] = [];
+  const keypresses: string[] = [];
+  const proxy = new StdioProxy({ onTerminalResponse: (data) => routed.push(data) });
+  proxy.onKeypress((_value, key) => keypresses.push(key.sequence));
+  const response = "\u001B]11;rgb:0000/0000/0000\u0007";
+
+  try {
+    proxy.handleInput("\u001B");
+    proxy.handleOutput("\u001B]11;?\u0007");
+    proxy.handleInput(response, (data) => routed.push(data));
+    await delay(100);
+
+    expect(routed).toEqual(["\u001B", response]);
+    expect(keypresses).toEqual([]);
+    proxy.handleInput("a");
+    expect(keypresses).toEqual(["a"]);
+  } finally {
+    proxy.dispose();
+  }
+});
+
+test.each(["\u001B", "\u001B[", "\u001B]"])("does not hold raw %j for the terminal query lifetime", async (input) => {
+  const { keypresses, proxy } = createRouter();
+  const forwarded: string[] = [];
+  try {
+    proxy.handleOutput("\u001B[6n\u001B]11;?\u0007");
+    proxy.handleInput(input, (data) => forwarded.push(data));
+    await delay(100);
+
+    expect(forwarded).toEqual([input]);
+    expect(keypresses).toEqual([]);
+    proxy.handleInput("a");
+    expect(keypresses).toEqual(["a"]);
+  } finally {
+    proxy.dispose();
+  }
+});
+
+test.each([
+  ["\u001B[6n", "\u001B[2;7R"],
+  ["\u001B]11;?\u0007", "\u001B]11;rgb:0000/0000/0000\u0007"],
+  ["\u001B]12;?\u001B\\", "\u001B]12;rgb:ffff/ffff/ffff\u001B\\"],
+])("separates raw input from fragmented responses to %j at every chunk boundary", (query, response) => {
+  for (let split = 1; split < response.length; split++) {
+    const { keypresses, responses, proxy } = createRouter();
+    const forwarded: string[] = [];
+    const forward = (data: string) => forwarded.push(data);
+    try {
+      proxy.handleOutput(query);
+      proxy.handleInput(`a${response.slice(0, split)}`, forward);
+      proxy.handleInput(`${response.slice(split)}b`, forward);
+
+      expect(forwarded).toEqual(["a", "b"]);
+      expect(responses).toEqual([response]);
+      expect(keypresses).toEqual([]);
+    } finally {
+      proxy.dispose();
+    }
+  }
 });
 
 test("handles color reports split after escape", () => {

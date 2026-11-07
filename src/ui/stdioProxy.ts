@@ -182,8 +182,10 @@ export class StdioProxy {
     this.#clearPendingInputTimer();
     const remaining = this.#decoder.end();
     this.#pendingInput = "";
-    if (remaining.length !== 0) this.#keypressInput.write(remaining);
+    this.#writeInput(remaining);
+    this.#keypressInput.removeAllListeners("keypress");
     this.#keypressInput.destroy();
+    this.#pendingKeypressInput = "";
     const pendingOutput = this.#pendingOutput;
     this.#pendingOutput = "";
     this.#pendingQueryOutput = "";
@@ -251,21 +253,15 @@ export class StdioProxy {
       keypressInput += input.slice(index, sequenceStart);
       const match = parseTerminalResponse(input, sequenceStart);
       if (match.state === "complete") {
-        if (keypressInput.length !== 0) {
-          this.#keypressInput.write(keypressInput);
-          keypressInput = "";
-        }
+        this.#writeInput(keypressInput, forwardInput);
+        keypressInput = "";
         const response = input.slice(sequenceStart, match.end);
         if (this.#consumeTerminalQuery(match.kind)) this.#onTerminalResponse(response);
         index = match.end;
-      } else if (match.state === "partial") {
-        if (match.discardOnTimeout || this.#hasPendingTerminalQuery(match.kinds)) {
-          this.#pendingInput = input.slice(sequenceStart);
-          this.#schedulePendingInput(match.discardOnTimeout, match.kinds, forwardInput);
-          break;
-        }
-        keypressInput += ESC;
-        index = sequenceStart + 1;
+      } else if (match.state === "partial" && (match.discardOnTimeout || this.#hasPendingTerminalQuery(match.kinds))) {
+        this.#pendingInput = input.slice(sequenceStart);
+        this.#schedulePendingInput(match.discardOnTimeout, match.kinds, forwardInput);
+        break;
       } else {
         keypressInput += ESC;
         index = sequenceStart + 1;
@@ -324,12 +320,16 @@ export class StdioProxy {
     const pending = kinds.flatMap((kind) => this.#pendingTerminalQueries.get(kind) ?? []);
     const wait =
       pending.length === 0 ? terminalResponseLifetime : Math.max(...pending.map((createdAt) => createdAt + terminalResponseLifetime - Date.now()), 0);
-    this.#pendingInputTimer = setTimeout(() => {
-      const input = this.#pendingInput;
-      this.#pendingInput = "";
-      this.#pendingInputTimer = undefined;
-      if (!discard) this.#writeInput(input, forwardInput);
-    }, wait);
+    // Ambiguous response prefixes must not hold Escape for the full query lifetime.
+    this.#pendingInputTimer = setTimeout(
+      () => {
+        const input = this.#pendingInput;
+        this.#pendingInput = "";
+        this.#pendingInputTimer = undefined;
+        if (!discard) this.#writeInput(input, forwardInput);
+      },
+      discard ? wait : Math.min(wait, ESCAPE_CODE_TIMEOUT),
+    );
   }
 
   #clearPendingInputTimer(): void {

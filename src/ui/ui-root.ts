@@ -36,7 +36,9 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
       if (!termExited) term.write(data);
     },
   });
-  const forwardInput = (data: string) => term.write(normalizeBackspace(data, shell));
+  const forwardInput = (data: string) => {
+    if (!termExited) term.write(normalizeBackspace(data, shell));
+  };
   const handleInput = (data: Buffer | string) => stdio.handleInput(data, term.isAlternateBuffer() ? forwardInput : undefined);
   process.stdin.on("data", handleInput);
   writeOutput(ansi.clearTerminal);
@@ -92,10 +94,8 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
     } else if (!inputHandled) {
       if (press.name === "backspace") {
         backspaceEchoPending = true;
-        term.write(normalizeBackspace(press.sequence, shell));
-      } else {
-        term.write(press.sequence);
       }
+      forwardInput(press.sequence);
     }
   });
 
