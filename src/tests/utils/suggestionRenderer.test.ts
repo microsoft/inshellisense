@@ -9,10 +9,13 @@ import { SuggestionRenderer } from "../../ui/suggestionRenderer.js";
 import { SuggestionManager } from "../../ui/suggestionManager.js";
 import { Shell } from "../../utils/shell.js";
 import stripAnsi from "strip-ansi";
+import { getConfig } from "../../utils/config.js";
 
 const originalTerminalEmulator = process.env.TERMINAL_EMULATOR;
+const originalConfig = { ...getConfig() };
 
 afterEach(() => {
+  Object.assign(getConfig(), originalConfig);
   if (originalTerminalEmulator == null) {
     delete process.env.TERMINAL_EMULATOR;
   } else {
@@ -154,4 +157,46 @@ test("uses the available space above for a stacked description", async () => {
   renderer.renderSuggestionUpdate(false);
 
   expect(stripAnsi(output.join(""))).toContain("description");
+});
+
+test.each(["above", "below"] as const)("uses all available rows for an expanding description %s the cursor", async (direction) => {
+  getConfig().truncateDescriptions = false;
+  const output: string[] = [];
+  const patchHeights: number[] = [];
+  const term = {
+    cwd: process.cwd(),
+    cols: 80,
+    getCommandState: () => ({ commandText: "g", cursorTerminated: true, hasOutput: false }),
+    getCursorState: () => ({
+      cursorX: 0,
+      cursorY: direction === "above" ? 20 : 8,
+      remainingLines: direction === "below" ? 20 : 8,
+      hidden: false,
+      shift: 0,
+    }),
+    getPatch: (height: number, patches: ReturnType<SuggestionManager["render"]>) => {
+      patchHeights.push(height);
+      return patches.map(({ data }) => data).join("\n");
+    },
+    isAlternateBuffer: () => false,
+  } as unknown as ISTerm;
+  const suggestions = new SuggestionManager(
+    term,
+    Shell.Bash,
+    Promise.resolve({
+      getSuggestions: async () => ({
+        suggestions: [{ name: "item", allNames: ["item"], icon: "*", priority: 50, description: "x".repeat(400) + " ending" }],
+      }),
+    }),
+  );
+  await suggestions.exec();
+  const renderer = new SuggestionRenderer(term, suggestions, (data) => output.push(data));
+
+  renderer.renderSuggestionUpdate(false);
+  await renderer.handleBufferChange("alternate");
+
+  expect(stripAnsi(output[0])).toContain("ending");
+  expect(stripAnsi(output[0])).not.toContain("…");
+  expect(patchHeights.every((height) => height === 20)).toBe(true);
+  expect(output).toHaveLength(2);
 });

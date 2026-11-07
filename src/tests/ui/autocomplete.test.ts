@@ -2,13 +2,98 @@
 // Licensed under the MIT License.
 
 import { jest } from "@jest/globals";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { terminalSnapshot } from "@microsoft/tui-test/test";
 import type { TuiTest } from "@microsoft/tui-test/test";
 import { closeSession, configs, expectPrompt, expectText, returnChar, startSession } from "./helpers";
+import { unpackResources } from "../../utils/node.js";
 
 const accent = "#7d56f4";
 
 jest.retryTimes(2, { logErrorsBeforeRetry: true });
+
+describe("configured description layout", () => {
+  let home: string;
+  let terminal: TuiTest | undefined;
+
+  beforeAll(async () => {
+    home = await fs.mkdtemp(path.join(os.tmpdir(), "inshellisense-popup-"));
+    const resources = path.join(home, ".inshellisense");
+    await unpackResources(resources);
+    const spec = {
+      name: "git",
+      subcommands: Array.from({ length: 5 }, (_, index) => ({
+        name: `choice-${index}`,
+        description: index === 0 ? "More information about this suggestion. ".repeat(10) + "Description complete" : "Short description",
+      })),
+    };
+    await fs.writeFile(path.join(resources, "spec", "git.js"), `export default ${JSON.stringify(spec)};`);
+  });
+
+  afterEach(async () => {
+    await closeSession(terminal);
+    terminal = undefined;
+  });
+
+  afterAll(async () => {
+    await fs.rm(home, { recursive: true, force: true });
+  });
+
+  const start = async (truncate: boolean) => {
+    await fs.writeFile(
+      path.join(home, ".inshellisenserc"),
+      `maxSuggestions = 2\ndescriptionWidth = 24\ndescriptionHeight = 2\ntruncateDescriptions = ${truncate}\n`,
+    );
+    terminal = await startSession(
+      {
+        label: "bash-popup",
+        shell: "bash",
+        env: { HOME: home, USERPROFILE: home, XDG_CONFIG_HOME: path.join(home, ".config"), BASH_SILENCE_DEPRECATION_WARNING: "1" },
+      },
+      ["-T", "-s", "bash"],
+      120,
+      30,
+    );
+    await terminal.type("git ");
+    await expectText(terminal, "choice-0");
+    return terminal;
+  };
+
+  test("honors configured dimensions when truncation is enabled", async () => {
+    const terminal = await start(true);
+    await expectText(terminal, "…");
+    await expectText(terminal, "choice-1");
+    await expectText(terminal, "choice-2", { not: true });
+    await expectText(terminal, "Description complete", { not: true });
+    const rows = terminalSnapshot(await terminal.text()).split("\n");
+    expect(rows.filter((row) => row.includes("│"))).toHaveLength(2);
+    expect(rows.find((row) => row.includes("┌"))?.trim()).toBe(`┌${"─".repeat(38)}┐┌${"─".repeat(22)}┐`);
+  });
+
+  test("expands, truncates on resize, and clears the expanded description on selection changes", async () => {
+    const terminal = await start(false);
+    await expectText(terminal, "Description complete");
+    await expectText(terminal, "…", { not: true });
+    await expectText(terminal, "choice-2", { not: true });
+    await terminal.waitIdle();
+    const expanded = terminalSnapshot(await terminal.text());
+
+    await terminal.resize(21, 12);
+    await expectText(terminal, "…");
+    await expectText(terminal, "Description complete", { not: true });
+    await terminal.resize(120, 30);
+    await expectText(terminal, "Description complete");
+    await terminal.waitIdle();
+    expect(terminalSnapshot(await terminal.text())).toBe(expanded);
+
+    await terminal.press("Down");
+    await expectText(terminal, "Short description");
+    await expectText(terminal, "More information", { not: true });
+    await expectText(terminal, "Description complete", { not: true });
+  });
+});
 
 describe("resize recovery", () => {
   let terminal: TuiTest;

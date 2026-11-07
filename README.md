@@ -142,13 +142,22 @@ If you are using a [NerdFont](https://www.nerdfonts.com/) patched font, you can 
 useNerdFont = true
 ```
 
-### Max Suggestions
+### Suggestion and Description Size
 
-You can change the maximum number of suggestions displayed in the autocomplete list at one time in your config file:
+These top-level config options control the popup size. The values below are the defaults:
 
 ```toml
-maxSuggestions = 10
+maxSuggestions = 5
+descriptionWidth = 30
+descriptionHeight = 5
+truncateDescriptions = true
 ```
+
+`maxSuggestions` controls the suggestion list's height: each suggestion takes one row, excluding borders. Use a positive integer; for example, `maxSuggestions = 10` shows up to ten suggestions at once. The list shrinks when there is less room, and keyboard navigation keeps the other suggestions accessible.
+
+`descriptionWidth` is the description box's width in terminal columns, including its borders (minimum 3). `descriptionHeight` is its maximum number of text rows, excluding borders (minimum 1). Both must be integers. In narrow terminals, the boxes stack and share the wider box's width, capped by the terminal width.
+
+Set `truncateDescriptions = false` to use these dimensions as a starting size instead of a limit. Long descriptions grow proportionally to preserve the box's aspect ratio until one dimension reaches the available space, then continue growing along the other dimension. Text is still truncated if it cannot fit. This also applies to standalone argument descriptions; suggestion labels remain single-line.
 
 ### Active Suggestion Background Color
 

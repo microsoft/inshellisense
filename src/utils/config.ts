@@ -34,6 +34,9 @@ type Config = {
   useAliases: boolean;
   useNerdFont: boolean;
   maxSuggestions?: number;
+  descriptionWidth: number;
+  descriptionHeight: number;
+  truncateDescriptions: boolean;
   activeSuggestionBackgroundColor: string;
   boxBorderStyle: BoxBorderStyle;
 };
@@ -87,9 +90,27 @@ const configSchema = {
       default: false,
     },
     maxSuggestions: {
-      type: "number",
+      type: "integer",
+      minimum: 1,
       nullable: true,
       default: 5,
+    },
+    descriptionWidth: {
+      type: "integer",
+      minimum: 3,
+      nullable: true,
+      default: 30,
+    },
+    descriptionHeight: {
+      type: "integer",
+      minimum: 1,
+      nullable: true,
+      default: 5,
+    },
+    truncateDescriptions: {
+      type: "boolean",
+      nullable: true,
+      default: true,
     },
     activeSuggestionBackgroundColor: {
       type: "string",
@@ -124,6 +145,9 @@ let globalConfig: Config = {
   },
   useAliases: false,
   useNerdFont: false,
+  descriptionWidth: 30,
+  descriptionHeight: 5,
+  truncateDescriptions: true,
   activeSuggestionBackgroundColor: "#7D56F4",
   boxBorderStyle: "square",
 };
@@ -156,6 +180,9 @@ export const loadConfig = async (program: Command) => {
         useAliases: config.useAliases ?? false,
         useNerdFont: config?.useNerdFont ?? false,
         maxSuggestions: config?.maxSuggestions ?? 5,
+        descriptionWidth: config?.descriptionWidth ?? 30,
+        descriptionHeight: config?.descriptionHeight ?? 5,
+        truncateDescriptions: config?.truncateDescriptions ?? true,
         activeSuggestionBackgroundColor: config?.activeSuggestionBackgroundColor ?? "#7D56F4",
         boxBorderStyle: config?.boxBorderStyle ?? "square",
       };
