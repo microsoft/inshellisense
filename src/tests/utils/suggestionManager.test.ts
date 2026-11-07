@@ -80,6 +80,37 @@ test("clears prompt-scoped generator state when the command ends", async () => {
   expect(clearCalls).toBe(1);
 });
 
+test("clears prompt-scoped state when the command ends before its first suggestions finish", async () => {
+  let commandText: string | undefined = "first";
+  let clearCalls = 0;
+  const first = deferred<SuggestionBlob>();
+  const started = deferred<void>();
+  const terminal = {
+    cwd: process.cwd(),
+    cols: 80,
+    getCommandState: () => ({ commandText, cursorTerminated: true, hasOutput: false }),
+  } as unknown as ISTerm;
+  const runtime = Promise.resolve({
+    getSuggestions: async () => {
+      started.resolve();
+      return first.promise;
+    },
+    clearTransientSuggestionState: () => {
+      clearCalls += 1;
+    },
+  });
+  const manager = new SuggestionManager(terminal, Shell.Bash, runtime);
+
+  const pending = manager.exec();
+  await started.promise;
+  commandText = undefined;
+  await manager.exec();
+  first.resolve(blob("obsolete"));
+
+  await expect(pending).resolves.toBe(false);
+  expect(clearCalls).toBe(1);
+});
+
 test("does not consume suggestion bindings while the UI is hidden", async () => {
   const writes: string[] = [];
   const terminal = {

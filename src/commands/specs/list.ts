@@ -3,7 +3,7 @@
 
 import { Command } from "commander";
 import { loadConfig } from "../../utils/config.js";
-import { getSpecNames, loadLocalSpecsSet } from "../../runtime/runtime.js";
+import { getSpecNames, loadLocalSpecsSet } from "../../runtime/specs.js";
 import { getAliasNames, loadAliases } from "../../runtime/alias.js";
 import { aliasSupportedShells, Shell } from "../../utils/shell.js";
 
