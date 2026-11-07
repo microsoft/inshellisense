@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { jest } from "@jest/globals";
+import { setTimeout as delay } from "node:timers/promises";
 
 import { disableWin32InputMode, enableWin32InputMode, index } from "../../utils/ansi.js";
 import { StdioProxy } from "../../ui/stdioProxy.js";
@@ -18,6 +18,43 @@ const createRouter = () => {
   return { keypresses, proxy, responses, toggles };
 };
 
+// Readline captures native timers, which Jest's fake timers cannot advance.
+test("emits a standalone Escape after the shortened timeout", async () => {
+  const { keypresses, proxy } = createRouter();
+  try {
+    proxy.handleInput("\u001B");
+    expect(keypresses).toEqual([]);
+
+    await delay(100);
+    expect(keypresses).toEqual(["\u001B"]);
+
+    proxy.handleInput("a");
+    expect(keypresses).toEqual(["\u001B", "a"]);
+  } finally {
+    proxy.dispose();
+  }
+});
+
+test.each([
+  ["an arrow key", "[A"],
+  ["an Alt combination", "a"],
+])("preserves %s completed within the Escape timeout", async (_name, suffix) => {
+  const { keypresses, proxy } = createRouter();
+  try {
+    proxy.handleInput("\u001B");
+    await delay(25);
+    expect(keypresses).toEqual([]);
+
+    proxy.handleInput(suffix);
+    expect(keypresses).toEqual([`\u001B${suffix}`]);
+
+    await delay(100);
+    expect(keypresses).toEqual([`\u001B${suffix}`]);
+  } finally {
+    proxy.dispose();
+  }
+});
+
 test("forwards raw Escape immediately without creating a keypress", () => {
   const { keypresses, proxy } = createRouter();
   const forwarded: string[] = [];
@@ -30,20 +67,18 @@ test("forwards raw Escape immediately without creating a keypress", () => {
 });
 
 test("transfers an incomplete key to the raw route without a delayed duplicate", async () => {
-  jest.useFakeTimers();
   const { keypresses, proxy } = createRouter();
   const forwarded: string[] = [];
   try {
     proxy.handleInput("a\u001B");
     proxy.handleInput("[A", (data) => forwarded.push(data));
-    await jest.advanceTimersByTimeAsync(1_000);
+    await delay(100);
     proxy.handleInput("\u001B[D");
 
     expect(forwarded).toEqual(["\u001B[A"]);
     expect(keypresses).toEqual(["a", "\u001B[D"]);
   } finally {
     proxy.dispose();
-    jest.useRealTimers();
   }
 });
 

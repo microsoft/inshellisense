@@ -259,7 +259,7 @@ const getGitBashPaths = async (): Promise<string[]> => {
   return gitBashPaths;
 };
 
-export const getBackspaceSequence = (input: string, shell: Shell) =>
+export const normalizeBackspace = (input: string, shell: Shell) =>
   shell === Shell.Pwsh || shell === Shell.Powershell || shell === Shell.Cmd || shell === Shell.Nushell ? input.replaceAll("\u0008", "\u007F") : input;
 
 export const getPathSeparator = (shell: Shell) => (shell == Shell.Bash || shell == Shell.Xonsh || shell == Shell.Nushell ? "/" : path.sep);

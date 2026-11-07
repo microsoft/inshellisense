@@ -8,6 +8,8 @@ import { StringDecoder } from "node:string_decoder";
 import * as ansi from "../utils/ansi.js";
 import type { KeyPressEvent } from "./suggestionManager.js";
 
+const ESCAPE_CODE_TIMEOUT = 50;
+
 // eslint-disable-next-line no-control-regex
 const cursorPositionReport = new RegExp("\\u001B\\[\\??\\d+;\\d+R", "g");
 // eslint-disable-next-line no-control-regex
@@ -97,7 +99,8 @@ export class StdioProxy {
 
   #createKeypressInput(): PassThrough {
     const input = new PassThrough();
-    readline.emitKeypressEvents(input as unknown as NodeJS.ReadStream);
+    // Node reads the timeout from its Interface argument without requiring a line editor.
+    readline.emitKeypressEvents(input, { escapeCodeTimeout: ESCAPE_CODE_TIMEOUT } as unknown as readline.Interface);
     input.on("keypress", (...event: KeyPressEvent) => {
       this.#pendingKeypressInput = this.#pendingKeypressInput.slice(event[1].sequence.length);
       this.#keypressListeners.forEach((listener) => listener(...event));

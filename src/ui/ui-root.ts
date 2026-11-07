@@ -5,7 +5,7 @@ import ansi from "ansi-escapes";
 import { Command } from "commander";
 
 import log from "../utils/log.js";
-import { getBackspaceSequence, Shell } from "../utils/shell.js";
+import { normalizeBackspace, Shell } from "../utils/shell.js";
 import { resetToInitialState } from "../utils/ansi.js";
 import { endTiming, incrementMetric, startTiming } from "../utils/performance.js";
 import type { KeyPressEvent } from "./suggestionManager.js";
@@ -37,7 +37,7 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
       }
     },
   });
-  const forwardInput = (data: string) => term.write(getBackspaceSequence(data, shell));
+  const forwardInput = (data: string) => term.write(normalizeBackspace(data, shell));
   const handleInput = (data: Buffer | string) => stdio.handleInput(data, term.isAlternateBuffer() ? forwardInput : undefined);
   process.stdin.on("data", handleInput);
   writeOutput(ansi.clearTerminal);
@@ -82,7 +82,7 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   stdio.onKeypress((...keyPress: KeyPressEvent) => {
     const press = keyPress[1];
     if (term.isAlternateBuffer()) {
-      term.write(press.name === "backspace" ? getBackspaceSequence(press.sequence, shell) : press.sequence);
+      forwardInput(press.sequence);
       return;
     }
 
@@ -92,7 +92,7 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
     } else if (!inputHandled) {
       if (press.name === "backspace") {
         backspaceEchoPending = true;
-        term.write(getBackspaceSequence(press.sequence, shell));
+        term.write(normalizeBackspace(press.sequence, shell));
       } else {
         term.write(press.sequence);
       }
