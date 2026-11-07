@@ -27,12 +27,41 @@ describe("resize recovery", () => {
     expect(initialView).toMatchSnapshot("initial 80 column view");
 
     await terminal.resize(40, 30);
-    await expectText(terminal, "┘", { not: true });
+    await expectText(terminal, "stage");
+    await expectText(terminal, "Add file contents");
+    await terminal.waitIdle();
     expect(terminalSnapshot(await terminal.text())).toMatchSnapshot("40 column view");
 
     await terminal.resize(21, 30);
-    await expectText(terminal, "┘", { not: true });
+    await expectText(terminal, "stage");
+    await expectText(terminal, "Add file contents");
+    await terminal.waitIdle();
     expect(terminalSnapshot(await terminal.text())).toMatchSnapshot("21 column view");
+
+    await terminal.resize(21, 10);
+    await expectText(terminal, "stage");
+    await expectText(terminal, "…");
+    await terminal.waitIdle();
+    expect(terminalSnapshot(await terminal.text())).toMatchSnapshot("21 columns with a truncated description");
+
+    await terminal.resize(21, 9);
+    await expectText(terminal, "stage");
+    await expectText(terminal, "Add file contents", { not: true });
+    await terminal.waitIdle();
+    const threeSuggestions = terminalSnapshot(await terminal.text());
+    expect(threeSuggestions).toMatchSnapshot("21 columns without room for a description");
+
+    await terminal.resize(21, 6);
+    await terminal.waitIdle();
+    await expectText(terminal, "stage");
+    await expectText(terminal, "status");
+    await expectText(terminal, "stash", { not: true });
+    expect(terminalSnapshot(await terminal.text())).toMatchSnapshot("21 columns with two suggestions");
+
+    await terminal.resize(21, 9);
+    await expectText(terminal, "stash");
+    await terminal.waitIdle();
+    expect(terminalSnapshot(await terminal.text())).toBe(threeSuggestions);
 
     await terminal.resize(80, 30);
     await terminal.waitIdle();
@@ -40,6 +69,27 @@ describe("resize recovery", () => {
     const restoredView = terminalSnapshot(await terminal.text());
     expect(restoredView).toMatchSnapshot("restored 80 column view");
     expect(restoredView).toBe(initialView);
+  });
+
+  test("keeps selection usable when a short menu appears above the cursor", async () => {
+    await terminal.resize(21, 12);
+    await terminal.write("\r".repeat(12));
+    await expectPrompt(terminal);
+    await terminal.type("git st");
+    await expectText(terminal, "stash");
+    await terminal.waitIdle();
+
+    await terminal.resize(21, 7);
+    await terminal.waitIdle();
+    await expectText(terminal, "stage");
+    await expectText(terminal, "status");
+    const view = terminalSnapshot(await terminal.text());
+    expect(view.indexOf("stage")).toBeLessThan(view.lastIndexOf("> git st"));
+
+    await terminal.press("Down");
+    await terminal.waitIdle();
+    await terminal.press("Tab");
+    await expectText(terminal, "> git status", { strict: false });
   });
 });
 

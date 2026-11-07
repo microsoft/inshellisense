@@ -68,6 +68,12 @@ describe("truncateMultilineText", () => {
     expect(box.every((line) => wcswidth(line) === 30)).toBe(true);
   });
 
+  test.each(["美", "⭐⭐"])("fits wide text %s into a single-cell description", (description) => {
+    const lines = truncateMultilineText(description, 1, 5);
+    expect(lines.every((line) => wcswidth(line) === 1)).toBe(true);
+    expect(lines.join("")).toContain("…");
+  });
+
   test("respects maxHeight and marks the truncation", () => {
     const lines = truncateMultilineText("a".repeat(200), 20, 3);
     expect(lines).toHaveLength(3);

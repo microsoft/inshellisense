@@ -108,11 +108,14 @@ export class SuggestionRenderer {
   }
 
   #layout(cursor: CursorState): RenderSnapshot["layout"] {
-    const maxLines = getMaxLines();
+    const maxLines = getMaxLines(this.#term.cols);
     const { remainingLines, cursorY } = cursor;
     const direction = remainingLines >= maxLines ? "below" : cursorY >= maxLines ? "above" : remainingLines >= cursorY ? "below" : "above";
-    const lines = direction === "above" ? Math.min(maxLines, cursorY) : Math.min(maxLines, remainingLines);
-    return { direction, lines };
+    return { direction, lines: this.#linesFor(direction, cursor) };
+  }
+
+  #linesFor(direction: Direction, { cursorY, remainingLines }: CursorState): number {
+    return Math.min(getMaxLines(this.#term.cols), direction === "above" ? cursorY : remainingLines);
   }
 
   #snapshot(bufferType: PatchBuffer = "active"): RenderSnapshot {
@@ -133,7 +136,7 @@ export class SuggestionRenderer {
         cursor: { hidden: cursorHidden, shift: cursorShift, cursorX },
         command,
       } = snapshot;
-      const suggestions = this.#suggestions.render(direction, cursorX);
+      const suggestions = this.#suggestions.render(direction, cursorX, lines);
       const fitsViewport = suggestions.length <= lines && suggestions.every(({ startX, length }) => startX >= 0 && startX + length <= this.#term.cols);
 
       if (!fitsViewport || (!previouslyVisible && suggestions.length === 0)) {
@@ -186,10 +189,9 @@ export class SuggestionRenderer {
   }
 
   #clearOutput(direction: Direction, snapshot: RenderSnapshot, bufferType: PatchBuffer = "active"): string {
-    const {
-      cursor: { hidden: cursorHidden, cursorY, remainingLines },
-    } = snapshot;
-    const lines = direction === "above" ? Math.min(getMaxLines(), cursorY) : Math.min(getMaxLines(), remainingLines);
+    const { cursor } = snapshot;
+    const cursorHidden = cursor.hidden;
+    const lines = this.#linesFor(direction, cursor);
     const patch = this.#term.getPatch(lines, [], direction, bufferType);
     const showCursor = cursorHidden ? "" : ansi.cursorShow;
     const { cursorSavePosition, cursorRestorePosition } = this.#cursorPositionSequences;

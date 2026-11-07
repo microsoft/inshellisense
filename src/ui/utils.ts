@@ -30,11 +30,8 @@ export const truncateMultilineText = (description: string, width: number, maxHei
     hard: true,
   });
   const lines = wrappedText.split("\n");
-  const truncatedLines = lines.slice(0, maxHeight);
-  if (lines.length > maxHeight) {
-    truncatedLines[maxHeight - 1] = [...truncatedLines[maxHeight - 1]].slice(0, -1).join("") + "…";
-  }
-  return truncatedLines.map((line) => wcPadEnd(line, width));
+  const overflows = lines.length > maxHeight;
+  return lines.slice(0, maxHeight).map((line, idx) => truncateText(overflows && idx === maxHeight - 1 ? line + "…" : line, width));
 };
 
 const wcPadEnd = (text: string, width: number, char = " "): string => text + char.repeat(Math.max(width - wcswidth(text), 0));
