@@ -1,19 +1,19 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`configured description layout expands above the cursor near the bottom of the terminal: expanded description above the prompt 1`] = `
-">
->
->
->                                             ┌────────────────────────────────────────────────────────┐
->                                             │More information about this suggestion. More information│
->                                             │ about this suggestion. More information about this     │
->                                             │suggestion. More information about this suggestion. More│
->                                             │ information about this suggestion. More information    │
->                                             │about this suggestion. More information about this      │
->     ┌──────────────────────────────────────┐│suggestion. More information about this suggestion. More│
->     │📦 choice-0                           ││ information about this suggestion. More information    │
->     │📦 choice-1                           ││about this suggestion. Description complete             │
->     └──────────────────────────────────────┘└────────────────────────────────────────────────────────┘
+"
+
+
+                                              ┌────────────────────────────────────────────────────────┐
+                                              │More information about this suggestion. More information│
+                                              │ about this suggestion. More information about this     │
+                                              │suggestion. More information about this suggestion. More│
+                                              │ information about this suggestion. More information    │
+                                              │about this suggestion. More information about this      │
+      ┌──────────────────────────────────────┐│suggestion. More information about this suggestion. More│
+      │📦 choice-0                           ││ information about this suggestion. More information    │
+      │📦 choice-1                           ││about this suggestion. Description complete             │
+      └──────────────────────────────────────┘└────────────────────────────────────────────────────────┘
 > git"
 `;
 

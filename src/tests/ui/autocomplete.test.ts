@@ -57,7 +57,10 @@ describe("configured description layout", () => {
       rows,
     );
     if (above) {
-      await terminal.write("\r".repeat(rows));
+      await terminal.type(`printf '\\033[2J\\033[${rows};1H'`);
+      await expectText(terminal, "printf", { strict: false });
+      await terminal.press("Enter");
+      await expectText(terminal, "printf", { not: true });
       await expectPrompt(terminal);
     }
     await terminal.type("git ");
