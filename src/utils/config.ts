@@ -32,6 +32,7 @@ type Config = {
     path: string[];
   };
   useAliases: boolean;
+  cacheGeneratedSpecs: boolean;
   useNerdFont: boolean;
   maxSuggestions?: number;
   descriptionWidth: number;
@@ -83,6 +84,11 @@ const configSchema = {
       type: "boolean",
       nullable: true,
       default: false,
+    },
+    cacheGeneratedSpecs: {
+      type: "boolean",
+      nullable: true,
+      default: true,
     },
     useNerdFont: {
       type: "boolean",
@@ -144,6 +150,7 @@ let globalConfig: Config = {
     path: [],
   },
   useAliases: false,
+  cacheGeneratedSpecs: true,
   useNerdFont: false,
   descriptionWidth: 30,
   descriptionHeight: 5,
@@ -178,6 +185,7 @@ export const loadConfig = async (program: Command) => {
           path: [...(config?.specs?.path ?? [])],
         },
         useAliases: config.useAliases ?? false,
+        cacheGeneratedSpecs: config?.cacheGeneratedSpecs ?? true,
         useNerdFont: config?.useNerdFont ?? false,
         maxSuggestions: config?.maxSuggestions ?? 5,
         descriptionWidth: config?.descriptionWidth ?? 30,

@@ -59,3 +59,17 @@ test.each([
 ])("rejects invalid popup configuration: %s", async (source) => {
   await expect(load(source)).rejects.toThrow("is invalid");
 });
+
+test.each<[string, boolean]>([
+  ["", true],
+  ["cacheGeneratedSpecs = true", true],
+  ["cacheGeneratedSpecs = false", false],
+])("loads generated spec caching from %p", async (config, expected) => {
+  await load(config);
+
+  expect(getConfig().cacheGeneratedSpecs).toBe(expected);
+});
+
+test("rejects a non-boolean generated spec caching setting", async () => {
+  await expect(load('cacheGeneratedSpecs = "false"')).rejects.toThrow("cacheGeneratedSpecs");
+});

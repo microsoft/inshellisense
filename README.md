@@ -134,6 +134,16 @@ Inshellisense supports expanding aliases for bash/zsh shells. You can enable ali
 useAliases = true
 ```
 
+### Generated Spec Caching
+
+Generated root specs are cached by spec and working directory while you edit a prompt. The cache is cleared between prompts, and specs with `cache: false` always regenerate. Argument suggestion generators continue to refresh according to their own settings. Failed or cancelled spec generation is not cached.
+
+Caching is enabled by default. To regenerate root specs on every completion request, add this top-level setting to your config file:
+
+```toml
+cacheGeneratedSpecs = false
+```
+
 ### NerdFonts
 
 If you are using a [NerdFont](https://www.nerdfonts.com/) patched font, you can enable the NerdFonts support in your config file:
