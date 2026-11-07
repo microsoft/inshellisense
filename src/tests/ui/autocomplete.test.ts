@@ -41,10 +41,10 @@ describe("configured description layout", () => {
     await fs.rm(home, { recursive: true, force: true });
   });
 
-  const start = async (truncate: boolean) => {
+  const start = async (truncate: boolean, { cols = 120, rows = 30, maxSuggestions = 2, descriptionWidth = 24, descriptionHeight = 2, above = false } = {}) => {
     await fs.writeFile(
       path.join(home, ".inshellisenserc"),
-      `maxSuggestions = 2\ndescriptionWidth = 24\ndescriptionHeight = 2\ntruncateDescriptions = ${truncate}\n`,
+      `maxSuggestions = ${maxSuggestions}\ndescriptionWidth = ${descriptionWidth}\ndescriptionHeight = ${descriptionHeight}\ntruncateDescriptions = ${truncate}\n`,
     );
     terminal = await startSession(
       {
@@ -53,12 +53,23 @@ describe("configured description layout", () => {
         env: { HOME: home, USERPROFILE: home, XDG_CONFIG_HOME: path.join(home, ".config"), BASH_SILENCE_DEPRECATION_WARNING: "1" },
       },
       ["-T", "-s", "bash"],
-      120,
-      30,
+      cols,
+      rows,
     );
+    if (above) {
+      await terminal.write("\r".repeat(rows));
+      await expectPrompt(terminal);
+    }
     await terminal.type("git ");
     await expectText(terminal, "choice-0");
     return terminal;
+  };
+
+  const snapshot = async (terminal: TuiTest, name: string) => {
+    await terminal.waitIdle();
+    const view = terminalSnapshot(await terminal.text());
+    expect(view).toMatchSnapshot(name);
+    return view;
   };
 
   test("honors configured dimensions when truncation is enabled", async () => {
@@ -67,9 +78,49 @@ describe("configured description layout", () => {
     await expectText(terminal, "choice-1");
     await expectText(terminal, "choice-2", { not: true });
     await expectText(terminal, "Description complete", { not: true });
-    const rows = terminalSnapshot(await terminal.text()).split("\n");
+    const rows = (await snapshot(terminal, "two suggestions and two description rows")).split("\n");
     expect(rows.filter((row) => row.includes("│"))).toHaveLength(2);
     expect(rows.find((row) => row.includes("┌"))?.trim()).toBe(`┌${"─".repeat(38)}┐┌${"─".repeat(22)}┐`);
+  });
+
+  test("honors larger configured suggestion and description heights", async () => {
+    const terminal = await start(true, { maxSuggestions: 4, descriptionWidth: 45, descriptionHeight: 6 });
+    await expectText(terminal, "choice-3");
+    await expectText(terminal, "choice-4", { not: true });
+    await expectText(terminal, "…");
+    await expectText(terminal, "Description complete", { not: true });
+
+    const rows = (await snapshot(terminal, "four suggestions and six description rows")).split("\n");
+    expect(rows.filter((row) => row.includes("│"))).toHaveLength(6);
+    expect(rows.find((row) => row.includes("┌"))?.trim()).toBe(`┌${"─".repeat(38)}┐┌${"─".repeat(43)}┐`);
+  });
+
+  test.each([
+    { scenario: "width-limited side-by-side growth", cols: 80, rows: 30, truncated: false },
+    { scenario: "height-limited side-by-side growth", cols: 120, rows: 10, truncated: false },
+    { scenario: "width-limited stacked growth", cols: 60, rows: 30, truncated: false },
+    { scenario: "truncation after exhausting both dimensions", cols: 80, rows: 8, truncated: true },
+  ])("$scenario", async ({ cols, rows, truncated }) => {
+    const terminal = await start(false, { cols, rows });
+    await expectText(terminal, "Description complete", { not: truncated });
+    await expectText(terminal, "…", { not: !truncated });
+    await expectText(terminal, "choice-2", { not: true });
+    const view = await snapshot(terminal, `${cols}x${rows} terminal`);
+    const popupRows = view.split("\n").filter((row) => /[┌│└]/u.test(row));
+
+    if (cols <= 80) expect(Math.max(...popupRows.map((row) => row.trimEnd().length))).toBe(cols);
+    if (rows <= 10) expect(popupRows).toHaveLength(rows - 2);
+    expect(popupRows.filter((row) => row.includes("┌"))).toHaveLength(cols < 64 ? 2 : 1);
+  });
+
+  test("expands above the cursor near the bottom of the terminal", async () => {
+    const terminal = await start(false, { rows: 14, above: true });
+    await expectText(terminal, "Description complete");
+    await expectText(terminal, "…", { not: true });
+    const view = await snapshot(terminal, "expanded description above the prompt");
+
+    expect(view.indexOf("choice-0")).toBeLessThan(view.lastIndexOf("> git"));
+    expect(view.indexOf("Description complete")).toBeLessThan(view.lastIndexOf("> git"));
   });
 
   test("expands, truncates on resize, and clears the expanded description on selection changes", async () => {
@@ -77,12 +128,12 @@ describe("configured description layout", () => {
     await expectText(terminal, "Description complete");
     await expectText(terminal, "…", { not: true });
     await expectText(terminal, "choice-2", { not: true });
-    await terminal.waitIdle();
-    const expanded = terminalSnapshot(await terminal.text());
+    const expanded = await snapshot(terminal, "proportional expansion at 120x30");
 
     await terminal.resize(21, 12);
     await expectText(terminal, "…");
     await expectText(terminal, "Description complete", { not: true });
+    await snapshot(terminal, "stacked truncation at 21x12");
     await terminal.resize(120, 30);
     await expectText(terminal, "Description complete");
     await terminal.waitIdle();
@@ -92,6 +143,7 @@ describe("configured description layout", () => {
     await expectText(terminal, "Short description");
     await expectText(terminal, "More information", { not: true });
     await expectText(terminal, "Description complete", { not: true });
+    await snapshot(terminal, "short description after selection changes");
   });
 });
 
