@@ -4,7 +4,7 @@
 import type { ISTerm } from "../../isterm/pty.js";
 import type { SuggestionBlob } from "../../runtime/model.js";
 import { Shell } from "../../utils/shell.js";
-import { SuggestionManager } from "../../ui/suggestionManager.js";
+import { getMaxLines, SuggestionManager } from "../../ui/suggestionManager.js";
 import stripAnsi from "strip-ansi";
 import { wcswidth } from "../../utils/unicode.js";
 import { getConfig } from "../../utils/config.js";
@@ -150,6 +150,16 @@ test("does not consume suggestion bindings when the UI is hidden", async () => {
 });
 
 describe("adaptive suggestion layout", () => {
+  let originalConfig: ReturnType<typeof getConfig>;
+
+  beforeEach(() => {
+    originalConfig = { ...getConfig(), maxSuggestions: getConfig().maxSuggestions };
+  });
+
+  afterEach(() => {
+    Object.assign(getConfig(), originalConfig);
+  });
+
   const createManager = async (suggestionBlob: SuggestionBlob, cols = 80) => {
     const writes: string[] = [];
     const terminal = {
@@ -322,5 +332,106 @@ describe("adaptive suggestion layout", () => {
     expect(text(manager.render("below", 0, 7))).toContain("details-6");
     press("acceptSuggestion");
     expect(writes).toEqual(["item-6 "]);
+  });
+
+  test("uses the configured list height for pagination", async () => {
+    getConfig().maxSuggestions = 2;
+    const { manager, press, writes } = await createManager(items());
+
+    const firstPage = text(manager.render("below", 0, 20));
+    expect(firstPage).toContain("item-1");
+    expect(firstPage).not.toContain("item-2");
+    press("nextSuggestion");
+    press("nextSuggestion");
+    expect(text(manager.render("below", 0, 20))).toContain("item-2");
+    press("acceptSuggestion");
+    expect(writes).toEqual(["item-2 "]);
+  });
+
+  test("uses configured description dimensions and reserves enough rows", async () => {
+    Object.assign(getConfig(), { descriptionWidth: 45, descriptionHeight: 8 });
+    const suggestionBlob = items();
+    suggestionBlob.suggestions[0].description = "description ".repeat(100);
+    const { manager, terminal } = await createManager(suggestionBlob, 100);
+
+    const sideBySide = manager.render("below", 0);
+    expectFits(sideBySide, 100, 11);
+    expect(sideBySide).toHaveLength(10);
+    expect(sideBySide[0].length).toBe(85);
+    expect(text(sideBySide)).toContain("…");
+    expect(getMaxLines(100)).toBe(11);
+
+    terminal.cols = 60;
+    const stacked = manager.render("above", 59);
+    expectFits(stacked, 60, 18);
+    expect(stacked).toHaveLength(17);
+    expect(stacked.every(({ length }) => length === 45)).toBe(true);
+    expect(getMaxLines(60)).toBe(18);
+  });
+
+  test.each(["above", "below"] as const)("expands descriptions %s the cursor without expanding the suggestion count", async (direction) => {
+    getConfig().truncateDescriptions = false;
+    const suggestionBlob = items();
+    suggestionBlob.suggestions[0].description = "x".repeat(480) + " ending";
+    const { manager } = await createManager(suggestionBlob, 160);
+    const patches = manager.render(direction, 159, 25);
+
+    expectFits(patches, 160, 25);
+    expect(patches.length).toBeGreaterThan(7);
+    expect(Math.max(...patches.map(({ length }) => length))).toBeGreaterThan(70);
+    expect(text(patches)).toContain("ending");
+    expect(text(patches)).not.toContain("…");
+    expect(text(patches)).toContain("item-4");
+    expect(text(patches)).not.toContain("item-5");
+  });
+
+  test("expands standalone argument descriptions", async () => {
+    getConfig().truncateDescriptions = false;
+    const { manager } = await createManager({ suggestions: [], argumentDescription: "x".repeat(480) + " ending" }, 100);
+    const patches = manager.render("below", 99, 20);
+
+    expectFits(patches, 100, 20);
+    expect(patches.length).toBeGreaterThan(7);
+    expect(patches[0].length).toBeGreaterThan(30);
+    expect(text(patches)).toContain("ending");
+    expect(text(patches)).not.toContain("…");
+  });
+
+  test("expands stacked descriptions and restores the layout and selection after resizing", async () => {
+    getConfig().truncateDescriptions = false;
+    const suggestionBlob = items();
+    suggestionBlob.suggestions[6].description = "x".repeat(480) + " ending";
+    const { manager, terminal, press, writes } = await createManager(suggestionBlob, 60);
+    for (let index = 0; index < 6; index++) press("nextSuggestion");
+
+    const expanded = manager.render("below", 59, 30);
+    expectFits(expanded, 60, 30);
+    expect(expanded[0].length).toBeGreaterThan(40);
+    expect(text(expanded)).toContain("ending");
+    expect(text(expanded)).not.toContain("…");
+
+    terminal.cols = 21;
+    const constrained = manager.render("above", 20, 10);
+    expectFits(constrained, 21, 10);
+    expect(text(constrained)).toContain("item-6");
+    expect(text(constrained)).toContain("…");
+
+    terminal.cols = 60;
+    expect(manager.render("below", 59, 30)).toEqual(expanded);
+    press("acceptSuggestion");
+    expect(writes).toEqual(["item-6 "]);
+  });
+
+  test.each([3, 21, 80])("still truncates at terminal boundaries with truncation disabled at %i columns", async (cols) => {
+    getConfig().truncateDescriptions = false;
+    const suggestionBlob = items();
+    suggestionBlob.suggestions[0].description = "x".repeat(2000);
+    const { manager } = await createManager(suggestionBlob, cols);
+    const patches = manager.render("below", cols - 1, 10);
+
+    expectFits(patches, cols, 10);
+    expect(patches).toHaveLength(10);
+    expect(text(patches)).toContain("…");
+    expect(Math.max(...patches.map(({ length }) => length))).toBe(cols);
   });
 });

@@ -24,12 +24,32 @@ export const renderBox = (rows: string[], width: number, borderColor?: string): 
   return result;
 };
 
-export const truncateMultilineText = (description: string, width: number, maxHeight: number) => {
-  const wrappedText = wrapAnsi(description, width, {
+const wrapText = (text: string, width: number) =>
+  wrapAnsi(text, width, {
     trim: false,
     hard: true,
-  });
-  const lines = wrappedText.split("\n");
+  }).split("\n");
+
+export const getExpandedBoxSize = (text: string, width: number, height: number, maxWidth: number, maxHeight: number) => {
+  let expandedWidth = Math.min(width, maxWidth);
+  let expandedHeight = Math.min(height, maxHeight);
+  while (expandedWidth <= maxWidth) {
+    const lines = wrapText(text, expandedWidth - 2);
+    if (lines.length <= expandedHeight - 2 && lines.every((line) => wcswidth(line) <= expandedWidth - 2)) {
+      break;
+    }
+    if (expandedWidth === maxWidth) {
+      expandedHeight = Math.min(maxHeight, Math.max(expandedHeight, lines.length + 2));
+      break;
+    }
+    expandedWidth += 1;
+    expandedHeight = Math.min(maxHeight, Math.max(expandedHeight, Math.ceil((expandedWidth * height) / width)));
+  }
+  return { width: expandedWidth, height: expandedHeight };
+};
+
+export const truncateMultilineText = (description: string, width: number, maxHeight: number) => {
+  const lines = wrapText(description, width);
   const overflows = lines.length > maxHeight;
   return lines.slice(0, maxHeight).map((line, idx) => truncateText(overflows && idx === maxHeight - 1 ? line + "…" : line, width));
 };

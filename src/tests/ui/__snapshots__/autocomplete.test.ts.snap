@@ -1,5 +1,137 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`configured description layout expands above the cursor near the bottom of the terminal: expanded description above the prompt 1`] = `
+"
+
+
+                                              ┌────────────────────────────────────────────────────────┐
+                                              │More information about this suggestion. More information│
+                                              │ about this suggestion. More information about this     │
+                                              │suggestion. More information about this suggestion. More│
+                                              │ information about this suggestion. More information    │
+                                              │about this suggestion. More information about this      │
+      ┌──────────────────────────────────────┐│suggestion. More information about this suggestion. More│
+      │📦 choice-0                           ││ information about this suggestion. More information    │
+      │📦 choice-1                           ││about this suggestion. Description complete             │
+      └──────────────────────────────────────┘└────────────────────────────────────────────────────────┘
+> git"
+`;
+
+exports[`configured description layout expands, truncates on resize, and clears the expanded description on selection changes: proportional expansion at 120x30 1`] = `
+"> git
+      ┌──────────────────────────────────────┐┌────────────────────────────────────────────────────────┐
+      │📦 choice-0                           ││More information about this suggestion. More information│
+      │📦 choice-1                           ││ about this suggestion. More information about this     │
+      └──────────────────────────────────────┘│suggestion. More information about this suggestion. More│
+                                              │ information about this suggestion. More information    │
+                                              │about this suggestion. More information about this      │
+                                              │suggestion. More information about this suggestion. More│
+                                              │ information about this suggestion. More information    │
+                                              │about this suggestion. Description complete             │
+                                              └────────────────────────────────────────────────────────┘"
+`;
+
+exports[`configured description layout expands, truncates on resize, and clears the expanded description on selection changes: short description after selection changes 1`] = `
+"> git
+      ┌──────────────────────────────────────┐┌──────────────────────┐
+      │📦 choice-0                           ││Short description     │
+      │📦 choice-1                           │└──────────────────────┘
+      └──────────────────────────────────────┘"
+`;
+
+exports[`configured description layout expands, truncates on resize, and clears the expanded description on selection changes: stacked truncation at 21x12 1`] = `
+"> git
+┌───────────────────┐
+│📦 choice-0        │
+│📦 choice-1        │
+└───────────────────┘
+┌───────────────────┐
+│More information   │
+│about this         │
+│suggestion. More   │
+│information about …│
+└───────────────────┘"
+`;
+
+exports[`configured description layout height-limited side-by-side growth: 120x10 terminal 1`] = `
+"> git
+┌──────────────────────────────────────────────────────────────────────────┐┌──────────────────────────────────────┐
+│More information about this suggestion. More information about this       ││📦 choice-0                           │
+│suggestion. More information about this suggestion. More information about││📦 choice-1                           │
+│ this suggestion. More information about this suggestion. More information│└──────────────────────────────────────┘
+│ about this suggestion. More information about this suggestion. More      │
+│information about this suggestion. More information about this suggestion.│
+│ More information about this suggestion. Description complete             │
+└──────────────────────────────────────────────────────────────────────────┘"
+`;
+
+exports[`configured description layout honors configured dimensions when truncation is enabled: two suggestions and two description rows 1`] = `
+"> git
+      ┌──────────────────────────────────────┐┌──────────────────────┐
+      │📦 choice-0                           ││More information about│
+      │📦 choice-1                           ││ this suggestion. Mor…│
+      └──────────────────────────────────────┘└──────────────────────┘"
+`;
+
+exports[`configured description layout honors larger configured suggestion and description heights: four suggestions and six description rows 1`] = `
+"> git
+      ┌──────────────────────────────────────┐┌───────────────────────────────────────────┐
+      │📦 choice-0                           ││More information about this suggestion.    │
+      │📦 choice-1                           ││More information about this suggestion.    │
+      │📦 choice-2                           ││More information about this suggestion.    │
+      │📦 choice-3                           ││More information about this suggestion.    │
+      └──────────────────────────────────────┘│More information about this suggestion.    │
+                                              │More information about this suggestion. …  │
+                                              └───────────────────────────────────────────┘"
+`;
+
+exports[`configured description layout truncation after exhausting both dimensions: 80x8 terminal 1`] = `
+"> git
+┌──────────────────────────────────────┐┌──────────────────────────────────────┐
+│More information about this           ││📦 choice-0                           │
+│suggestion. More information about    ││📦 choice-1                           │
+│this suggestion. More information     │└──────────────────────────────────────┘
+│about this suggestion. More …         │
+└──────────────────────────────────────┘"
+`;
+
+exports[`configured description layout width-limited side-by-side growth: 80x30 terminal 1`] = `
+"> git
+┌──────────────────────────────────────┐┌──────────────────────────────────────┐
+│More information about this           ││📦 choice-0                           │
+│suggestion. More information about    ││📦 choice-1                           │
+│this suggestion. More information     │└──────────────────────────────────────┘
+│about this suggestion. More           │
+│information about this suggestion.    │
+│More information about this           │
+│suggestion. More information about    │
+│this suggestion. More information     │
+│about this suggestion. More           │
+│information about this suggestion.    │
+│More information about this           │
+│suggestion. More information about    │
+│this suggestion. Description complete │
+└──────────────────────────────────────┘"
+`;
+
+exports[`configured description layout width-limited stacked growth: 60x30 terminal 1`] = `
+"> git
+┌──────────────────────────────────────────────────────────┐
+│📦 choice-0                                               │
+│📦 choice-1                                               │
+└──────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│More information about this suggestion. More information  │
+│about this suggestion. More information about this        │
+│suggestion. More information about this suggestion. More  │
+│information about this suggestion. More information about │
+│this suggestion. More information about this suggestion.  │
+│More information about this suggestion. More information  │
+│about this suggestion. More information about this        │
+│suggestion. Description complete                          │
+└──────────────────────────────────────────────────────────┘"
+`;
+
 exports[`resize recovery restores input and suggestions after becoming too narrow: 21 column view 1`] = `
 "> git st
 ┌───────────────────┐

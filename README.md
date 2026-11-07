@@ -152,13 +152,20 @@ If you are using a [NerdFont](https://www.nerdfonts.com/) patched font, you can 
 useNerdFont = true
 ```
 
-### Max Suggestions
+### Suggestion and description size
 
-You can change the maximum number of suggestions displayed in the autocomplete list at one time in your config file:
+Defaults for these top-level config options:
 
 ```toml
-maxSuggestions = 10
+maxSuggestions = 5
+descriptionWidth = 30
+descriptionHeight = 5
+truncateDescriptions = true
 ```
+
+Width includes borders; height counts text rows.
+
+Set `truncateDescriptions = false` to grow descriptions proportionally, then along the remaining dimension. Text is still truncated if it cannot fit.
 
 ### Active Suggestion Background Color
 

@@ -3,7 +3,7 @@
 
 import { Suggestion, SuggestionBlob } from "../runtime/model.js";
 import type { ISTerm, ISTermPatch } from "../isterm/pty.js";
-import { renderBox, truncateText, truncateMultilineText } from "./utils.js";
+import { getExpandedBoxSize, renderBox, truncateText, truncateMultilineText } from "./utils.js";
 import chalk from "chalk";
 import { Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
@@ -17,15 +17,16 @@ type SuggestionRuntime = Pick<Awaited<ReturnType<typeof initializeRuntime>>, "ge
 
 const getMaxSuggestions = () => getConfig().maxSuggestions ?? 5;
 const suggestionWidth = 40;
-const descriptionWidth = 30;
-const descriptionHeight = 5;
 const borderWidth = 2;
 const minBoxSize = borderWidth + 1;
 // The description is stacked below the suggestions when they don't fit side by side.
-const isStacked = (columns: number) => columns < suggestionWidth + descriptionWidth;
-export const getMaxLines = (columns = Infinity) =>
+const isStacked = (columns: number) => columns < suggestionWidth + getConfig().descriptionWidth;
+export const getMaxLines = (columns = Infinity) => {
+  const { descriptionHeight, truncateDescriptions } = getConfig();
+  if (!truncateDescriptions) return Infinity;
   // Reserve an extra line for an unhandled newline at the end of the command.
-  (isStacked(columns) ? borderWidth * 2 + getMaxSuggestions() + descriptionHeight : borderWidth + Math.max(getMaxSuggestions(), descriptionHeight)) + 1;
+  return (isStacked(columns) ? borderWidth * 2 + getMaxSuggestions() + descriptionHeight : borderWidth + Math.max(getMaxSuggestions(), descriptionHeight)) + 1;
+};
 
 export type KeyPressEvent = [string | null | undefined, KeyPress];
 
@@ -137,9 +138,16 @@ export class SuggestionManager {
     }
   }
 
-  private _renderDescription(description: string | undefined, width: number, height: number): string[] {
-    if (!description) return [];
-    return renderBox(truncateMultilineText(description, width - borderWidth, height), width);
+  private _renderDescription(description: string | undefined, width: number, maxWidth: number, availableLines: number) {
+    if (!description || availableLines < minBoxSize) return { rows: [], width: 0 };
+    const { descriptionHeight, truncateDescriptions } = getConfig();
+    const size = truncateDescriptions
+      ? { width: Math.min(width, maxWidth), height: Math.min(descriptionHeight + borderWidth, availableLines) }
+      : getExpandedBoxSize(description, width, descriptionHeight + borderWidth, maxWidth, availableLines);
+    return {
+      rows: renderBox(truncateMultilineText(description, size.width - borderWidth, size.height - borderWidth), size.width),
+      width: size.width,
+    };
   }
 
   private _renderSuggestions(suggestions: Suggestion[], activeSuggestionIdx: number, width: number) {
@@ -171,30 +179,14 @@ export class SuggestionManager {
     return { page, activeIndex, activeSuggestion: page.at(activeIndex) };
   }
 
-  private _renderStacked(
-    suggestionRows: string[],
-    description: string | undefined,
-    panelWidth: number,
-    cursorX: number,
-    availableLines: number,
-  ): ISTermPatch[] {
-    const remainingLines = availableLines - suggestionRows.length;
-    const descriptionRows =
-      remainingLines >= minBoxSize ? this._renderDescription(description, panelWidth, Math.min(descriptionHeight, remainingLines - borderWidth)) : [];
-    const { padding } = this._calculatePadding(panelWidth, 0, cursorX);
-    return [...suggestionRows, ...descriptionRows].map((data) => ({ startX: padding, length: panelWidth, data }));
-  }
-
   private _renderSideBySide(
     suggestionRows: string[],
-    description: string | undefined,
+    descriptionRows: string[],
     suggestionPanelWidth: number,
+    descriptionPanelWidth: number,
     direction: "above" | "below",
     cursorX: number,
-    availableLines: number,
   ): ISTermPatch[] {
-    const descriptionRows = this._renderDescription(description, descriptionWidth, Math.min(descriptionHeight, availableLines - borderWidth));
-    const descriptionPanelWidth = descriptionRows.length > 0 ? descriptionWidth : 0;
     const { swapDescription, padding } = this._calculatePadding(suggestionPanelWidth, descriptionPanelWidth, cursorX);
     const suggestionPanel = { rows: suggestionRows, width: suggestionPanelWidth };
     const descriptionPanel = { rows: descriptionRows, width: descriptionPanelWidth };
@@ -225,13 +217,23 @@ export class SuggestionManager {
     const { suggestions, argumentDescription } = this.#suggestBlob;
     const { page, activeIndex, activeSuggestion } = this._getSuggestionPage(suggestions, availableLines);
     const description = activeSuggestion?.description || argumentDescription;
-    const panelWidth = Math.min(page.length > 0 ? suggestionWidth : descriptionWidth, this.#term.cols);
+    const { descriptionWidth } = getConfig();
+    const stacked = page.length === 0 || isStacked(this.#term.cols);
+    const baseWidth = page.length > 0 ? suggestionWidth : descriptionWidth;
+    const descriptionPanel = this._renderDescription(
+      description,
+      stacked ? Math.max(baseWidth, descriptionWidth) : descriptionWidth,
+      stacked ? this.#term.cols : this.#term.cols - suggestionWidth,
+      availableLines - (stacked && page.length > 0 ? page.length + borderWidth : 0),
+    );
+    const panelWidth = Math.min(stacked ? Math.max(baseWidth, descriptionPanel.width) : baseWidth, this.#term.cols);
     const suggestionRows = page.length > 0 ? this._renderSuggestions(page, activeIndex, panelWidth) : [];
 
-    if (suggestionRows.length === 0 || isStacked(this.#term.cols)) {
-      return this._renderStacked(suggestionRows, description, panelWidth, cursorX, availableLines);
+    if (stacked) {
+      const { padding } = this._calculatePadding(panelWidth, 0, cursorX);
+      return [...suggestionRows, ...descriptionPanel.rows].map((data) => ({ startX: padding, length: panelWidth, data }));
     }
-    return this._renderSideBySide(suggestionRows, description, panelWidth, direction, cursorX, availableLines);
+    return this._renderSideBySide(suggestionRows, descriptionPanel.rows, panelWidth, descriptionPanel.width, direction, cursorX);
   }
 
   update(keyPress: KeyPress, allowBindings = true): boolean {
