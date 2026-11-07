@@ -32,6 +32,7 @@ type Config = {
     path: string[];
   };
   useAliases: boolean;
+  cacheGeneratedSpecs: boolean;
   useNerdFont: boolean;
   maxSuggestions?: number;
   activeSuggestionBackgroundColor: string;
@@ -81,6 +82,11 @@ const configSchema = {
       nullable: true,
       default: false,
     },
+    cacheGeneratedSpecs: {
+      type: "boolean",
+      nullable: true,
+      default: true,
+    },
     useNerdFont: {
       type: "boolean",
       nullable: true,
@@ -123,6 +129,7 @@ let globalConfig: Config = {
     path: [],
   },
   useAliases: false,
+  cacheGeneratedSpecs: true,
   useNerdFont: false,
   activeSuggestionBackgroundColor: "#7D56F4",
   boxBorderStyle: "square",
@@ -154,6 +161,7 @@ export const loadConfig = async (program: Command) => {
           path: [...(config?.specs?.path ?? [])],
         },
         useAliases: config.useAliases ?? false,
+        cacheGeneratedSpecs: config?.cacheGeneratedSpecs ?? true,
         useNerdFont: config?.useNerdFont ?? false,
         maxSuggestions: config?.maxSuggestions ?? 5,
         activeSuggestionBackgroundColor: config?.activeSuggestionBackgroundColor ?? "#7D56F4",

@@ -94,7 +94,7 @@ export class SuggestionManager {
     const ownVersion = ++this.#requestVersion;
     this.#abortController?.abort();
     if (!commandText) {
-      const commandCleared = this.#commandKey.length !== 0;
+      const commandCleared = this.#commandKey.length !== 0 || this.#abortController != null;
       this.#commandKey = "";
       if (commandCleared) {
         const runtime = await this._getRuntime();

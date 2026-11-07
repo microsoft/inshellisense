@@ -9,7 +9,7 @@ import { Shell } from "../utils/shell.js";
 import { aliasExpand, getAliasNames } from "./alias.js";
 import { endTiming, startTiming } from "../utils/performance.js";
 import { clearImplicitGeneratorState } from "./generatorCache.js";
-import { genSubcommand, getGeneratedSubcommand, getSpecNames, loadSpec } from "./specs.js";
+import { clearGeneratedSpecCache, genSubcommand, getGeneratedSubcommand, getSpecNames, loadSpec } from "./specs.js";
 
 export const getSuggestions = async (cmd: string, cwd: string, shell: Shell, signal?: AbortSignal): Promise<SuggestionBlob | undefined> => {
   const suggestionTiming = startTiming();
@@ -49,7 +49,10 @@ export const getSuggestions = async (cmd: string, cwd: string, shell: Shell, sig
   }
 };
 
-export const clearTransientSuggestionState = (): void => clearImplicitGeneratorState();
+export const clearTransientSuggestionState = (): void => {
+  clearImplicitGeneratorState();
+  clearGeneratedSpecCache();
+};
 
 const prefixMatches = (values: string[], prefix: string): string[] => {
   let low = 0;

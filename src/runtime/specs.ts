@@ -46,6 +46,11 @@ function loadSpecsSet(speclist: string[], versionedSpeclist: string[], specsPath
 loadSpecsSet(speclist as string[], versionedSpeclist, specResourcesPath);
 
 const loadedSpecs: { [key: string]: Fig.Spec } = {};
+let generatedSpecs = new WeakMap<Fig.Spec, Map<string, Fig.Subcommand>>();
+
+export const clearGeneratedSpecCache = (): void => {
+  generatedSpecs = new WeakMap();
+};
 
 export const loadSpec = async (cmd: CommandToken[], signal?: AbortSignal): Promise<Fig.Spec | undefined> => {
   const rootToken = cmd.at(0);
@@ -124,6 +129,11 @@ export const getGeneratedSubcommand = async (
   if (!subcommand?.generateSpec) return subcommand;
 
   signal?.throwIfAborted();
+  // Capture this prompt's cache so an in-flight generation cannot populate the next prompt's cache.
+  const cache = getConfig().cacheGeneratedSpecs && subcommand.cache !== false ? generatedSpecs : undefined;
+  const cached = cache?.get(spec)?.get(cwd);
+  if (cached != null) return cached;
+
   const executeShellCommand = buildExecuteShellCommand(5000, signal);
   try {
     const generated = getSubcommand(
@@ -133,13 +143,21 @@ export const getGeneratedSubcommand = async (
       ),
     );
     signal?.throwIfAborted();
-    if (generated == null) return subcommand;
-    return {
-      ...subcommand,
-      ...generated,
-      subcommands: [...(subcommand.subcommands ?? []), ...(generated.subcommands ?? [])],
-      options: [...(subcommand.options ?? []), ...(generated.options ?? [])],
-    };
+    const result =
+      generated == null
+        ? subcommand
+        : {
+            ...subcommand,
+            ...generated,
+            subcommands: [...(subcommand.subcommands ?? []), ...(generated.subcommands ?? [])],
+            options: [...(subcommand.options ?? []), ...(generated.options ?? [])],
+          };
+    if (cache != null && result.cache !== false) {
+      const byDirectory = cache.get(spec) ?? new Map<string, Fig.Subcommand>();
+      byDirectory.set(cwd, result);
+      cache.set(spec, byDirectory);
+    }
+    return result;
   } catch (error) {
     signal?.throwIfAborted();
     log.debug({ msg: "failed to generate spec, falling back to static completions", command: tokens[0]?.token, error });
