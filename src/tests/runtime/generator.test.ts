@@ -210,3 +210,16 @@ test("reuses a generator when a path query moves past a delimiter", async () => 
 
   expect(calls).toBe(1);
 });
+
+test("passes searchTerm correctly in generator context", async () => {
+  let passedSearchTerm = "";
+  const generator: Fig.Generator = {
+    custom: async (_tokens, _executeShellCommand, context) => {
+      passedSearchTerm = context.searchTerm;
+      return [];
+    },
+  };
+
+  await getGeneratorSuggestions(generator, ["tool", "mysearch"], "mysearch", process.cwd(), false);
+  expect(passedSearchTerm).toBe("mysearch");
+});
