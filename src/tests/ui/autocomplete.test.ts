@@ -372,15 +372,16 @@ configs.map((config) => {
       await expectText(terminal, "archive", { strict: false });
     });
 
-    test.skip("access history when no suggestions exist", async () => {
-      await terminal.type("clear");
-      await expectText(terminal, "clear");
-
-      await terminal.write(rc);
-      await expectText(terminal, "clear", { not: true });
+    test("history navigation hides suggestions until the input is edited", async () => {
+      await terminal.write(`git st${rc}`);
+      await expectPrompt(terminal);
 
       await terminal.press("Up");
-      await expectText(terminal, "clear");
+      await expectText(terminal, "> git st", { strict: false });
+      await expectText(terminal, "stage", { not: true });
+
+      await terminal.press("Backspace");
+      await expectText(terminal, "stage");
     });
 
     test("proper overflow truncation in command", async () => {
