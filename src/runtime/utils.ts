@@ -92,9 +92,9 @@ export const buildExecuteShellCommand =
   async ({ command, env, args, cwd }: Fig.ExecuteCommandInput): Promise<Fig.ExecuteCommandOutput> => {
     signal?.throwIfAborted();
     const executionShell = await getExecutionShell();
+    signal?.throwIfAborted();
     const escapedArgs = escapeArgs(executionShell, args);
     const child = spawn(command, escapedArgs, { cwd, env: { ...process.env, ...env, ISTERM: "1" }, shell: executionShell, signal });
-    const killTimeout = setTimeout(() => child.kill("SIGKILL"), timeout);
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (data) => (stdout += data));
@@ -102,9 +102,31 @@ export const buildExecuteShellCommand =
     child.on("error", (err) => {
       log.debug({ msg: "shell command failed", command, args, e: err.message });
     });
-    return new Promise((resolve) => {
-      child.on("close", (code) => {
+    return new Promise((resolve, reject) => {
+      const cleanup = () => {
         clearTimeout(killTimeout);
+        signal?.removeEventListener("abort", onAbort);
+      };
+      const stop = () => {
+        child.kill("SIGKILL");
+        // Shell descendants can retain pipe handles after the shell exits.
+        child.stdin.destroy();
+        child.stdout.destroy();
+        child.stderr.destroy();
+      };
+      const onAbort = () => {
+        cleanup();
+        reject(signal?.reason);
+        stop();
+      };
+      const killTimeout = setTimeout(() => {
+        cleanup();
+        resolve({ status: 1, stderr, stdout });
+        stop();
+      }, timeout);
+      signal?.addEventListener("abort", onAbort, { once: true });
+      child.on("close", (code) => {
+        cleanup();
         resolve({
           status: code ?? 0,
           stderr,
