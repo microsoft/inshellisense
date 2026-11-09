@@ -1,12 +1,39 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { jest } from "@jest/globals";
 import fs from "node:fs";
 
-import { getSuggestions } from "../../runtime/runtime.js";
 import { Shell } from "../../utils/shell.js";
-import { SuggestionIcons } from "../../runtime/suggestion.js";
 import { unpackResources } from "../../utils/node.js";
+
+const utils = await import("../../runtime/utils.js");
+const executeNugetSearch = jest.fn<Fig.ExecuteCommandFunction>().mockResolvedValue({
+  status: 0,
+  stderr: "",
+  stdout: JSON.stringify({
+    data: [
+      {
+        id: "Microsoft.Azure.WebJobs.Core",
+        title: "Microsoft.Azure.WebJobs.Core",
+        description:
+          "This package provides the core Types and Attribute definitions for the WebJobs SDK. For more information, please visit https://go.microsoft.com/fwlink/?linkid=2279708.",
+      },
+    ],
+  }),
+});
+
+jest.unstable_mockModule("../../runtime/utils.js", () => ({
+  ...utils,
+  buildExecuteShellCommand: (timeout: number, signal?: AbortSignal): Fig.ExecuteCommandFunction => {
+    const execute = utils.buildExecuteShellCommand(timeout, signal);
+    return (input) =>
+      input.command === "curl" && input.args.at(-1)?.startsWith("https://azuresearch-usnc.nuget.org/query?") ? executeNugetSearch(input) : execute(input);
+  },
+}));
+
+const { getSuggestions } = await import("../../runtime/runtime.js");
+const { SuggestionIcons } = await import("../../runtime/suggestion.js");
 
 const testData = [
   { name: "partialPrefixFilter", command: "git sta" },
@@ -27,7 +54,6 @@ const testData = [
   { name: "nestedNonCommands", command: "az az ", skip: true }, // no longer supported
   { name: "loadSpec", command: "aws acm add", skip: true }, // no longer loaded
   { name: "noArgsArgumentGiven", command: "gcc lab ", maxSuggestions: 3 },
-  { name: "generatorUsingPartialInput", command: "dotnet add package Microsoft.Azure.WebJobs.Cor", maxSuggestions: 1 },
   { name: "pathSuggestion", command: "source she" },
   { name: "pathNestedSuggestion", command: "source .github/work" },
   { name: "pathWithFileSuggestion", command: "source shell/", maxSuggestions: 1 },
@@ -47,6 +73,20 @@ describe(`parseCommand`, () => {
       }
       expect(suggestions).toMatchSnapshot();
     });
+  });
+
+  test("generatorUsingPartialInput", async () => {
+    const suggestions = await getSuggestions("dotnet add package Microsoft.Azure.WebJobs.Cor", process.cwd(), Shell.Bash);
+    if (suggestions != null) {
+      suggestions.suggestions = suggestions.suggestions.slice(0, 1);
+    }
+
+    expect(executeNugetSearch).toHaveBeenCalledWith({
+      command: "curl",
+      args: ["-s", "-H", "Accept: application/json", "https://azuresearch-usnc.nuget.org/query?packageType=Dependency&q=Microsoft.Azure.WebJobs.Cor"],
+      cwd: process.cwd(),
+    });
+    expect(suggestions).toMatchSnapshot();
   });
 });
 
