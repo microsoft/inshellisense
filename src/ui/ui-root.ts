@@ -27,17 +27,18 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   const renderer = new SuggestionRenderer(term, suggestions, writeOutput);
   let commandStateVersion = term.getCommandStateVersion();
   let backspaceEchoPending = false;
+  let termExited = false;
 
   const stdinStartedInRawMode = process.stdin.isRaw;
   if (process.stdin.isTTY) process.stdin.setRawMode(true);
   const stdio = new StdioProxy({
-    onCursorPositionReport: (data) => {
-      if (term.consumeCursorPositionQuery()) {
-        term.write(data);
-      }
+    onTerminalResponse: (data) => {
+      if (!termExited) term.write(data);
     },
   });
-  const forwardInput = (data: string) => term.write(normalizeBackspace(data, shell));
+  const forwardInput = (data: string) => {
+    if (!termExited) term.write(normalizeBackspace(data, shell));
+  };
   const handleInput = (data: Buffer | string) => stdio.handleInput(data, term.isAlternateBuffer() ? forwardInput : undefined);
   process.stdin.on("data", handleInput);
   writeOutput(ansi.clearTerminal);
@@ -80,6 +81,7 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
   });
 
   stdio.onKeypress((...keyPress: KeyPressEvent) => {
+    if (termExited) return;
     const press = keyPress[1];
     if (term.isAlternateBuffer()) {
       forwardInput(press.sequence);
@@ -92,19 +94,21 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
     } else if (!inputHandled) {
       if (press.name === "backspace") {
         backspaceEchoPending = true;
-        term.write(normalizeBackspace(press.sequence, shell));
-      } else {
-        term.write(press.sequence);
       }
+      forwardInput(press.sequence);
     }
   });
 
   term.onExit(({ exitCode }) => {
-    process.stdin.removeListener("data", handleInput);
-    writeOutput(stdio.dispose());
-    if (!stdinStartedInRawMode) process.stdin.setRawMode(false);
-    process.stdout.write(resetToInitialState);
-    process.exit(exitCode);
+    termExited = true;
+    void (async () => {
+      await stdio.waitForPendingTerminalResponses();
+      process.stdin.removeListener("data", handleInput);
+      writeOutput(stdio.dispose());
+      if (!stdinStartedInRawMode) process.stdin.setRawMode(false);
+      process.stdout.write(resetToInitialState);
+      process.exit(exitCode);
+    })();
   });
 
   process.stdout.on("resize", () => {
