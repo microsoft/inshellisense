@@ -2,13 +2,13 @@
 // Licensed under the MIT License.
 
 import ansi from "ansi-escapes";
-import { Command } from "commander";
 
 import log from "../utils/log.js";
 import { normalizeBackspace, Shell } from "../utils/shell.js";
 import { resetToInitialState } from "../utils/ansi.js";
 import { endTiming, incrementMetric, startTiming } from "../utils/performance.js";
 import type { KeyPressEvent } from "./suggestionManager.js";
+import type { ISTerm } from "../isterm/pty.js";
 import { BatchScheduler } from "./batchScheduler.js";
 import { SuggestionRenderer } from "./suggestionRenderer.js";
 import { StdioProxy } from "./stdioProxy.js";
@@ -20,9 +20,8 @@ const writeOutput = (data: string) => {
   process.stdout.write(data);
 };
 
-export const render = async (program: Command, shell: Shell, underTest: boolean, login: boolean) => {
-  const [isterm, { SuggestionManager }] = await Promise.all([import("../isterm/index.js"), import("./suggestionManager.js")]);
-  const term = await isterm.default.spawn(program, { shell, rows: process.stdout.rows, cols: process.stdout.columns, underTest, login });
+export const render = async (term: ISTerm, shell: Shell) => {
+  const { SuggestionManager } = await import("./suggestionManager.js");
   const suggestions = new SuggestionManager(term, shell);
   const renderer = new SuggestionRenderer(term, suggestions, writeOutput);
   let commandStateVersion = term.getCommandStateVersion();

@@ -5,8 +5,10 @@ import path from "node:path";
 import sea from "node:sea";
 import fsAsync from "node:fs/promises";
 import fs from "node:fs";
-import { allResourcesPath, getResourcePaths, versionResourcePath } from "./constants.js";
+import { allResourcesPath, getResourcePaths } from "./constants.js";
 import { getVersion } from "./version.js";
+import { createShellConfigs } from "./shell.js";
+import { writeFileAtomic } from "./file.js";
 
 const ASSET_PATH_SEP = "____";
 
@@ -47,9 +49,7 @@ const copyFiles = async (assetType: AssetType, files: string[], sourceFolder: st
     files.map(async (file) => {
       const sourcePath = path.join(sourceFolder, file);
       const destPath = path.join(getAssetFolder(assetType, resources), file);
-      if (fs.existsSync(destPath)) return;
-      await fsAsync.mkdir(path.dirname(destPath), { recursive: true });
-      await fsAsync.copyFile(sourcePath, destPath);
+      await writeFileAtomic(destPath, await fsAsync.readFile(sourcePath));
     }),
   );
 };
@@ -59,10 +59,7 @@ const copyAssets = async (assetType: AssetType, resources: ResourcePaths) => {
     getAssetKeys(assetType).map(async (assetKey) => {
       const assetPath = assetKey.replaceAll(ASSET_PATH_SEP, path.sep);
       const outputPath = path.join(getAssetFolder(assetType, resources), assetPath);
-      if (fs.existsSync(outputPath)) return;
-      const assetBlob = sea.getRawAsset(assetKey);
-      await fsAsync.mkdir(path.dirname(outputPath), { recursive: true });
-      await fsAsync.writeFile(outputPath, Buffer.from(assetBlob));
+      await writeFileAtomic(outputPath, new Uint8Array(sea.getRawAsset(assetKey)));
     }),
   );
 };
@@ -82,9 +79,9 @@ const permissionNativeModules = async (resources: ResourcePaths): Promise<void> 
   }
 };
 
-const unpackSpecs = async (resources: ResourcePaths): Promise<void> => {
+const unpackSpecs = async (resources: ResourcePaths, sourceRoot: string): Promise<void> => {
   if (!sea.isSea()) {
-    const autocompleteSpecFolderPath = path.join(process.cwd(), "node_modules", "@withfig", "autocomplete", "build");
+    const autocompleteSpecFolderPath = path.join(sourceRoot, "node_modules", "@withfig", "autocomplete", "build");
     const entries = await fsAsync.readdir(autocompleteSpecFolderPath, { recursive: true });
     const files = entries
       .filter((f) => {
@@ -99,13 +96,12 @@ const unpackSpecs = async (resources: ResourcePaths): Promise<void> => {
   }
 
   const packageJsonPath = path.join(resources.spec, "package.json");
-  await fsAsync.mkdir(resources.spec, { recursive: true });
-  await fsAsync.writeFile(packageJsonPath, JSON.stringify({ type: "module" }));
+  await writeFileAtomic(packageJsonPath, JSON.stringify({ type: "module" }));
 };
 
-const unpackShellFiles = async (resources: ResourcePaths): Promise<void> => {
+const unpackShellFiles = async (resources: ResourcePaths, sourceRoot: string): Promise<void> => {
   if (!sea.isSea()) {
-    const shellFolderPath = path.join(process.cwd(), "shell");
+    const shellFolderPath = path.join(sourceRoot, "shell");
     const files = (await fsAsync.readdir(shellFolderPath)).map((f) => path.basename(f));
 
     await copyFiles("shell", files, shellFolderPath, resources);
@@ -115,24 +111,47 @@ const unpackShellFiles = async (resources: ResourcePaths): Promise<void> => {
 };
 
 const setUnpackedVersion = async (resources: ResourcePaths): Promise<void> => {
-  const version = getVersion();
-  await fsAsync.writeFile(resources.version, version, "utf-8");
+  await writeFileAtomic(resources.version, getVersion());
 };
 
-export const checkUnpackedVersion = async (): Promise<boolean> => {
-  if (!fs.existsSync(versionResourcePath)) {
+export const checkUnpackedVersion = async (resourcesPath = allResourcesPath): Promise<boolean> => {
+  const versionPath = getResourcePaths(resourcesPath).version;
+  if (!fs.existsSync(versionPath)) {
     return false;
   }
-  const unpackedVersion = await fsAsync.readFile(versionResourcePath, "utf-8");
+  const unpackedVersion = await fsAsync.readFile(versionPath, "utf-8");
   const currentVersion = getVersion();
   return unpackedVersion === currentVersion;
 };
 
-export const unpackResources = async (resourcesPath = allResourcesPath): Promise<void> => {
+// Outside of SEA builds (development) resources are copied from the checkout containing the running entry point
+// (build/index.js or src/index.ts), independent of the working directory.
+const getDevelopmentSourceRoot = (): string => {
+  const entryPoint = process.argv[1];
+  if (sea.isSea() || entryPoint == null) return process.cwd();
+  try {
+    return path.resolve(path.dirname(fs.realpathSync(entryPoint)), "..");
+  } catch {
+    return process.cwd();
+  }
+};
+
+// sourceRoot is only used outside of SEA builds
+export const unpackResources = async (resourcesPath = allResourcesPath, sourceRoot = getDevelopmentSourceRoot()): Promise<void> => {
   const resources = getResourcePaths(resourcesPath);
   await unpackNativeModules(resources);
   await permissionNativeModules(resources);
-  await unpackShellFiles(resources);
-  await unpackSpecs(resources);
+  await unpackShellFiles(resources, sourceRoot);
+  await unpackSpecs(resources, sourceRoot);
+  // written last so an interrupted refresh is retried on the next start
   await setUnpackedVersion(resources);
+};
+
+/**
+ * Brings resources unpacked by a previous inshellisense version up to date in place (keeping the resource location the
+ * user's shell profile points at), so upgrading the binary doesn't require a manual `is reinit`.
+ */
+export const refreshResources = async (resourcesPath = allResourcesPath, sourceRoot = getDevelopmentSourceRoot()): Promise<void> => {
+  await createShellConfigs(getResourcePaths(resourcesPath).init);
+  await unpackResources(resourcesPath, sourceRoot);
 };
