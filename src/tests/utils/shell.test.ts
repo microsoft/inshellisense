@@ -4,7 +4,15 @@
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
-import { getShellSourceCommand, hasLegacyShellConfig, normalizeBackspace, Shell, shouldFlagLegacyResourcePlugin, zdotdir } from "../../utils/shell.js";
+import {
+  getShellLoginArgs,
+  getShellSourceCommand,
+  hasLegacyShellConfig,
+  normalizeBackspace,
+  Shell,
+  shouldFlagLegacyResourcePlugin,
+  zdotdir,
+} from "../../utils/shell.js";
 
 test("uses a process-specific ZDOTDIR", () => {
   expect(zdotdir).toBe(path.join(os.tmpdir(), `is-zsh-${process.pid}`));
@@ -105,5 +113,24 @@ describe("shouldFlagLegacyResourcePlugin", () => {
     ["legacy resources with an XDG config", true, true, true],
   ])("%s", (_case, usesLegacyResources, hasXdgConfig, expected) => {
     expect(shouldFlagLegacyResourcePlugin(usesLegacyResources, hasXdgConfig)).toBe(expected);
+  });
+});
+
+describe("getShellLoginArgs", () => {
+  test.each([
+    [Shell.Bash, ["--login"]],
+    [Shell.Zsh, ["--login"]],
+    [Shell.Fish, ["--login"]],
+    [Shell.Xonsh, ["--login"]],
+    [Shell.Nushell, ["--login"]],
+    [Shell.Pwsh, ["-login"]],
+    [Shell.Powershell, ["-login"]],
+    [Shell.Cmd, []],
+  ])("returns the login arguments for %s", (shell, expected) => {
+    expect(getShellLoginArgs(shell, true)).toEqual(expected);
+  });
+
+  test.each(Object.values(Shell))("returns no arguments for a non-login %s shell", (shell) => {
+    expect(getShellLoginArgs(shell, false)).toEqual([]);
   });
 });
