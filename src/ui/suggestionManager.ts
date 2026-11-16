@@ -35,6 +35,7 @@ type KeyPress = {
   name: string;
   ctrl: boolean;
   shift: boolean;
+  meta?: boolean;
 };
 
 export class SuggestionManager {
@@ -92,7 +93,8 @@ export class SuggestionManager {
     const commandState = this.#term.getCommandState();
     const commandText = commandState.commandText;
     const commandKey = commandText ? `${this.#term.cwd}\u0000${getCommandCacheKey(commandText, this.#shell)}` : "";
-    if (commandKey.length !== 0 && commandKey === this.#commandKey && !this.#hideSuggestions && !commandState.hasOutput) {
+    const hasCachedResult = this.#suggestBlob != null || !getConfig().historyAtSuggestionEdges;
+    if (commandKey.length !== 0 && commandKey === this.#commandKey && hasCachedResult && !this.#hideSuggestions && !commandState.hasOutput) {
       return false;
     }
     // Aborting is cooperative; the version check also rejects generators that ignore cancellation.
@@ -236,18 +238,29 @@ export class SuggestionManager {
     return this._renderSideBySide(suggestionRows, descriptionPanel.rows, panelWidth, descriptionPanel.width, direction, cursorX);
   }
 
+  private _startHistoryNavigation(): void {
+    this.invalidate();
+    this.#suggestBlob = undefined;
+    this.#activeSuggestionIdx = 0;
+    this.#hideSuggestions = true;
+  }
+
   update(keyPress: KeyPress, allowBindings = true): boolean {
-    const { name, shift, ctrl } = keyPress;
+    const { name, shift, ctrl, meta } = keyPress;
+    const arrow = name === "up" || name === "down";
+    const config = getConfig();
+    const historyArrow = config.historyAtSuggestionEdges && arrow && !shift && !ctrl && !meta;
     if (name == "return") {
       this.#term.clearCommand(); // clear the current command on enter
     }
 
-    // if suggestions are hidden, keep them hidden until during command navigation
+    // Keep suggestions hidden during command navigation.
     if (this.#hideSuggestions) {
-      this.#hideSuggestions = name == "up" || name == "down";
+      this.#hideSuggestions = arrow;
     }
 
     if (!allowBindings || !this.#suggestBlob) {
+      if (historyArrow && !this.#hideSuggestions) this._startHistoryNavigation();
       return false;
     }
     const {
@@ -255,15 +268,22 @@ export class SuggestionManager {
       acceptSuggestion: { key: acceptKey, shift: acceptShift, control: acceptCtrl },
       nextSuggestion: { key: nextKey, shift: nextShift, control: nextCtrl },
       previousSuggestion: { key: prevKey, shift: prevShift, control: prevCtrl },
-    } = getConfig().bindings;
+    } = config.bindings;
+
+    const previous = name == prevKey && shift == !!prevShift && ctrl == !!prevCtrl;
+    const next = name == nextKey && shift == !!nextShift && ctrl == !!nextCtrl;
 
     if (name == dismissKey && shift == !!dismissShift && ctrl == !!dismissCtrl) {
       this.#suggestBlob = undefined;
       this.#hideSuggestions = true;
-    } else if (name == prevKey && shift == !!prevShift && ctrl == !!prevCtrl) {
-      this.#activeSuggestionIdx = Math.max(0, this.#activeSuggestionIdx - 1);
-    } else if (name == nextKey && shift == !!nextShift && ctrl == !!nextCtrl) {
-      this.#activeSuggestionIdx = Math.min(this.#activeSuggestionIdx + 1, (this.#suggestBlob?.suggestions.length ?? 1) - 1);
+    } else if (previous || next) {
+      const nextIndex = this.#activeSuggestionIdx + (previous ? -1 : 1);
+      const lastIndex = this.#suggestBlob.suggestions.length - 1;
+      if (historyArrow && (nextIndex < 0 || nextIndex > lastIndex)) {
+        this._startHistoryNavigation();
+        return false;
+      }
+      this.#activeSuggestionIdx = Math.max(0, Math.min(nextIndex, lastIndex));
     } else if (name == acceptKey && shift == !!acceptShift && ctrl == !!acceptCtrl) {
       const suggestion = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx);
       if (suggestion == null || this.#suggestBlob?.suggestions.length == 0) {

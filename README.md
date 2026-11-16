@@ -126,6 +126,14 @@ key = "escape"
 
 Key names are matched against the Node.js [keypress](https://nodejs.org/api/readline.html#readlineemitkeypresseventsstream-interface) events.
 
+Enable this top-level setting before any `[bindings.*]` sections to use the default Up and Down bindings for both suggestions and shell history.
+
+```toml
+historyAtSuggestionEdges = true
+```
+
+Up and Down move through suggestions while there is another item in that direction. Pressing Up on the first item or Down on the last dismisses the menu and forwards the same key to the shell. Suggestions stay hidden while you continue using the arrow keys. This option is off by default.
+
 ### Alias Expansion
 
 Inshellisense supports expanding aliases for bash/zsh shells. You can enable alias expansion in your config file:
