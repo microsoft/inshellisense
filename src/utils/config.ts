@@ -34,6 +34,7 @@ type Config = {
   useAliases: boolean;
   cacheGeneratedSpecs: boolean;
   useNerdFont: boolean;
+  historyAtSuggestionEdges: boolean;
   maxSuggestions?: number;
   descriptionWidth: number;
   descriptionHeight: number;
@@ -95,6 +96,11 @@ const configSchema = {
       nullable: true,
       default: false,
     },
+    historyAtSuggestionEdges: {
+      type: "boolean",
+      nullable: true,
+      default: false,
+    },
     maxSuggestions: {
       type: "integer",
       minimum: 1,
@@ -152,6 +158,7 @@ let globalConfig: Config = {
   useAliases: false,
   cacheGeneratedSpecs: true,
   useNerdFont: false,
+  historyAtSuggestionEdges: false,
   descriptionWidth: 30,
   descriptionHeight: 5,
   truncateDescriptions: true,
@@ -187,6 +194,7 @@ export const loadConfig = async (program: Command) => {
         useAliases: config.useAliases ?? false,
         cacheGeneratedSpecs: config?.cacheGeneratedSpecs ?? true,
         useNerdFont: config?.useNerdFont ?? false,
+        historyAtSuggestionEdges: config?.historyAtSuggestionEdges ?? false,
         maxSuggestions: config?.maxSuggestions ?? 5,
         descriptionWidth: config?.descriptionWidth ?? 30,
         descriptionHeight: config?.descriptionHeight ?? 5,

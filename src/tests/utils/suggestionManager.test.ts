@@ -21,6 +21,74 @@ const blob = (name: string): SuggestionBlob => ({
   suggestions: [{ name, allNames: [name], icon: "*", priority: 50 }],
 });
 
+const arrow = (name: "up" | "down") => ({ name, sequence: name === "up" ? "\x1b[A" : "\x1b[B", shift: false, ctrl: false });
+
+test.each([
+  ["up", true],
+  ["down", true],
+  ["up", false],
+  ["down", false],
+] as const)("handles %s at the suggestion boundary with history fallback set to %s", async (direction, fallback) => {
+  const previousSetting = getConfig().historyAtSuggestionEdges;
+  getConfig().historyAtSuggestionEdges = fallback;
+  try {
+    let commandText = "git ch";
+    const terminal = {
+      cwd: process.cwd(),
+      cols: 80,
+      getCommandState: () => ({ commandText, cursorTerminated: true, hasOutput: false }),
+    } as unknown as ISTerm;
+    const runtime = Promise.resolve({
+      getSuggestions: async () => ({ suggestions: [...blob("checkout").suggestions, ...blob("cherry-pick").suggestions] }),
+    });
+    const manager = new SuggestionManager(terminal, Shell.Zsh, runtime);
+
+    await expect(manager.exec()).resolves.toBe(true);
+    expect(manager.update(arrow("down"))).toBe(true);
+    if (direction === "up") expect(manager.update(arrow("up"))).toBe(true);
+    expect(manager.update(arrow(direction))).toBe(!fallback);
+    if (!fallback) {
+      expect(manager.render("below", 0)).not.toEqual([]);
+      return;
+    }
+    expect(manager.render("below", 0)).toEqual([]);
+
+    commandText = "git check";
+    await expect(manager.exec()).resolves.toBe(false);
+    expect(manager.update(arrow(direction))).toBe(false);
+    expect(manager.render("below", 0)).toEqual([]);
+
+    commandText = "git ch";
+    expect(manager.update({ name: "h", sequence: "h", shift: false, ctrl: false })).toBe(false);
+    await expect(manager.exec()).resolves.toBe(true);
+    expect(manager.render("below", 0)).not.toEqual([]);
+  } finally {
+    getConfig().historyAtSuggestionEdges = previousSetting;
+  }
+});
+
+test("keeps suggestions hidden when history navigation starts at an empty prompt", async () => {
+  const previousSetting = getConfig().historyAtSuggestionEdges;
+  getConfig().historyAtSuggestionEdges = true;
+  try {
+    let commandText = "";
+    const terminal = {
+      cwd: process.cwd(),
+      cols: 80,
+      getCommandState: () => ({ commandText, cursorTerminated: true, hasOutput: false }),
+    } as unknown as ISTerm;
+    const runtime = Promise.resolve({ getSuggestions: async () => blob("checkout") });
+    const manager = new SuggestionManager(terminal, Shell.Zsh, runtime);
+
+    expect(manager.update(arrow("up"), false)).toBe(false);
+    commandText = "git ch";
+    await expect(manager.exec()).resolves.toBe(false);
+    expect(manager.render("below", 0)).toEqual([]);
+  } finally {
+    getConfig().historyAtSuggestionEdges = previousSetting;
+  }
+});
+
 test("does not commit stale suggestions when a generator ignores cancellation", async () => {
   let commandText = "first";
   const first = deferred<SuggestionBlob>();
