@@ -139,10 +139,13 @@ const getMatchRelevance = (name: string, partialCmd: string): number => {
 
 // Whether any of a suggestion's names is exactly the text typed so far. Case-sensitive, since options
 // (-l vs -L) and git refs differ by case. Tokens containing a path separator are treated as paths and
-// matched by their basename, so non-path suggestions with a separator in their name (e.g. the git branch
-// feat/foo) are also compared against the full token.
-const isExactMatch = (suggestion: Suggestion, partialCmd: string, token: string | undefined): boolean =>
-  suggestion.allNames.some((name) => name === partialCmd || name === token);
+// reduced to their basename (partialCmd). File and folder suggestions are named by their basename, so
+// they compare against it; every other suggestion (e.g. the git branch feat/foo) is named in full and
+// compares against the full token, so typing feat/foo does not match an unrelated branch named foo.
+const isExactMatch = (suggestion: Suggestion, partialCmd: string, token: string | undefined): boolean => {
+  const typed = getPathy(suggestion.type) ? partialCmd : token ?? partialCmd;
+  return suggestion.allNames.some((name) => name === typed);
+};
 
 // Sorts exact matches first, then by priority. Typing a suggestion's full name is the clearest signal of
 // intent, so it beats spec priorities, which only hint at what to show while input is still partial

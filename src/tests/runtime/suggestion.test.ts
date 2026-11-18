@@ -88,4 +88,17 @@ describe.each([
   test("keeps priority order when nothing matches exactly", async () => {
     expect(await rankBranches("feat/s")).toEqual(["feat/search-1234", "feat/search-", "fix/search-5678"]);
   });
+
+  test("does not match a branch that only shares the typed basename", async () => {
+    const withBasenameBranch: Fig.Suggestion[] = [{ name: "search-", priority: 75 }, ...branches];
+    expect(await rank(withBasenameBranch, "feat/search-", "fuzzy")).toEqual(["feat/search-", "feat/search-1234", "search-", "fix/search-5678"]);
+  });
+
+  test("matches files by basename and keeps an exact file above a higher priority file", async () => {
+    const files: Fig.Suggestion[] = [
+      { name: "index.ts.bak", type: "file", priority: 80 },
+      { name: "index.ts", type: "file", priority: 50 },
+    ];
+    expect(await rank(files, "src/index.ts")).toEqual(["index.ts", "index.ts.bak"]);
+  });
 });
