@@ -34,9 +34,8 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-          sudo apt-add-repository ppa:fish-shell/release-3
           sudo apt-get update
-          sudo apt install fish zsh
+          sudo apt-get install -y fish zsh
 
           sudo chmod -R 755 /usr/share/zsh/vendor-completions
           sudo chown -R root:root /usr/share/zsh/vendor-completions

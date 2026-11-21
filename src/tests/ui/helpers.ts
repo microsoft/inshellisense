@@ -64,11 +64,21 @@ export const expectPrompt = async (terminal: TuiTest, timeout = promptTimeout): 
   await terminal.waitIdle();
 };
 
-export const closeSession = async (terminal: TuiTest | undefined): Promise<void> => {
-  if (terminal) {
-    await terminal.closeQuiet();
-    untrackTerminal(terminal);
+export const closeSession = async (terminal: TuiTest | undefined, shell: string): Promise<void> => {
+  if (!terminal) return;
+  if (os.platform() === "win32") {
+    try {
+      // Let the nested shell exit before closing the Windows pseudoconsole.
+      await terminal.press("Ctrl+C");
+      await terminal.waitIdle({ timeout: 5_000 });
+      await terminal.write(`exit${returnChar(shell)}`);
+      await terminal.waitExit({ timeout: 5_000 });
+    } catch {
+      // Fall back to closing directly if the shell has already exited or is unresponsive.
+    }
   }
+  await terminal.closeQuiet();
+  untrackTerminal(terminal);
 };
 
 const baseEnv = { ISTERM: "0", ISTERM_TESTING: "0" };
@@ -86,7 +96,7 @@ export const startSession = async (config: ShellConfig, args: string[], cols = 8
     await expectPrompt(terminal);
     return terminal;
   } catch (error) {
-    await closeSession(terminal);
+    await closeSession(terminal, config.shell);
     throw error;
   }
 };
