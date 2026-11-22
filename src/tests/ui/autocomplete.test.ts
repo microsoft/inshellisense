@@ -33,7 +33,7 @@ describe("configured description layout", () => {
   });
 
   afterEach(async () => {
-    await closeSession(terminal);
+    await closeSession(terminal, "bash");
     terminal = undefined;
   });
 
@@ -156,7 +156,7 @@ describe("resize recovery", () => {
     terminal = await startSession({ label: "bash-resize", shell: "bash", env: { BASH_SILENCE_DEPRECATION_WARNING: "1" } }, ["-T", "-s", "bash"]);
   });
   afterEach(async () => {
-    await closeSession(terminal);
+    await closeSession(terminal, "bash");
   });
 
   test("restores input and suggestions after becoming too narrow", async () => {
@@ -242,7 +242,7 @@ configs.map((config) => {
       terminal = await startSession(config, args);
     });
     afterEach(async () => {
-      await closeSession(terminal);
+      await closeSession(terminal, config.shell);
     });
 
     test("basic git suggestions", async () => {
