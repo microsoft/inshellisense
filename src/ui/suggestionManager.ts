@@ -44,6 +44,8 @@ export class SuggestionManager {
   #suggestBlob?: SuggestionBlob;
   #shell: Shell;
   #hideSuggestions: boolean = false;
+  #historyMode: "navigating" | "editing" | undefined;
+  #historyCommandText = "";
   #abortController?: AbortController;
   #runtime?: Promise<SuggestionRuntime>;
   #requestVersion = 0;
@@ -78,6 +80,8 @@ export class SuggestionManager {
     this.#suggestBlob = undefined;
     this.#activeSuggestionIdx = 0;
     this.#hideSuggestions = false;
+    this.#historyMode = undefined;
+    this.#historyCommandText = "";
     if (commandCleared) {
       try {
         const runtime = await this._getRuntime();
@@ -91,8 +95,17 @@ export class SuggestionManager {
   private async _loadSuggestions(): Promise<boolean> {
     const commandState = this.#term.getCommandState();
     const commandText = commandState.commandText;
+    const currentCommandText = commandText ?? "";
     const commandKey = commandText ? `${this.#term.cwd}\u0000${getCommandCacheKey(commandText, this.#shell)}` : "";
-    if (commandKey.length !== 0 && commandKey === this.#commandKey && !this.#hideSuggestions && !commandState.hasOutput) {
+    if (this.#historyMode !== undefined && currentCommandText !== this.#historyCommandText) {
+      this.#historyCommandText = currentCommandText;
+      if (this.#historyMode === "editing") {
+        this.#historyMode = undefined;
+        this.#historyCommandText = "";
+        if (commandText) this.#commandKey = "";
+      }
+    }
+    if (commandKey.length !== 0 && commandKey === this.#commandKey && !this.#hideSuggestions && this.#historyMode === undefined && !commandState.hasOutput) {
       return false;
     }
     // Aborting is cooperative; the version check also rejects generators that ignore cancellation.
@@ -106,7 +119,7 @@ export class SuggestionManager {
         runtime.clearTransientSuggestionState?.();
       }
     }
-    if (!commandText || this.#hideSuggestions || commandState.hasOutput) {
+    if (!commandText || this.#hideSuggestions || this.#historyMode !== undefined || commandState.hasOutput) {
       const changed = this.#suggestBlob != null || this.#activeSuggestionIdx !== 0;
       this.#suggestBlob = undefined;
       this.#activeSuggestionIdx = 0;
@@ -238,11 +251,34 @@ export class SuggestionManager {
 
   update(keyPress: KeyPress, allowBindings = true): boolean {
     const { name, shift, ctrl } = keyPress;
+    const isHistoryKey = (name === "up" || name === "down") && !shift && !ctrl;
+
+    if (name === "return" || (name === "c" && ctrl)) {
+      this.#historyMode = undefined;
+      this.#historyCommandText = "";
+    }
+
     if (name == "return") {
       this.#term.clearCommand(); // clear the current command on enter
     }
 
-    // if suggestions are hidden, keep them hidden until during command navigation
+    if (isHistoryKey && !allowBindings) {
+      // Let the shell navigate history and keep suggestions hidden for recalled commands.
+      this.#historyMode = "navigating";
+      this.#historyCommandText = this.#term.getCommandState().commandText ?? "";
+      this.invalidate();
+      this.#suggestBlob = undefined;
+      this.#activeSuggestionIdx = 0;
+      return false;
+    }
+
+    if (this.#historyMode !== undefined && !isHistoryKey) {
+      // Let the shell handle the key, then use the resulting command text to detect edits.
+      this.#historyMode = "editing";
+      this.#historyCommandText = this.#term.getCommandState().commandText ?? "";
+    }
+
+    // Keep dismissed suggestions hidden while navigating command history.
     if (this.#hideSuggestions) {
       this.#hideSuggestions = name == "up" || name == "down";
     }

@@ -111,6 +111,64 @@ test("clears prompt-scoped state when the command ends before its first suggesti
   expect(clearCalls).toBe(1);
 });
 
+test("shows suggestions only after a history command is edited", async () => {
+  let commandText = "git ";
+  let clearCalls = 0;
+  const requestedCommands: string[] = [];
+  const terminal = {
+    cwd: process.cwd(),
+    cols: 80,
+    getCommandState: () => ({ commandText, cursorTerminated: true, hasOutput: false }),
+    getCursorState: () => ({ cursorX: 0 }),
+  } as unknown as ISTerm;
+  const runtime = Promise.resolve({
+    getSuggestions: async (command: string) => {
+      requestedCommands.push(command);
+      return blob(command);
+    },
+    clearTransientSuggestionState: () => {
+      clearCalls += 1;
+    },
+  });
+  const manager = new SuggestionManager(terminal, Shell.Bash, runtime);
+  const press = (name: string, sequence: string) => manager.update({ name, sequence, shift: false, ctrl: false }, false);
+
+  await expect(manager.exec()).resolves.toBe(true);
+  expect(requestedCommands).toEqual(["git "]);
+
+  expect(press("up", "\u001b[A")).toBe(false);
+  commandText = "git status";
+  await expect(manager.exec()).resolves.toBe(false);
+
+  manager.update({ name: "u", sequence: "\u0015", shift: false, ctrl: true }, false);
+  commandText = "";
+  await expect(manager.exec()).resolves.toBe(false);
+  expect(clearCalls).toBe(1);
+  expect(requestedCommands).toEqual(["git "]);
+
+  expect(press("up", "\u001b[A")).toBe(false);
+  commandText = "git status";
+  await expect(manager.exec()).resolves.toBe(false);
+
+  press("left", "\u001b[D");
+  await expect(manager.exec()).resolves.toBe(false);
+
+  press("paste", "git statu");
+  commandText = "git statu";
+  await expect(manager.exec()).resolves.toBe(true);
+  expect(requestedCommands).toEqual(["git ", "git statu"]);
+
+  await manager.suspend();
+  commandText = "";
+  press("up", "\u001b[A");
+  await expect(manager.exec()).resolves.toBe(false);
+
+  press("g", "g");
+  commandText = "g";
+  await expect(manager.exec()).resolves.toBe(true);
+  expect(requestedCommands).toEqual(["git ", "git statu", "g"]);
+});
+
 test("does not consume suggestion bindings while the UI is hidden", async () => {
   const writes: string[] = [];
   const terminal = {
