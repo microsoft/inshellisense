@@ -21,7 +21,7 @@ interface ICellData extends IBufferCell {
 }
 import { CommandManager, CommandState } from "./commandManager.js";
 import log from "../utils/log.js";
-import { gitBashPath } from "../utils/shell.js";
+import { getShellExecutable, getShellLoginArgs } from "../utils/shell.js";
 import styles from "ansi-styles";
 import * as ansi from "../utils/ansi.js";
 import { Command } from "commander";
@@ -431,7 +431,7 @@ const shellExists = async (shellTarget: string): Promise<boolean> => {
 
 const convertToPtyTarget = async (shell: Shell, underTest: boolean, login: boolean) => {
   const platform = os.platform();
-  const shellTarget = shell == Shell.Bash && platform == "win32" ? await gitBashPath() : platform == "win32" ? `${shell}.exe` : shell;
+  const shellTarget = await getShellExecutable(shell);
   let shellArgs: string[] = [];
 
   switch (shell) {
@@ -465,20 +465,8 @@ const convertToPtyTarget = async (shell: Shell, underTest: boolean, login: boole
       break;
   }
 
-  if (login) {
-    switch (shell) {
-      case Shell.Powershell:
-      case Shell.Pwsh:
-        shellArgs.unshift("-login");
-        break;
-      case Shell.Zsh:
-      case Shell.Fish:
-      case Shell.Xonsh:
-      case Shell.Nushell:
-        shellArgs.unshift("--login");
-        break;
-    }
-  }
+  // bash login behavior is emulated by shellIntegration.bash (ISTERM_LOGIN) since --login can't be combined with --init-file
+  if (shell != Shell.Bash) shellArgs.unshift(...getShellLoginArgs(shell, login));
 
   return { shellTarget, shellArgs };
 };

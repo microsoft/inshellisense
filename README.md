@@ -28,8 +28,9 @@ is init
 
 ```shell
 npm install -g @microsoft/inshellisense # OR brew upgrade inshellisense
-is reinit
 ```
+
+inshellisense refreshes its generated resources automatically the first time a new version starts. If it ever fails to start, the shell plugin falls back to your plain shell and prints the error; run `is reinit` to fully regenerate the resources.
 
 ### Quickstart
 

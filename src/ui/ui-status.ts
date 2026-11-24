@@ -8,6 +8,10 @@ export const renderConfirmation = (live: boolean): string => {
   return `inshellisense session [${statusMessage}]\n`;
 };
 
-export const renderMissingResources = (): string => {
-  return chalk.red(`inshellisense resources out of date, run "is reinit" to refresh\n`);
+export const renderStartupFailure = (message: string | undefined): string => {
+  const reason = message != null && message.length > 0 ? `: ${message}` : "";
+  return (
+    chalk.red(`inshellisense failed to start${reason}\n`) +
+    chalk.dim(`starting your shell without inshellisense, run "is doctor" or "is reinit" to fix the installation\n`)
+  );
 };
