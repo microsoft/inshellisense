@@ -18,7 +18,7 @@ describe("status checks", () => {
       terminal = await startSession({ label: "status", shell }, ["-T", "-s", shell]);
     });
     afterEach(async () => {
-      await closeSession(terminal);
+      await closeSession(terminal, shell);
     });
 
     test("current status", async () => {
@@ -33,7 +33,7 @@ describe("status checks", () => {
       terminal = await startShell(shell);
     });
     afterEach(async () => {
-      await closeSession(terminal);
+      await closeSession(terminal, shell);
     });
 
     test("current status", async () => {
