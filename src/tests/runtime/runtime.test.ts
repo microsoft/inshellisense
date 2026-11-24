@@ -27,8 +27,15 @@ jest.unstable_mockModule("../../runtime/utils.js", () => ({
   ...utils,
   buildExecuteShellCommand: (timeout: number, signal?: AbortSignal): Fig.ExecuteCommandFunction => {
     const execute = utils.buildExecuteShellCommand(timeout, signal);
-    return (input) =>
-      input.command === "curl" && input.args.at(-1)?.startsWith("https://azuresearch-usnc.nuget.org/query?") ? executeNugetSearch(input) : execute(input);
+    return async (input) => {
+      if (input.command === "dotnet" && input.args.join(" ") === "tool list --global") {
+        return { status: 0, stderr: "", stdout: "" };
+      }
+      if (input.command === "curl" && input.args.at(-1)?.startsWith("https://azuresearch-usnc.nuget.org/query?")) {
+        return executeNugetSearch(input);
+      }
+      return execute(input);
+    };
   },
 }));
 
