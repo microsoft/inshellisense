@@ -137,18 +137,33 @@ const getMatchRelevance = (name: string, partialCmd: string): number => {
   return 0;
 };
 
-// Sorts by priority, then ranks file and folder suggestions within a priority band by match quality,
-// shorter names and alphabetically. Paths only swap places with other paths, so subcommands, options
-// and spec-authored suggestions keep their source order.
-const sortSuggestions = (suggestions: Suggestion[], partialCmd: string | undefined): Suggestion[] => {
-  const sorted = suggestions.sort((a, b) => b.priority - a.priority);
-  if (!partialCmd) return sorted;
+// Whether any of a suggestion's names is exactly the text typed so far. Case-sensitive, since options
+// (-l vs -L) and git refs differ by case. Tokens containing a path separator are treated as paths and
+// reduced to their basename (partialCmd). File and folder suggestions are named by their basename, so
+// they compare against it; every other suggestion (e.g. the git branch feat/foo) is named in full and
+// compares against the full token, so typing feat/foo does not match an unrelated branch named foo.
+const isExactMatch = (suggestion: Suggestion, partialCmd: string, token: string | undefined): boolean => {
+  const typed = getPathy(suggestion.type) ? partialCmd : token ?? partialCmd;
+  return suggestion.allNames.some((name) => name === typed);
+};
+
+// Sorts exact matches first, then by priority. Typing a suggestion's full name is the clearest signal of
+// intent, so it beats spec priorities, which only hint at what to show while input is still partial
+// (e.g. git ranks the current branch at 100 over other branches at 75, which otherwise kept the current
+// branch above a fully typed branch name). Within a priority band file and folder suggestions are further
+// ranked by match quality, shorter names and alphabetically. Paths only swap places with other paths, so
+// subcommands, options and spec-authored suggestions keep their source order.
+const sortSuggestions = (suggestions: Suggestion[], partialCmd: string | undefined, token: string | undefined): Suggestion[] => {
+  if (!partialCmd) return suggestions.sort((a, b) => b.priority - a.priority);
+  const byExactMatchThenPriority = (a: Suggestion, b: Suggestion) =>
+    Number(isExactMatch(b, partialCmd, token)) - Number(isExactMatch(a, partialCmd, token)) || b.priority - a.priority;
+  const sorted = suggestions.sort(byExactMatchThenPriority);
   const pathIndexes = sorted.flatMap((s, i) => (getPathy(s.type) ? [i] : []));
   const rankedPaths = pathIndexes
     .map((i) => sorted[i])
     .sort(
       (a, b) =>
-        b.priority - a.priority ||
+        byExactMatchThenPriority(a, b) ||
         getMatchRelevance(b.name, partialCmd) - getMatchRelevance(a.name, partialCmd) ||
         a.name.length - b.name.length ||
         a.name.localeCompare(b.name),
@@ -398,7 +413,10 @@ export const getSubcommandDrivenRecommendation = async (
       removeEmptySuggestion(
         removeHiddenSuggestions(
           removeHomeDirectorySuggestion(
-            removeAcceptedSuggestions(adjustPathSuggestions(sortSuggestions(suggestions, partialCmd), partialToken, lastToken, shell), acceptedTokens),
+            removeAcceptedSuggestions(
+              adjustPathSuggestions(sortSuggestions(suggestions, partialCmd, partialToken?.token), partialToken, lastToken, shell),
+              acceptedTokens,
+            ),
             allTokens,
           ),
           partialToken,
@@ -445,7 +463,10 @@ export const getArgDrivenRecommendation = async (
       removeEmptySuggestion(
         removeHiddenSuggestions(
           removeHomeDirectorySuggestion(
-            removeAcceptedSuggestions(adjustPathSuggestions(sortSuggestions(suggestions, partialCmd), partialToken, lastToken, shell), acceptedTokens),
+            removeAcceptedSuggestions(
+              adjustPathSuggestions(sortSuggestions(suggestions, partialCmd, partialToken?.token), partialToken, lastToken, shell),
+              acceptedTokens,
+            ),
             allTokens,
           ),
           partialToken,

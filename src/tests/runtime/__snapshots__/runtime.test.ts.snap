@@ -587,6 +587,18 @@ exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
   "suggestions": [
     {
       "allNames": [
+        "-l",
+      ],
+      "description": "(The lowercase letter \`\`ell''.)  List in long format.  (See below.)  A total sum for all the file sizes is output on a line before the long listing",
+      "hidden": undefined,
+      "icon": "🔗",
+      "insertValue": undefined,
+      "name": "-l",
+      "priority": 50,
+      "type": undefined,
+    },
+    {
+      "allNames": [
         "package-lock.json",
       ],
       "description": undefined,
@@ -606,18 +618,6 @@ exports[`parseCommand optionsSuggestedAfterVariadicArg 1`] = `
       "icon": "🔗",
       "insertValue": undefined,
       "name": "-L",
-      "priority": 50,
-      "type": undefined,
-    },
-    {
-      "allNames": [
-        "-l",
-      ],
-      "description": "(The lowercase letter \`\`ell''.)  List in long format.  (See below.)  A total sum for all the file sizes is output on a line before the long listing",
-      "hidden": undefined,
-      "icon": "🔗",
-      "insertValue": undefined,
-      "name": "-l",
       "priority": 50,
       "type": undefined,
     },
