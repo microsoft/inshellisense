@@ -126,13 +126,15 @@ key = "escape"
 
 Key names are matched against the Node.js [keypress](https://nodejs.org/api/readline.html#readlineemitkeypresseventsstream-interface) events.
 
-Enable this top-level setting before any `[bindings.*]` sections to use the default Up and Down bindings for both suggestions and shell history.
+Set `suggestionBoundaryAction` at the top level of the config to choose what happens when you press Previous on the first suggestion or Next on the last.
 
 ```toml
-historyAtSuggestionEdges = true
+suggestionBoundaryAction = "wait"
 ```
 
-Up and Down move through suggestions while there is another item in that direction. Pressing Up on the first item or Down on the last dismisses the menu and forwards the same key to the shell. Suggestions stay hidden while you continue using the arrow keys. This option is off by default.
+- `wait` keeps the selection at the edge. This is the default.
+- `wrap` moves the selection to the opposite end of the list.
+- `exit` closes the menu and passes the key to the shell. With the default Up and Down bindings, this lets you browse command history. The menu stays hidden as you keep pressing Up or Down.
 
 ### Alias Expansion
 

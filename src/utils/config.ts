@@ -20,6 +20,7 @@ type Binding = {
 };
 
 type BoxBorderStyle = "square" | "rounded";
+type SuggestionBoundaryAction = "wait" | "wrap" | "exit";
 
 type Config = {
   bindings: {
@@ -34,7 +35,7 @@ type Config = {
   useAliases: boolean;
   cacheGeneratedSpecs: boolean;
   useNerdFont: boolean;
-  historyAtSuggestionEdges: boolean;
+  suggestionBoundaryAction: SuggestionBoundaryAction;
   maxSuggestions?: number;
   descriptionWidth: number;
   descriptionHeight: number;
@@ -96,10 +97,11 @@ const configSchema = {
       nullable: true,
       default: false,
     },
-    historyAtSuggestionEdges: {
-      type: "boolean",
+    suggestionBoundaryAction: {
+      type: "string",
       nullable: true,
-      default: false,
+      enum: ["wait", "wrap", "exit"],
+      default: "wait",
     },
     maxSuggestions: {
       type: "integer",
@@ -158,7 +160,7 @@ let globalConfig: Config = {
   useAliases: false,
   cacheGeneratedSpecs: true,
   useNerdFont: false,
-  historyAtSuggestionEdges: false,
+  suggestionBoundaryAction: "wait",
   descriptionWidth: 30,
   descriptionHeight: 5,
   truncateDescriptions: true,
@@ -194,7 +196,7 @@ export const loadConfig = async (program: Command) => {
         useAliases: config.useAliases ?? false,
         cacheGeneratedSpecs: config?.cacheGeneratedSpecs ?? true,
         useNerdFont: config?.useNerdFont ?? false,
-        historyAtSuggestionEdges: config?.historyAtSuggestionEdges ?? false,
+        suggestionBoundaryAction: config?.suggestionBoundaryAction ?? "wait",
         maxSuggestions: config?.maxSuggestions ?? 5,
         descriptionWidth: config?.descriptionWidth ?? 30,
         descriptionHeight: config?.descriptionHeight ?? 5,

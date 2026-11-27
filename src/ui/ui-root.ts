@@ -90,7 +90,7 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
     if (renderer.hasVisibleSuggestions && inputHandled) {
       term.noop();
     } else if (!inputHandled) {
-      if (renderer.hasVisibleSuggestions && (press.name === "up" || press.name === "down")) {
+      if (renderer.hasVisibleSuggestions && suggestions.isHidden) {
         renderer.renderSuggestionUpdate(backspaceEchoPending);
       }
       if (press.name === "backspace") {

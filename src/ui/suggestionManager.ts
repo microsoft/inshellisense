@@ -40,7 +40,8 @@ type KeyPress = {
 
 export class SuggestionManager {
   #term: ISTerm;
-  #commandKey: string;
+  // An undefined key invalidates the result while preserving prompt-scoped cleanup.
+  #commandKey: string | undefined;
   #activeSuggestionIdx: number;
   #suggestBlob?: SuggestionBlob;
   #shell: Shell;
@@ -62,6 +63,10 @@ export class SuggestionManager {
     void this.#runtime.catch((e) => log.debug({ msg: "suggestion runtime initialization failed", e: (e as Error).message }));
   }
 
+  get isHidden(): boolean {
+    return this.#hideSuggestions;
+  }
+
   private _getRuntime(): Promise<SuggestionRuntime> {
     this.initialize();
     return this.#runtime!;
@@ -73,7 +78,7 @@ export class SuggestionManager {
   }
 
   async suspend(): Promise<void> {
-    const commandCleared = this.#commandKey.length !== 0 || this.#abortController != null;
+    const commandCleared = this.#commandKey !== "" || this.#abortController != null;
     this.invalidate();
     this.#commandKey = "";
     this.#suggestBlob = undefined;
@@ -93,15 +98,14 @@ export class SuggestionManager {
     const commandState = this.#term.getCommandState();
     const commandText = commandState.commandText;
     const commandKey = commandText ? `${this.#term.cwd}\u0000${getCommandCacheKey(commandText, this.#shell)}` : "";
-    const hasCachedResult = this.#suggestBlob != null || !getConfig().historyAtSuggestionEdges;
-    if (commandKey.length !== 0 && commandKey === this.#commandKey && hasCachedResult && !this.#hideSuggestions && !commandState.hasOutput) {
+    if (commandKey.length !== 0 && commandKey === this.#commandKey && !this.#hideSuggestions && !commandState.hasOutput) {
       return false;
     }
     // Aborting is cooperative; the version check also rejects generators that ignore cancellation.
     const ownVersion = ++this.#requestVersion;
     this.#abortController?.abort();
     if (!commandText) {
-      const commandCleared = this.#commandKey.length !== 0 || this.#abortController != null;
+      const commandCleared = this.#commandKey !== "" || this.#abortController != null;
       this.#commandKey = "";
       if (commandCleared) {
         const runtime = await this._getRuntime();
@@ -239,6 +243,9 @@ export class SuggestionManager {
   }
 
   private _startHistoryNavigation(): void {
+    if (this.#commandKey !== "" || this.#abortController != null) {
+      this.#commandKey = undefined;
+    }
     this.invalidate();
     this.#suggestBlob = undefined;
     this.#activeSuggestionIdx = 0;
@@ -248,8 +255,7 @@ export class SuggestionManager {
   update(keyPress: KeyPress, allowBindings = true): boolean {
     const { name, shift, ctrl, meta } = keyPress;
     const arrow = name === "up" || name === "down";
-    const config = getConfig();
-    const historyArrow = config.historyAtSuggestionEdges && arrow && !shift && !ctrl && !meta;
+    const { bindings, suggestionBoundaryAction } = getConfig();
     if (name == "return") {
       this.#term.clearCommand(); // clear the current command on enter
     }
@@ -260,7 +266,9 @@ export class SuggestionManager {
     }
 
     if (!allowBindings || !this.#suggestBlob) {
-      if (historyArrow && !this.#hideSuggestions) this._startHistoryNavigation();
+      if (suggestionBoundaryAction === "exit" && arrow && !shift && !ctrl && !meta && !this.#hideSuggestions) {
+        this._startHistoryNavigation();
+      }
       return false;
     }
     const {
@@ -268,7 +276,7 @@ export class SuggestionManager {
       acceptSuggestion: { key: acceptKey, shift: acceptShift, control: acceptCtrl },
       nextSuggestion: { key: nextKey, shift: nextShift, control: nextCtrl },
       previousSuggestion: { key: prevKey, shift: prevShift, control: prevCtrl },
-    } = config.bindings;
+    } = bindings;
 
     const previous = name == prevKey && shift == !!prevShift && ctrl == !!prevCtrl;
     const next = name == nextKey && shift == !!nextShift && ctrl == !!nextCtrl;
@@ -279,11 +287,14 @@ export class SuggestionManager {
     } else if (previous || next) {
       const nextIndex = this.#activeSuggestionIdx + (previous ? -1 : 1);
       const lastIndex = this.#suggestBlob.suggestions.length - 1;
-      if (historyArrow && (nextIndex < 0 || nextIndex > lastIndex)) {
+      if (nextIndex >= 0 && nextIndex <= lastIndex) {
+        this.#activeSuggestionIdx = nextIndex;
+      } else if (suggestionBoundaryAction === "wrap" && lastIndex >= 0) {
+        this.#activeSuggestionIdx = previous ? lastIndex : 0;
+      } else if (suggestionBoundaryAction === "exit") {
         this._startHistoryNavigation();
         return false;
       }
-      this.#activeSuggestionIdx = Math.max(0, Math.min(nextIndex, lastIndex));
     } else if (name == acceptKey && shift == !!acceptShift && ctrl == !!acceptCtrl) {
       const suggestion = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx);
       if (suggestion == null || this.#suggestBlob?.suggestions.length == 0) {
