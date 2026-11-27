@@ -21,6 +21,124 @@ const blob = (name: string): SuggestionBlob => ({
   suggestions: [{ name, allNames: [name], icon: "*", priority: 50 }],
 });
 
+describe("suggestion boundary actions", () => {
+  const config = getConfig();
+  const originalAction = config.suggestionBoundaryAction;
+  const arrow = (name: "up" | "down") => ({ name, sequence: name === "up" ? "\x1b[A" : "\x1b[B", shift: false, ctrl: false });
+  const tab = { name: "tab", sequence: "\t", shift: false, ctrl: false };
+  const suggestions = { suggestions: [...blob("checkout").suggestions, ...blob("cherry-pick").suggestions] };
+
+  afterEach(() => {
+    config.suggestionBoundaryAction = originalAction;
+  });
+
+  const createManager = (result: SuggestionBlob | undefined) => {
+    const command = { commandText: "git ch", cursorTerminated: true, hasOutput: false };
+    const writes: string[] = [];
+    const requests: string[] = [];
+    const terminal = {
+      cwd: process.cwd(),
+      cols: 80,
+      getCommandState: () => command,
+      write: (data: string) => writes.push(data),
+    } as unknown as ISTerm;
+    let cleared = 0;
+    const runtime = Promise.resolve({
+      getSuggestions: async (commandText: string) => {
+        requests.push(commandText);
+        return result;
+      },
+      clearTransientSuggestionState: () => {
+        cleared++;
+      },
+    });
+    const manager = new SuggestionManager(terminal, Shell.Zsh, runtime);
+    return { command, writes, requests, manager, clearCalls: () => cleared };
+  };
+
+  test.each([
+    ["up", "wait", "checkout"],
+    ["down", "wait", "cherry-pick"],
+    ["up", "wrap", "cherry-pick"],
+    ["down", "wrap", "checkout"],
+  ] as const)("%s at the boundary with %s selects %s", async (direction, action, selected) => {
+    config.suggestionBoundaryAction = action;
+    const { manager, writes } = createManager(suggestions);
+
+    await manager.exec();
+    if (direction === "down") expect(manager.update(arrow("down"))).toBe("redraw");
+    expect(manager.update(arrow(direction))).toBe(action === "wait" ? "consume" : "redraw");
+    expect(manager.update(tab)).toBe("redraw");
+    expect(writes).toEqual([selected + " "]);
+  });
+
+  test("consumes navigation without a redraw when wrap has one suggestion", async () => {
+    config.suggestionBoundaryAction = "wrap";
+    const { manager } = createManager(blob("checkout"));
+
+    await manager.exec();
+    expect(manager.update(arrow("up"))).toBe("consume");
+    expect(manager.update(arrow("down"))).toBe("consume");
+  });
+
+  test.each(["up", "down"] as const)("exits the menu and hands %s to history", async (direction) => {
+    config.suggestionBoundaryAction = "exit";
+    const { manager, command, requests } = createManager(suggestions);
+
+    await manager.exec();
+    if (direction === "down") expect(manager.update(arrow("down"))).toBe("redraw");
+    expect(manager.update(arrow(direction))).toBe("dismissAndForward");
+    expect(manager.render("below", 0)).toEqual([]);
+
+    command.commandText = "git check";
+    await expect(manager.exec()).resolves.toBe(false);
+    expect(manager.update(arrow(direction), false)).toBe("forward");
+    expect(requests).toEqual(["git ch"]);
+
+    command.commandText = "git ch";
+    expect(manager.update({ name: "h", sequence: "h", shift: false, ctrl: false }, false)).toBe("forward");
+    await expect(manager.exec()).resolves.toBe(true);
+    expect(manager.render("below", 0)).not.toEqual([]);
+    expect(requests).toEqual(["git ch", "git ch"]);
+  });
+
+  test("keeps suggestions hidden when history starts at an empty prompt in exit mode", async () => {
+    config.suggestionBoundaryAction = "exit";
+    const { manager, command, requests } = createManager(suggestions);
+    command.commandText = "";
+
+    expect(manager.update(arrow("up"), false)).toBe("forward");
+    command.commandText = "git ch";
+    await expect(manager.exec()).resolves.toBe(false);
+    expect(requests).toEqual([]);
+  });
+
+  test("reuses an empty suggestion result when only the cursor moves in exit mode", async () => {
+    config.suggestionBoundaryAction = "exit";
+    const { manager, command, requests } = createManager(undefined);
+
+    await manager.exec();
+    command.cursorTerminated = false;
+    manager.invalidate();
+    await expect(manager.exec()).resolves.toBe(false);
+    command.cursorTerminated = true;
+    manager.invalidate();
+    await expect(manager.exec()).resolves.toBe(false);
+    expect(requests).toEqual(["git ch"]);
+  });
+
+  test("clears prompt-scoped suggestions when the prompt ends after handing off to history", async () => {
+    config.suggestionBoundaryAction = "exit";
+    const { manager, command, clearCalls } = createManager(suggestions);
+
+    await manager.exec();
+    expect(manager.update(arrow("up"))).toBe("dismissAndForward");
+    command.commandText = "";
+    await manager.exec();
+    expect(clearCalls()).toBe(1);
+  });
+});
+
 test("does not commit stale suggestions when a generator ignores cancellation", async () => {
   let commandText = "first";
   const first = deferred<SuggestionBlob>();
@@ -126,7 +244,7 @@ test("does not consume suggestion bindings while the UI is hidden", async () => 
   const manager = new SuggestionManager(terminal, Shell.Bash, runtime);
   await manager.exec();
 
-  expect(manager.update({ name: "tab", sequence: "\t", shift: false, ctrl: false }, false)).toBe(false);
+  expect(manager.update({ name: "tab", sequence: "\t", shift: false, ctrl: false }, false)).toBe("forward");
   expect(writes).toEqual([]);
 });
 
@@ -145,7 +263,7 @@ test("does not consume suggestion bindings when the UI is hidden", async () => {
   const manager = new SuggestionManager(terminal, Shell.Bash, runtime);
   await manager.exec();
 
-  expect(manager.update({ name: "tab", sequence: "\t", shift: false, ctrl: false }, false)).toBe(false);
+  expect(manager.update({ name: "tab", sequence: "\t", shift: false, ctrl: false }, false)).toBe("forward");
   expect(writes).toEqual([]);
 });
 

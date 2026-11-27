@@ -126,6 +126,16 @@ key = "escape"
 
 Key names are matched against the Node.js [keypress](https://nodejs.org/api/readline.html#readlineemitkeypresseventsstream-interface) events.
 
+Set `suggestionBoundaryAction` at the top level of the config to choose what happens when you press Previous on the first suggestion or Next on the last.
+
+```toml
+suggestionBoundaryAction = "wait"
+```
+
+- `wait` keeps the selection at the edge. This is the default.
+- `wrap` moves the selection to the opposite end of the list.
+- `exit` closes the menu and passes the key to the shell. With the default Up and Down bindings, this lets you browse command history. The menu stays hidden as you keep pressing Up or Down.
+
 ### Alias Expansion
 
 Inshellisense supports expanding aliases for bash/zsh shells. You can enable alias expansion in your config file:

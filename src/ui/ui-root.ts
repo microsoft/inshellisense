@@ -86,16 +86,21 @@ export const render = async (program: Command, shell: Shell, underTest: boolean,
       return;
     }
 
-    const inputHandled = suggestions.update(press, renderer.hasVisibleSuggestions);
-    if (renderer.hasVisibleSuggestions && inputHandled) {
-      term.noop();
-    } else if (!inputHandled) {
-      if (press.name === "backspace") {
-        backspaceEchoPending = true;
-        term.write(normalizeBackspace(press.sequence, shell));
-      } else {
-        term.write(press.sequence);
-      }
+    switch (suggestions.update(press, renderer.hasVisibleSuggestions)) {
+      case "consume":
+        return;
+      case "redraw":
+        term.noop();
+        return;
+      case "dismissAndForward":
+        renderer.renderSuggestionUpdate(backspaceEchoPending);
+        break;
+    }
+    if (press.name === "backspace") {
+      backspaceEchoPending = true;
+      forwardInput(press.sequence);
+    } else {
+      term.write(press.sequence);
     }
   });
 

@@ -73,3 +73,18 @@ test.each<[string, boolean]>([
 test("rejects a non-boolean generated spec caching setting", async () => {
   await expect(load('cacheGeneratedSpecs = "false"')).rejects.toThrow("cacheGeneratedSpecs");
 });
+
+test.each([
+  ["", "wait"],
+  ['suggestionBoundaryAction = "wait"', "wait"],
+  ['suggestionBoundaryAction = "wrap"', "wrap"],
+  ['suggestionBoundaryAction = "exit"', "exit"],
+])("loads the suggestion boundary action from %p", async (source, expected) => {
+  await load(source);
+
+  expect(getConfig().suggestionBoundaryAction).toBe(expected);
+});
+
+test.each(['suggestionBoundaryAction = "unknown"', "suggestionBoundaryAction = true"])("rejects an invalid suggestion boundary action: %s", async (source) => {
+  await expect(load(source)).rejects.toThrow("suggestionBoundaryAction");
+});
