@@ -13,7 +13,7 @@ import { allResourcesPath, xdgConfigPath } from "./constants.js";
 const Ajv = _Ajv as unknown as typeof _Ajv.default;
 const ajv = new Ajv();
 
-type Binding = {
+export type Binding = {
   shift?: boolean;
   control?: boolean;
   key: string;

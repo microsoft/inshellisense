@@ -66,10 +66,19 @@ describe("suggestion boundary actions", () => {
     const { manager, writes } = createManager(suggestions);
 
     await manager.exec();
-    if (direction === "down") expect(manager.update(arrow("down"))).toBe(true);
-    expect(manager.update(arrow(direction))).toBe(true);
-    expect(manager.update(tab)).toBe(true);
+    if (direction === "down") expect(manager.update(arrow("down"))).toBe("redraw");
+    expect(manager.update(arrow(direction))).toBe(action === "wait" ? "consume" : "redraw");
+    expect(manager.update(tab)).toBe("redraw");
     expect(writes).toEqual([selected + " "]);
+  });
+
+  test("consumes navigation without a redraw when wrap has one suggestion", async () => {
+    config.suggestionBoundaryAction = "wrap";
+    const { manager } = createManager(blob("checkout"));
+
+    await manager.exec();
+    expect(manager.update(arrow("up"))).toBe("consume");
+    expect(manager.update(arrow("down"))).toBe("consume");
   });
 
   test.each(["up", "down"] as const)("exits the menu and hands %s to history", async (direction) => {
@@ -77,17 +86,17 @@ describe("suggestion boundary actions", () => {
     const { manager, command, requests } = createManager(suggestions);
 
     await manager.exec();
-    if (direction === "down") expect(manager.update(arrow("down"))).toBe(true);
-    expect(manager.update(arrow(direction))).toBe(false);
+    if (direction === "down") expect(manager.update(arrow("down"))).toBe("redraw");
+    expect(manager.update(arrow(direction))).toBe("dismissAndForward");
     expect(manager.render("below", 0)).toEqual([]);
 
     command.commandText = "git check";
     await expect(manager.exec()).resolves.toBe(false);
-    expect(manager.update(arrow(direction), false)).toBe(false);
+    expect(manager.update(arrow(direction), false)).toBe("forward");
     expect(requests).toEqual(["git ch"]);
 
     command.commandText = "git ch";
-    expect(manager.update({ name: "h", sequence: "h", shift: false, ctrl: false }, false)).toBe(false);
+    expect(manager.update({ name: "h", sequence: "h", shift: false, ctrl: false }, false)).toBe("forward");
     await expect(manager.exec()).resolves.toBe(true);
     expect(manager.render("below", 0)).not.toEqual([]);
     expect(requests).toEqual(["git ch", "git ch"]);
@@ -98,7 +107,7 @@ describe("suggestion boundary actions", () => {
     const { manager, command, requests } = createManager(suggestions);
     command.commandText = "";
 
-    expect(manager.update(arrow("up"), false)).toBe(false);
+    expect(manager.update(arrow("up"), false)).toBe("forward");
     command.commandText = "git ch";
     await expect(manager.exec()).resolves.toBe(false);
     expect(requests).toEqual([]);
@@ -123,7 +132,7 @@ describe("suggestion boundary actions", () => {
     const { manager, command, clearCalls } = createManager(suggestions);
 
     await manager.exec();
-    expect(manager.update(arrow("up"))).toBe(false);
+    expect(manager.update(arrow("up"))).toBe("dismissAndForward");
     command.commandText = "";
     await manager.exec();
     expect(clearCalls()).toBe(1);
@@ -235,7 +244,7 @@ test("does not consume suggestion bindings while the UI is hidden", async () => 
   const manager = new SuggestionManager(terminal, Shell.Bash, runtime);
   await manager.exec();
 
-  expect(manager.update({ name: "tab", sequence: "\t", shift: false, ctrl: false }, false)).toBe(false);
+  expect(manager.update({ name: "tab", sequence: "\t", shift: false, ctrl: false }, false)).toBe("forward");
   expect(writes).toEqual([]);
 });
 
@@ -254,7 +263,7 @@ test("does not consume suggestion bindings when the UI is hidden", async () => {
   const manager = new SuggestionManager(terminal, Shell.Bash, runtime);
   await manager.exec();
 
-  expect(manager.update({ name: "tab", sequence: "\t", shift: false, ctrl: false }, false)).toBe(false);
+  expect(manager.update({ name: "tab", sequence: "\t", shift: false, ctrl: false }, false)).toBe("forward");
   expect(writes).toEqual([]);
 });
 

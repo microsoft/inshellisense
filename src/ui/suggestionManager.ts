@@ -7,7 +7,7 @@ import { getExpandedBoxSize, renderBox, truncateText, truncateMultilineText } fr
 import chalk from "chalk";
 import { Shell } from "../utils/shell.js";
 import log from "../utils/log.js";
-import { getConfig } from "../utils/config.js";
+import { type Binding, getConfig } from "../utils/config.js";
 import { calculateReplacement, applyReplacement } from "../runtime/replacement.js";
 import { getCommandCacheKey } from "../runtime/parser.js";
 import { initializeRuntime } from "../runtime/initialize.js";
@@ -38,9 +38,15 @@ type KeyPress = {
   meta?: boolean;
 };
 
+type KeyPressAction = "forward" | "consume" | "redraw" | "dismissAndForward";
+
+const matchesBinding = ({ name, shift, ctrl }: KeyPress, binding: Binding): boolean =>
+  name === binding.key && shift === !!binding.shift && ctrl === !!binding.control;
+
 export class SuggestionManager {
   #term: ISTerm;
-  // An undefined key invalidates the result while preserving prompt-scoped cleanup.
+  // An empty key marks a fresh prompt. An undefined key marks a result discarded
+  // during history navigation that still needs prompt-scoped cleanup.
   #commandKey: string | undefined;
   #activeSuggestionIdx: number;
   #suggestBlob?: SuggestionBlob;
@@ -61,10 +67,6 @@ export class SuggestionManager {
   initialize(): void {
     this.#runtime ??= initializeRuntime(this.#shell);
     void this.#runtime.catch((e) => log.debug({ msg: "suggestion runtime initialization failed", e: (e as Error).message }));
-  }
-
-  get isHidden(): boolean {
-    return this.#hideSuggestions;
   }
 
   private _getRuntime(): Promise<SuggestionRuntime> {
@@ -97,8 +99,9 @@ export class SuggestionManager {
   private async _loadSuggestions(): Promise<boolean> {
     const commandState = this.#term.getCommandState();
     const commandText = commandState.commandText;
-    const commandKey = commandText ? `${this.#term.cwd}\u0000${getCommandCacheKey(commandText, this.#shell)}` : "";
-    if (commandKey.length !== 0 && commandKey === this.#commandKey && !this.#hideSuggestions && !commandState.hasOutput) {
+    const shouldSuggest = !!commandText && !this.#hideSuggestions && !commandState.hasOutput;
+    const commandKey = shouldSuggest ? `${this.#term.cwd}\u0000${getCommandCacheKey(commandText, this.#shell)}` : "";
+    if (shouldSuggest && commandKey === this.#commandKey) {
       return false;
     }
     // Aborting is cooperative; the version check also rejects generators that ignore cancellation.
@@ -112,7 +115,7 @@ export class SuggestionManager {
         runtime.clearTransientSuggestionState?.();
       }
     }
-    if (!commandText || this.#hideSuggestions || commandState.hasOutput) {
+    if (!shouldSuggest) {
       const changed = this.#suggestBlob != null || this.#activeSuggestionIdx !== 0;
       this.#suggestBlob = undefined;
       this.#activeSuggestionIdx = 0;
@@ -252,7 +255,7 @@ export class SuggestionManager {
     this.#hideSuggestions = true;
   }
 
-  update(keyPress: KeyPress, allowBindings = true): boolean {
+  update(keyPress: KeyPress, allowBindings = true): KeyPressAction {
     const { name, shift, ctrl, meta } = keyPress;
     const arrow = name === "up" || name === "down";
     const { bindings, suggestionBoundaryAction } = getConfig();
@@ -269,49 +272,37 @@ export class SuggestionManager {
       if (suggestionBoundaryAction === "exit" && arrow && !shift && !ctrl && !meta && !this.#hideSuggestions) {
         this._startHistoryNavigation();
       }
-      return false;
+      return "forward";
     }
-    const {
-      dismissSuggestions: { key: dismissKey, shift: dismissShift, control: dismissCtrl },
-      acceptSuggestion: { key: acceptKey, shift: acceptShift, control: acceptCtrl },
-      nextSuggestion: { key: nextKey, shift: nextShift, control: nextCtrl },
-      previousSuggestion: { key: prevKey, shift: prevShift, control: prevCtrl },
-    } = bindings;
+    const previous = matchesBinding(keyPress, bindings.previousSuggestion);
 
-    const previous = name == prevKey && shift == !!prevShift && ctrl == !!prevCtrl;
-    const next = name == nextKey && shift == !!nextShift && ctrl == !!nextCtrl;
-
-    if (name == dismissKey && shift == !!dismissShift && ctrl == !!dismissCtrl) {
+    if (matchesBinding(keyPress, bindings.dismissSuggestions)) {
       this.#suggestBlob = undefined;
       this.#hideSuggestions = true;
-    } else if (previous || next) {
-      const nextIndex = this.#activeSuggestionIdx + (previous ? -1 : 1);
+    } else if (previous || matchesBinding(keyPress, bindings.nextSuggestion)) {
+      let nextIndex = this.#activeSuggestionIdx + (previous ? -1 : 1);
       const lastIndex = this.#suggestBlob.suggestions.length - 1;
-      if (nextIndex >= 0 && nextIndex <= lastIndex) {
-        this.#activeSuggestionIdx = nextIndex;
-      } else if (suggestionBoundaryAction === "wrap" && lastIndex >= 0) {
-        this.#activeSuggestionIdx = previous ? lastIndex : 0;
-      } else if (suggestionBoundaryAction === "exit") {
-        this._startHistoryNavigation();
-        return false;
+      if (nextIndex < 0 || nextIndex > lastIndex) {
+        if (suggestionBoundaryAction === "exit") {
+          this._startHistoryNavigation();
+          return "dismissAndForward";
+        }
+        if (suggestionBoundaryAction === "wait" || lastIndex < 0) return "consume";
+        nextIndex = previous ? lastIndex : 0;
       }
-    } else if (name == acceptKey && shift == !!acceptShift && ctrl == !!acceptCtrl) {
-      const suggestion = this.#suggestBlob?.suggestions.at(this.#activeSuggestionIdx);
-      if (suggestion == null || this.#suggestBlob?.suggestions.length == 0) {
-        return false;
-      }
-      const action = calculateReplacement(this.#suggestBlob?.activeToken, suggestion);
-      if (action == null) {
-        return false;
-      }
+      if (nextIndex === this.#activeSuggestionIdx) return "consume";
+      this.#activeSuggestionIdx = nextIndex;
+    } else if (matchesBinding(keyPress, bindings.acceptSuggestion)) {
+      const suggestion = this.#suggestBlob.suggestions[this.#activeSuggestionIdx];
+      if (suggestion == null) return "forward";
+      const action = calculateReplacement(this.#suggestBlob.activeToken, suggestion);
+      if (action == null) return "forward";
       this.#term.write(applyReplacement(action));
-    } else if (name == "return" || (name == "c" && ctrl)) {
-      this.#term.clearCommand();
-      return false;
     } else {
-      return false;
+      if (name === "c" && ctrl) this.#term.clearCommand();
+      return "forward";
     }
     log.debug({ msg: "handled keypress", ...keyPress });
-    return true;
+    return "redraw";
   }
 }
