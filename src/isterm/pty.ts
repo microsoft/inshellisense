@@ -10,7 +10,7 @@ import { Unicode11Addon } from "@xterm/addon-unicode11";
 
 import pty from "node-pty";
 import type { IPty, IEvent } from "node-pty";
-import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
+import { getBashLoginEnvironment, setupBashLoginShell, Shell, userZdotdir, zdotdir } from "../utils/shell.js";
 import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
 import xterm from "@xterm/headless";
 import type { IBuffer, IBufferCell } from "@xterm/xterm";
@@ -69,15 +69,15 @@ export class ISTerm implements IPty {
   readonly #commandManager: CommandManager;
   readonly #shell: Shell;
   #pendingData: string[] = [];
-  #pendingCursorPositionReports = 0;
 
   constructor({ shell, cols, rows, env, shellTarget, shellArgs, underTest, login }: ISTermOptions & { shellTarget: string }) {
+    const ptyEnv = { ...convertToPtyEnv(shell, underTest, login), ...env };
     this.#pty = pty.spawn(shellTarget, shellArgs ?? [], {
       name: "xterm-256color",
       cols,
       rows,
       cwd: process.cwd(),
-      env: { ...convertToPtyEnv(shell, underTest, login), ...env },
+      env: shell === Shell.Bash && login ? getBashLoginEnvironment(ptyEnv) : ptyEnv,
       useConpty: true,
       useConptyDll: true,
     });
@@ -90,14 +90,6 @@ export class ISTerm implements IPty {
     this.#term = new xterm.Terminal({ allowProposedApi: true, rows, cols });
     this.#term.loadAddon(unicode11Addon);
     this.#term.unicode.activeVersion = "11";
-    this.#term.parser.registerCsiHandler({ final: "n" }, (params) => {
-      if (params.at(0) === 6) this.#pendingCursorPositionReports += 1;
-      return false;
-    });
-    this.#term.parser.registerCsiHandler({ prefix: "?", final: "n" }, (params) => {
-      if (params.at(0) === 6) this.#pendingCursorPositionReports += 1;
-      return false;
-    });
 
     this.#ptyEmitter = new EventEmitter();
     this.#term.parser.registerOscHandler(IsTermOscPs, (data) => this._handleIsSequence(data));
@@ -236,12 +228,6 @@ export class ISTerm implements IPty {
 
   getCommandStateVersion(): number {
     return this.#commandManager.getStateVersion();
-  }
-
-  consumeCursorPositionQuery(): boolean {
-    if (this.#pendingCursorPositionReports === 0) return false;
-    this.#pendingCursorPositionReports -= 1;
-    return true;
   }
 
   isAlternateBuffer(): boolean {
@@ -416,6 +402,9 @@ export class ISTerm implements IPty {
 }
 
 export const spawn = async (program: Command, options: ISTermOptions): Promise<ISTerm> => {
+  if (options.shell === Shell.Bash && options.login) {
+    await setupBashLoginShell();
+  }
   const { shellTarget, shellArgs } = await convertToPtyTarget(options.shell, options.underTest, options.login);
   if (!(await shellExists(shellTarget))) {
     program.error(`shell not found on PATH: ${shellTarget}`, { exitCode: 1 });
@@ -436,7 +425,7 @@ const convertToPtyTarget = async (shell: Shell, underTest: boolean, login: boole
 
   switch (shell) {
     case Shell.Bash:
-      shellArgs = ["--init-file", path.join(shellResourcesPath, "shellIntegration.bash")];
+      shellArgs = login ? ["--login"] : ["--init-file", path.join(shellResourcesPath, "shellIntegration.bash")];
       break;
     case Shell.Powershell:
     case Shell.Pwsh:
